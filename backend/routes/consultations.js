@@ -2471,17 +2471,17 @@ router.post('/bookings/:bookingId/create-meeting', authenticate, async (req, res
       });
     }
     
-    // Import the Google Calendar service
-    const { createConsultationMeeting } = require('../services/googleCalendarService');
+    // Use Virtual Meeting Service directly
+    const virtualMeetingService = require('../services/virtualMeetingService');
     
-    // Create Google Meet via Calendar API
+    // Create virtual meeting directly
     const adviserName = `${consultation.adviser.salutation || ''} ${consultation.adviser.firstName} ${consultation.adviser.lastName}`.trim();
     const studentName = `${populatedBooking.student.user.firstName} ${populatedBooking.student.user.lastName}`;
     const title = consultationTitle || consultation.title || 'Academic Consultation';
     
-    console.log(`Creating meeting between ${adviserName} and ${studentName}`);
+    console.log(`Creating virtual meeting between ${adviserName} and ${studentName}`);
     
-    const meetingResult = await createConsultationMeeting(
+    const meetingResult = await virtualMeetingService.createMeeting(
       bookingId,
       title,
       adviserName,
@@ -2489,25 +2489,19 @@ router.post('/bookings/:bookingId/create-meeting', authenticate, async (req, res
     );
     
     if (!meetingResult.success) {
-      console.error('Failed to create Google Meet:', meetingResult.error);
+      console.error('Failed to create virtual meeting:', meetingResult.error);
       return res.status(500).json({ 
         message: 'Failed to create meeting', 
-        error: meetingResult.error,
-        details: meetingResult.details
+        error: meetingResult.error
       });
     }
     
-    console.log('Google Meet created successfully:', meetingResult.meetingUrl);
+    console.log('Virtual meeting created successfully:', meetingResult.meetingUrl);
     
     // Save meeting details to booking
     populatedBooking.meetingLink = meetingResult.meetingUrl;
     populatedBooking.meetingStarted = true;
     populatedBooking.meetingStartedAt = new Date();
-    
-    // Save Google Calendar event ID for future reference
-    if (meetingResult.eventId) {
-      populatedBooking.googleEventId = meetingResult.eventId;
-    }
     
     await consultation.save();
     
@@ -2516,8 +2510,7 @@ router.post('/bookings/:bookingId/create-meeting', authenticate, async (req, res
     res.json({
       success: true,
       meetingUrl: meetingResult.meetingUrl,
-      eventId: meetingResult.eventId,
-      conferenceId: meetingResult.conferenceId,
+      provider: meetingResult.provider,
       message: 'Meeting created successfully',
       booking: {
         _id: populatedBooking._id,
@@ -2536,27 +2529,7 @@ router.post('/bookings/:bookingId/create-meeting', authenticate, async (req, res
   }
 });
 
-// Test Google Calendar API connection
-router.get('/test-calendar-api', authenticate, async (req, res) => {
-  try {
-    // Only allow admins to test the API
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied. Admin only.' });
-    }
-    
-    const { testCalendarConnection } = require('../services/googleCalendarService');
-    const testResult = await testCalendarConnection();
-    
-    res.json(testResult);
-    
-  } catch (error) {
-    console.error('Test calendar API error:', error);
-    res.status(500).json({ 
-      message: 'Server error',
-      error: error.message
-    });
-  }
-});
+// Removed Google Calendar API - using direct virtual meeting service
 
 // Test Virtual Meeting APIs
 router.get('/test-virtual-meeting-apis', authenticate, async (req, res) => {
