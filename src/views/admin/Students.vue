@@ -8,90 +8,6 @@
             <h1 class="text-2xl font-normal text-gray-800">Students Management</h1>
             <p class="text-gray-500 mt-1 font-normal">Manage student records and assignments</p>
           </div>
-        </div>
-    </div>
-
-    <!-- Filters -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
-          <select
-            v-model="filters.yearLevel"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            @change="onYearLevelChange"
-          >
-            <option value="">All Years</option>
-            <option value="2">2nd Year</option>
-            <option value="3">3rd Year</option>
-            <option value="4">4th Year</option>
-          </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
-          <select
-            v-model="filters.section"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            @change="applyFiltersAndPagination"
-          >
-            <option value="">All Sections</option>
-            <option v-for="(section, index) in availableSections" :key="index" :value="section">
-              {{ section }}
-            </option>
-          </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Major</label>
-          <select
-            v-model="filters.major"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            @change="applyFiltersAndPagination"
-          >
-            <option value="">All Majors</option>
-            <option v-for="(major, index) in availableMajors" :key="index" :value="major">
-              {{ major }}
-            </option>
-          </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Assignment</label>
-          <select
-            v-model="filters.assignment"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            @change="applyFiltersAndPagination"
-          >
-            <option value="">All</option>
-            <option value="assigned">Assigned</option>
-            <option value="unassigned">Unassigned</option>
-          </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-              </div>
-          <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Search by name or ID"
-                class="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            @input="handleSearchInput"
-          />
-            </div>
-        </div>
-      </div>
-    </div>
-
-      <!-- Action Buttons -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-        <div class="flex justify-between items-center">
-      <div>
-            <h2 class="text-lg font-normal text-gray-800">Student Records</h2>
-            <p class="text-sm text-gray-500 font-normal">Manage all registered students</p>
-      </div>
       <div class="flex space-x-3">
         <button
           @click="assignStudentsToClasses"
@@ -103,11 +19,8 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-              <svg v-else class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-          </svg>
-          <span v-if="assigningClasses">Assigning Students...</span>
-              <span v-else>Assign Selected ({{ selectedStudents.length }})</span>
+              <span v-else class="mr-2">Assign Selected</span>
+              <span>({{ selectedStudents.length }})</span>
         </button>
         <button
           @click="refreshStudents"
@@ -118,157 +31,92 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-              <svg v-else class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-          </svg>
-          <span v-if="loading">Loading...</span>
           <span v-else>Refresh List</span>
         </button>
       </div>
-      </div>
     </div>
 
-    <!-- Students Table -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <div class="flex items-center">
-                <input
-                  type="checkbox"
-                  @change="toggleSelectAll"
-                  :checked="areAllStudentsSelected"
-                      class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span class="ml-2">Select</span>
+      <!-- UnifiedTable for Students -->
               </div>
-            </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Number</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-            <tbody class="divide-y divide-gray-200">
-          <tr v-if="loading">
-                <td colspan="5" class="px-6 py-12 text-center">
-                  <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span class="ml-3 text-gray-500">Loading students...</span>
-              </div>
-            </td>
-          </tr>
-          <tr v-else-if="students.length === 0">
-                <td colspan="5" class="px-6 py-12 text-center">
-                  <div class="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                </svg>
-              </div>
-                  <h3 class="text-base font-normal text-gray-800 mb-1">
-                    {{ (filters.search || filters.yearLevel || filters.major || filters.section || filters.assignment !== '') ? 'No students found' : 'No students yet' }}
-                  </h3>
-                  <p class="text-gray-500 font-normal">
-                    {{ (filters.search || filters.yearLevel || filters.major || filters.section || filters.assignment !== '') ? 'Try adjusting your search criteria' : 'Students will appear here once they are registered' }}
-                  </p>
-            </td>
-          </tr>
-          <tr v-for="(student, index) in students" :key="index" class="hover:bg-gray-50 transition-colors duration-150">
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mt-4">
+        <UnifiedTable
+          :data="studentsForUnifiedTable"
+          :columns="tableColumns"
+          :sortable-columns="sortableColumns"
+          :loading="loading"
+          loading-text="Loading students..."
+          search-placeholder="Search by name, ID, or email"
+          empty-state-title="No students found"
+          empty-state-message="Try adjusting your search criteria"
+          @search="handleUnifiedSearch"
+          @sort="handleUnifiedSort"
+          @page-change="handleUnifiedPageChange"
+        >
+          <template #filters>
+            <!-- Year Level -->
+            <select v-model="filters.yearLevel" @change="onYearLevelChange" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+              <option value="">All Years</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
+            <!-- Section -->
+            <select v-model="filters.section" @change="applyFiltersAndPagination" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+              <option value="">All Sections</option>
+              <option v-for="(section, index) in availableSections" :key="index" :value="section">{{ section }}</option>
+            </select>
+            <!-- Major (hidden for 2nd year) -->
+            <select v-if="filters.yearLevel !== '2'" v-model="filters.major" @change="applyFiltersAndPagination" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+              <option value="">All Majors</option>
+              <option v-for="(major, index) in availableMajors" :key="index" :value="major">{{ major }}</option>
+            </select>
+            <!-- Assignment -->
+            <select v-model="filters.assignment" @change="applyFiltersAndPagination" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+              <option value="">All</option>
+              <option value="assigned">Assigned</option>
+              <option value="unassigned">Unassigned</option>
+            </select>
+          </template>
+
+          <template #row="{ item: student }">
             <td class="px-6 py-4 whitespace-nowrap">
-              <input
-                type="checkbox"
-                v-model="selectedStudents"
-                :value="student._id"
-                class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition-all duration-200 hover:border-indigo-500 cursor-pointer"
-              />
+              <input type="checkbox" v-model="selectedStudents" :value="student._id" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="h-10 w-10 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <span class="text-sm font-medium text-indigo-600">
-                    {{ getInitials(student) }}
-                  </span>
+                  <span class="text-sm font-medium text-indigo-600">{{ getInitials(student) }}</span>
                 </div>
                 <div class="ml-4">
                   <div class="text-sm font-medium text-gray-900">
-                    {{ student.user?.firstName || '' }} {{ student.user?.middleName || '' }} {{ student.user?.lastName || '' }}
-                    {{ student.user?.nameExtension !== 'N/A' ? student.user?.nameExtension : '' }}
+                    {{ student.user?.firstName || '' }} {{ student.user?.middleName || '' }} {{ student.user?.lastName || '' }} {{ student.user?.nameExtension !== 'N/A' ? student.user?.nameExtension : '' }}
                   </div>
-                  <div class="text-sm text-gray-500">
-                    {{ student.user?.email || '' }}
-                  </div>
+                  <div class="text-sm text-gray-500">{{ student.user?.email || '' }}</div>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               <span class="font-mono">{{ student.user?.idNumber || 'N/A' }}</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <span class="px-2.5 py-1 bg-gray-100 text-gray-800 rounded-md">
-                {{ getClassName(student.class, student) }}
-              </span>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.yearLevel || '-' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.section || '-' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.major || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button 
-                @click="viewStudent(student)" 
-                class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                View
-              </button>
-              <button 
-                @click="editStudent(student)" 
-                class="inline-flex items-center px-2.5 py-1.5 border border-transparent shadow-sm text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit
-              </button>
+              <div class="flex items-center justify-end space-x-2">
+                <button @click="viewStudent(student)" class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100">View</button>
+                <button @click="editStudent(student)" class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100">Edit</button>
+              </div>
             </td>
-          </tr>
-        </tbody>
-      </table>
+          </template>
+        </UnifiedTable>
         </div>
 
-      <!-- Pagination -->
-      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="text-sm text-gray-700">
-              Showing <span class="font-medium">{{ pagination.from }}</span> to <span class="font-medium">{{ pagination.to }}</span> of <span class="font-medium">{{ pagination.total }}</span> students
-            </p>
-          </div>
-          <div class="flex space-x-2">
-            <button 
-              @click="changePage(pagination.currentPage - 1)" 
-              :disabled="pagination.currentPage === 1"
-              class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-              Previous
-            </button>
-            <button 
-              @click="changePage(pagination.currentPage + 1)" 
-              :disabled="pagination.currentPage === pagination.totalPages"
-              class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-            >
-              Next
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- View Student Modal -->
@@ -1077,6 +925,7 @@ import { studentService } from '../../services/studentService';
 import { classService } from '../../services/classService';
 import { notificationService } from '../../services/notificationService';
 import api from '../../services/api';
+import UnifiedTable from '../../components/ui/UnifiedTable.vue';
 
 const route = useRoute();
 
@@ -1468,6 +1317,51 @@ function applyFiltersAndPagination() {
   students.value = filtered.slice(from - 1, to)
 }
 
+// Data source for UnifiedTable: apply filters only, UnifiedTable will paginate/sort/search
+const filteredStudentsUnified = computed(() => filterStudents(allStudents.value))
+
+// Raw data for UnifiedTable search functionality
+const studentsForUnifiedTable = computed(() => {
+  // Apply only the filter-based filtering (year level, section, major, assignment)
+  // Let UnifiedTable handle search, sort, and pagination
+  const filtered = filterStudents(allStudents.value)
+  
+  // Add searchable fields for UnifiedTable
+  return filtered.map(student => ({
+    ...student,
+    studentInfo: `${student.user?.firstName || ''} ${student.user?.middleName || ''} ${student.user?.lastName || ''} ${student.user?.email || ''}`.trim(),
+    yearLevel: student.class ? student.class.yearLevel : (student.classInfo ? student.classInfo.yearLevel : (student.classDetails ? student.classDetails.yearLevel : '')),
+    section: student.class ? student.class.section : (student.classInfo ? student.classInfo.section : (student.classDetails ? student.classDetails.section : '')),
+    major: student.class ? student.class.major : (student.classInfo ? student.classInfo.major : (student.classDetails ? student.classDetails.major : ''))
+  }))
+})
+
+// UnifiedTable configuration
+const tableColumns = [
+  { key: 'select', label: 'Select', class: '' },
+  { key: 'studentInfo', label: 'Student', class: '' },
+  { key: 'user.idNumber', label: 'ID Number', class: '' },
+  { key: 'yearLevel', label: 'Year Level', class: '' },
+  { key: 'section', label: 'Section', class: '' },
+  { key: 'major', label: 'Major', class: '' },
+  { key: 'actions', label: 'Actions', class: 'text-right' }
+]
+
+const sortableColumns = [
+  { value: 'user.firstName', label: 'Student' },
+  { value: 'user.idNumber', label: 'ID Number' },
+  { value: 'yearLevel', label: 'Year Level' },
+  { value: 'section', label: 'Section' },
+  { value: 'major', label: 'Major' }
+]
+
+function handleUnifiedSearch(query) {
+  filters.search = query
+  applyFiltersAndPagination()
+}
+function handleUnifiedSort() {}
+function handleUnifiedPageChange() {}
+
 function filterStudents(studentsData) {
   const processed = studentsData.filter(student => {
     // Skip any null or invalid student objects
@@ -1535,17 +1429,8 @@ function filterStudents(studentsData) {
       if (filters.assignment === 'unassigned' && isAssigned) return false
     }
 
-    // Filter by search term
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      const fullName = `${student.user?.firstName || ''} ${student.user?.middleName || ''} ${student.user?.lastName || ''}`.toLowerCase();
-      const idNumber = student.user?.idNumber?.toLowerCase() || '';
-      const email = student.user?.email?.toLowerCase() || '';
-      
-      if (!fullName.includes(searchTerm) && !idNumber.includes(searchTerm) && !email.includes(searchTerm)) {
-        return false;
-      }
-    }
+    // Note: Search is now handled by UnifiedTable component, not here
+    // This prevents double filtering and ensures proper search functionality
     
     return true;
   });

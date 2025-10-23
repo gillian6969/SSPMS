@@ -211,12 +211,25 @@ router.get('/pending', authenticate, authorizeAdmin, async (req, res) => {
           section: student.classDetails.section,
           major: student.classDetails.major || student.major
         };
+      } else if (student.class) {
+        // If class is assigned, use the class data
+        formattedStudent.classInfo = {
+          yearLevel: student.class.yearLevel,
+          section: student.class.section,
+          major: student.class.major
+        };
       }
       
       return formattedStudent;
     });
     
     console.log(`Successfully processed ${formattedStudents.length} pending students`);
+    
+    // Debug: Log the first student's structure to see what we're sending
+    if (formattedStudents.length > 0) {
+      console.log('First student structure:', JSON.stringify(formattedStudents[0], null, 2));
+    }
+    
     res.json(formattedStudents);
   } catch (error) {
     console.error('Error fetching pending registrations:', error);
@@ -843,46 +856,185 @@ router.put('/registration/:id/review', authenticate, authorizeAdmin, async (req,
     
     await student.save();
     
-    // Send notification email using SendGrid Web API
+    // Send notification email using appropriate service (SendGrid for prod, Gmail for dev)
     try {
-      // Set SendGrid API key
-      sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+      console.log('Starting email sending process...');
+      console.log('NODE_ENV:', process.env.NODE_ENV);
+      console.log('EMAIL_PASSWORD exists:', !!process.env.EMAIL_PASSWORD);
+      console.log('EMAIL_USER exists:', !!process.env.EMAIL_USER);
       
-      let emailSubject, emailText;
+      let emailSubject, emailHtml;
       
       if (approvalStatus === 'approved') {
-        emailSubject = 'SSP Management System - Registration Approved';
-        emailText = `Dear ${student.pendingRegistration.firstName},
-        
-Your registration for the SSP Management System has been approved. You can now log in using your email and the password you provided during registration.
-
-          Please log in at: ${process.env.FRONTEND_URL || 'https://sscms-au.com'}
-
-Thank you,
-SSP Management Team`;
+        emailSubject = 'PHINMA SSCMS - Registration Approved';
+        emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 8px; color: white;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: bold;">PHINMA ARAULLO UNIVERSITY</h1>
+              <p style="margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">Student Success and Completion Monitoring System</p>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 20px 0;">
+              <h2 style="color: #10b981; margin-bottom: 20px;">Congratulations, ${student.pendingRegistration.firstName}!</h2>
+              
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                Great news! Your registration for the PHINMA Student Success and Completion Monitoring System (SSCMS) has been <strong>approved</strong>. 
+                You can now access your student account and begin using the system.
+              </p>
+              
+              <div style="background-color: #f0fdf4; border: 1px solid #10b981; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                <h4 style="color: #059669; margin: 0 0 10px 0; font-size: 16px;">Your Account is Ready</h4>
+                <p style="color: #059669; margin: 0; font-size: 14px; line-height: 1.5;">
+                  You can now log in using your email address and the password you provided during registration.
+                </p>
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://sscms-au.com" style="display: inline-block; background-color: #10b981; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px;">
+                  Access Your Account
+                </a>
+              </div>
+              
+              <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">What's Next?</h3>
+                <ul style="margin: 5px 0; color: #374151; padding-left: 20px;">
+                  <li>Log in to your account using your email and password</li>
+                  <li>Complete your student profile</li>
+                  <li>Check for any pending requirements or announcements</li>
+                  <li>Contact your adviser if you have any questions</li>
+                </ul>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
+                If you have any questions or need assistance, please don't hesitate to contact the SSCMS support team.
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+              <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+              <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+            </div>
+          </div>
+        `;
       } else {
-        emailSubject = 'SSP Management System - Registration Rejected';
-        emailText = `Dear ${student.pendingRegistration.firstName},
-        
-We regret to inform you that your registration for the SSP Management System has been rejected.
-
-${approvalNotes ? `Reason: ${approvalNotes}` : ''}
-
-If you believe this is an error, please contact the SSP Management Team.
-
-Thank you,
-SSP Management Team`;
+        emailSubject = 'PHINMA SSCMS - Registration Update';
+        emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 8px; color: white;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: bold;">PHINMA ARAULLO UNIVERSITY</h1>
+              <p style="margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">Student Success and Completion Monitoring System</p>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 20px 0;">
+              <h2 style="color: #374151; margin-bottom: 20px;">Dear ${student.pendingRegistration.firstName},</h2>
+              
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                Thank you for your interest in the PHINMA Student Success and Completion Monitoring System (SSCMS). 
+                After careful review of your registration, we regret to inform you that your registration has not been approved at this time.
+              </p>
+              
+              ${approvalNotes ? `
+              <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 14px;">📋 Reason for Rejection</h4>
+                <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.5;">
+                  ${approvalNotes}
+                </p>
+              </div>
+              ` : ''}
+              
+              <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">Next Steps</h3>
+                <ul style="margin: 5px 0; color: #374151; padding-left: 20px;">
+                  <li>Review the reason provided above</li>
+                  <li>If you believe this is an error, contact the SSCMS support team</li>
+                  <li>You may reapply after addressing any issues mentioned</li>
+                  <li>Contact your academic adviser for guidance</li>
+                </ul>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
+                If you have any questions or believe this decision was made in error, please contact the SSCMS support team immediately at <strong>spsms.system.au@gmail.com</strong>.
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+              <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+              <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+            </div>
+          </div>
+        `;
       }
+      
+      // Check if we're in production (using SendGrid) or development (using Gmail)
+      const isProduction = process.env.NODE_ENV === 'production';
+      console.log('isProduction:', isProduction);
+      
+      if (isProduction) {
+        console.log('Using SendGrid for email sending...');
+        // Production: Use SendGrid
+        if (!process.env.EMAIL_PASSWORD) {
+          throw new Error('EMAIL_PASSWORD environment variable is required for SendGrid in production');
+        }
+        
+        // Validate SendGrid API key format
+        if (!process.env.EMAIL_PASSWORD.startsWith('SG.')) {
+          throw new Error('Invalid SendGrid API key format. API key must start with "SG."');
+        }
+        
+        sgMail.setApiKey(process.env.EMAIL_PASSWORD);
       
       const msg = {
         to: student.pendingRegistration.email,
         from: 'spsms.system.au@gmail.com',
         subject: emailSubject,
-        text: emailText
+          html: emailHtml
       };
       
+        try {
       await sgMail.send(msg);
       console.log(`Notification email sent successfully via SendGrid to ${student.pendingRegistration.email}`);
+        } catch (sendGridError) {
+          console.error('SendGrid API error:', sendGridError);
+          if (sendGridError.response) {
+            console.error('SendGrid response:', sendGridError.response.body);
+          }
+          throw new Error(`SendGrid email failed: ${sendGridError.message}`);
+        }
+      } else {
+        console.log('Using Gmail/Nodemailer for email sending...');
+        // Development: Use Gmail/Nodemailer
+        const nodemailer = require('nodemailer');
+        
+        console.log('Creating Gmail transporter...');
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+          }
+        });
+        
+        console.log('Verifying Gmail transporter...');
+        await transporter.verify();
+        console.log('Gmail transporter verified successfully');
+        
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: student.pendingRegistration.email,
+          subject: emailSubject,
+          html: emailHtml
+        };
+        
+        console.log('Sending email via Gmail...');
+        await transporter.sendMail(mailOptions);
+        console.log(`Notification email sent successfully via Gmail to ${student.pendingRegistration.email}`);
+      }
     } catch (emailError) {
       console.error('Failed to send notification email:', emailError);
       // We don't want to fail the request if email fails
@@ -1980,7 +2132,12 @@ router.post('/register', async (req, res) => {
       console.error('Error finding class:', classError);
     }
     
-    // Create student record with pending approval status
+    // Generate verification token
+    const crypto = require('crypto');
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+    
+    // Create student record with verification status
     const student = new Student({
       pendingRegistration: {
         firstName,
@@ -2010,15 +2167,211 @@ router.post('/register', async (req, res) => {
       major: formattedYearLevel === '2nd' ? null : (major || 'Business Informatics'),
       odysseyPlanCompleted: false,
       srmSurveyCompleted: false,
-      approvalStatus: 'pending',
-      status: 'inactive'
+      approvalStatus: 'verification_pending', // New status for email verification
+      status: 'inactive',
+      verificationToken,
+      tokenExpiry
     });
     
     await student.save();
-    console.log('Student pending registration created with ID:', student._id);
+    console.log('Student verification record created with ID:', student._id);
+    
+    // Send verification email
+    try {
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      if (isProduction) {
+        // Production: Use SendGrid
+        const sgMail = require('@sendgrid/mail');
+        
+        if (!process.env.EMAIL_PASSWORD || !process.env.EMAIL_PASSWORD.startsWith('SG.')) {
+          console.error('SendGrid API key not configured properly');
+          throw new Error('Email service not configured');
+        }
+        
+        sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+        
+        const verificationUrl = `https://sscms-au.com/verify-student/${verificationToken}`;
+        
+        const msg = {
+          to: email,
+          from: 'spsms.system.au@gmail.com',
+          subject: 'PHINMA SSCMS - Verify Your Email Address',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Email Verification</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">PHINMA Education</h1>
+                  <p style="color: #d1fae5; margin: 8px 0 0 0; font-size: 16px;">Student Success and Completion Monitoring System</p>
+                </div>
+                
+                <!-- Content -->
+                <div style="padding: 30px;">
+                  <h2 style="color: #10b981; margin-bottom: 20px;">Verify Your Email Address</h2>
+                  
+                  <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                    Hello ${firstName},
+                  </p>
+                  
+                  <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                    Thank you for registering with the PHINMA Student Success and Completion Monitoring System (SSCMS). 
+                    To complete your registration, please verify your email address by clicking the button below.
+                  </p>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${verificationUrl}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);">
+                      Verify Email Address
+                    </a>
+                  </div>
+                  
+                  <div style="background-color: #f0fdf4; border: 1px solid #10b981; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                    <h4 style="color: #059669; margin: 0 0 10px 0; font-size: 16px;">Important Information</h4>
+                    <p style="color: #059669; margin: 0; font-size: 14px; line-height: 1.5;">
+                      • This verification link will expire in 48 hours<br>
+                      • If you don't verify within this time, you'll need to register again<br>
+                      • After verification, your registration will be reviewed by administrators
+                    </p>
+                  </div>
+                  
+                  <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin-top: 30px;">
+                    If the button above doesn't work, you can copy and paste this link into your browser:<br>
+                    <a href="${verificationUrl}" style="color: #10b981; word-break: break-all;">${verificationUrl}</a>
+                  </p>
+                  
+                  <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin-top: 20px;">
+                    If you didn't register for this account, please ignore this email.
+                  </p>
+                </div>
+                
+                <!-- Footer -->
+                <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                    © 2024 PHINMA Education. All rights reserved.<br>
+                    This is an automated message, please do not reply.
+                  </p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `
+        };
+        
+        await sgMail.send(msg);
+        console.log('Verification email sent successfully via SendGrid to:', email);
+        
+      } else {
+        // Development: Use Gmail/Nodemailer
+        const nodemailer = require('nodemailer');
+        
+        console.log('Creating Gmail transporter for verification email...');
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+          }
+        });
+        
+        // Verify transporter
+        await transporter.verify();
+        console.log('Gmail transporter verified successfully');
+        
+        const verificationUrl = `http://localhost:5173/verify-student/${verificationToken}`;
+        
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'PHINMA SSCMS - Verify Your Email Address',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Email Verification</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">PHINMA Education</h1>
+                  <p style="color: #d1fae5; margin: 8px 0 0 0; font-size: 16px;">Student Success and Completion Monitoring System</p>
+                </div>
+                
+                <!-- Content -->
+                <div style="padding: 30px;">
+                  <h2 style="color: #10b981; margin-bottom: 20px;">Verify Your Email Address</h2>
+                  
+                  <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                    Hello ${firstName},
+                  </p>
+                  
+                  <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                    Thank you for registering with the PHINMA Student Success and Completion Monitoring System (SSCMS). 
+                    To complete your registration, please verify your email address by clicking the button below.
+                  </p>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${verificationUrl}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);">
+                      Verify Email Address
+                    </a>
+                  </div>
+                  
+                  <div style="background-color: #f0fdf4; border: 1px solid #10b981; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                    <h4 style="color: #059669; margin: 0 0 10px 0; font-size: 16px;">Important Information</h4>
+                    <p style="color: #059669; margin: 0; font-size: 14px; line-height: 1.5;">
+                      • This verification link will expire in 48 hours<br>
+                      • If you don't verify within this time, you'll need to register again<br>
+                      • After verification, your registration will be reviewed by administrators
+                    </p>
+                  </div>
+                  
+                  <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin-top: 30px;">
+                    If the button above doesn't work, you can copy and paste this link into your browser:<br>
+                    <a href="${verificationUrl}" style="color: #10b981; word-break: break-all;">${verificationUrl}</a>
+                  </p>
+                  
+                  <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin-top: 20px;">
+                    If you didn't register for this account, please ignore this email.
+                  </p>
+                </div>
+                
+                <!-- Footer -->
+                <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                    © 2024 PHINMA Education. All rights reserved.<br>
+                    This is an automated message, please do not reply.
+                  </p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log('Verification email sent successfully via Gmail to:', email);
+      }
+      
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail the registration if email fails, but log the error
+    }
     
     res.status(201).json({ 
-      message: 'Registration successful. Your account is pending admin approval. You will be notified via email when approved.'
+      message: 'Registration received. Please check your email for verification'
     });
     
   } catch (error) {
@@ -2026,6 +2379,105 @@ router.post('/register', async (req, res) => {
     console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     res.status(500).json({ 
       message: 'Server error during registration',
+      error: error.message 
+    });
+  }
+});
+
+// Verify student email
+router.get('/verify/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    console.log('Verifying student with token:', token);
+    
+    // Find student with this verification token
+    const student = await Student.findOne({ 
+      verificationToken: token,
+      approvalStatus: 'verification_pending'
+    });
+    
+    if (!student) {
+      console.log('No student found with token:', token);
+      return res.status(404).json({ 
+        message: 'Invalid or expired verification token',
+        redirectTo: '/token-expired'
+      });
+    }
+    
+    // Check if token has expired
+    if (new Date() > student.tokenExpiry) {
+      console.log('Token expired for student:', student._id);
+      
+      // Delete the expired student record
+      await Student.findByIdAndDelete(student._id);
+      
+      return res.status(400).json({ 
+        message: 'Verification token has expired. Please register again.',
+        redirectTo: '/token-expired'
+      });
+    }
+    
+    // Update student status to pending approval
+    student.approvalStatus = 'pending';
+    student.verificationToken = undefined;
+    student.tokenExpiry = undefined;
+    student.emailVerified = true;
+    student.emailVerifiedAt = new Date();
+    
+    await student.save();
+    console.log('Student email verified successfully:', student._id);
+    
+    res.json({ 
+      message: 'Email verified successfully! Your registration is now pending admin approval.',
+      redirectTo: '/email-verified'
+    });
+    
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({ 
+      message: 'Server error during verification',
+      error: error.message 
+    });
+  }
+});
+
+// Cleanup expired verification tokens (run this periodically)
+router.post('/cleanup-expired-tokens', async (req, res) => {
+  try {
+    console.log('Starting cleanup of expired verification tokens...');
+    
+    const now = new Date();
+    const expiredStudents = await Student.find({
+      approvalStatus: 'verification_pending',
+      tokenExpiry: { $lt: now }
+    });
+    
+    console.log(`Found ${expiredStudents.length} expired verification records`);
+    
+    if (expiredStudents.length > 0) {
+      const result = await Student.deleteMany({
+        approvalStatus: 'verification_pending',
+        tokenExpiry: { $lt: now }
+      });
+      
+      console.log(`Deleted ${result.deletedCount} expired verification records`);
+      
+      res.json({
+        message: `Cleanup completed. Deleted ${result.deletedCount} expired verification records.`,
+        deletedCount: result.deletedCount
+      });
+    } else {
+      res.json({
+        message: 'No expired verification records found.',
+        deletedCount: 0
+      });
+    }
+    
+  } catch (error) {
+    console.error('Token cleanup error:', error);
+    res.status(500).json({ 
+      message: 'Server error during cleanup',
       error: error.message 
     });
   }

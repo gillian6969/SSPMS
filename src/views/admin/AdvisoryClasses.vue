@@ -9,15 +9,6 @@
             <p class="text-gray-500 mt-1 font-normal">Manage class-adviser assignments and schedules</p>
     </div>
           <div class="flex items-center space-x-4">
-            <select 
-              v-model="statusFilter" 
-              @change="filterAdvisoryClasses"
-              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="archived">Archived</option>
-            </select>
           
             <!-- View Toggle -->
             <div class="flex bg-gray-100 rounded-lg p-1">
@@ -51,81 +42,70 @@
       </div>
       
       <!-- List View -->
-      <div v-if="viewMode === 'list'" class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <!-- Search Header -->
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex items-center">
-            <div class="relative max-w-md">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-              </div>
-              <input 
-                v-model="search" 
-                type="text" 
-                placeholder="Search classes or advisers" 
-                class="pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                @input="filterAdvisoryClasses"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <!-- Table Content -->
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adviser</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-            <tbody class="divide-y divide-gray-200">
-          <tr v-if="loading">
-                <td colspan="3" class="px-6 py-12 text-center">
-                  <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span class="ml-3 text-gray-500">Loading advisory classes...</span>
-              </div>
+      <div v-if="viewMode === 'list'">
+        <UnifiedTable
+          :data="filteredClasses"
+          :columns="tableColumns"
+          :sortable-columns="sortableColumns"
+          :loading="loading"
+          loading-text="Loading advisory classes..."
+          search-placeholder="Search classes or advisers"
+          empty-state-title="No advisory classes found"
+          empty-state-message="Try adjusting your search criteria or assign advisers to classes to get started"
+          @search="handleSearch"
+          @sort="handleSort"
+          @page-change="handlePageChange"
+        >
+          <!-- Filters Slot -->
+          <template #filters>
+            <!-- Year Level Filter -->
+            <select 
+              v-model="yearFilter" 
+              @change="filterAdvisoryClasses"
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Years</option>
+              <option v-for="year in yearLevels" :key="year" :value="year">{{ year }} Year</option>
+            </select>
+            
+            <!-- Section Filter -->
+            <select 
+              v-model="sectionFilter" 
+              @change="filterAdvisoryClasses"
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Sections</option>
+              <option v-for="section in availableSections" :key="section" :value="section">{{ section }}</option>
+            </select>
+            
+            <!-- Major Filter (only show for 3rd and 4th year) -->
+            <select 
+              v-if="yearFilter && yearFilter !== '2nd'"
+              v-model="majorFilter" 
+              @change="filterAdvisoryClasses"
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Majors</option>
+              <option v-for="major in availableMajors" :key="major" :value="major">{{ major }}</option>
+            </select>
+          </template>
+
+          <!-- Row Slot -->
+          <template #row="{ item: advisoryClass, index }">
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ getYearLevel(advisoryClass) }}
             </td>
-          </tr>
-          <tr v-else-if="filteredClasses.length === 0">
-                <td colspan="3" class="px-6 py-12 text-center">
-                  <div class="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443a55.381 55.381 0 015.25 2.882V15" />
-                    </svg>
-                  </div>
-                  <h3 class="text-base font-normal text-gray-800 mb-1">
-                    {{ search ? 'No classes found' : 'No advisory classes yet' }}
-                  </h3>
-                  <p class="text-gray-500 font-normal">
-                    {{ search ? 'Try adjusting your search criteria' : 'Classes will appear here once created' }}
-                  </p>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ getSection(advisoryClass) }}
             </td>
-          </tr>
-          <tr v-for="advisoryClass in filteredClasses" :key="advisoryClass._id" class="hover:bg-gray-50">
-                <td class="px-6 py-4">
-                  <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span class="text-sm font-normal text-blue-600">
-                        {{ getClassName(advisoryClass).charAt(0) }}
-                      </span>
-                    </div>
-                    <div>
-                      <div class="text-sm font-normal text-gray-800">{{ getClassName(advisoryClass) }}</div>
-              <div class="flex space-x-2 mt-1">
-                <span 
-                  v-if="hasSecondSemester(advisoryClass)" 
-                          class="px-2 py-0.5 text-xs font-normal rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200"
-                >
-                  2nd Sem
-                </span>
-                      </div>
-                    </div>
-              </div>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ getMajor(advisoryClass) || '-' }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ advisoryClass.currentSemester || '—' }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ advisoryClass.studentsCount ?? 0 }}
             </td>
                 <td class="px-6 py-4 text-sm text-gray-800">
               {{ getAdviserName(advisoryClass.adviser) }}
@@ -159,15 +139,13 @@
               </button>
                   </div>
             </td>
-          </tr>
-        </tbody>
-      </table>
-        </div>
+          </template>
+        </UnifiedTable>
       </div>
       
       <!-- Calendar View -->
       <div v-else class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <div class="p-6">
+        <div class="p-6 space-y-7">
           <!-- Calendar Controls -->
           <div class="flex items-center justify-between mb-6">
             <div class="flex items-center space-x-4">
@@ -304,24 +282,13 @@
     </div>
 
     <!-- Details Modal -->
-    <div v-if="showDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeDetailsModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Advisory Class Details</h3>
-          <button @click="closeDetailsModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6 space-y-6">
+    <UnifiedModal v-model="showDetailsModal" title="Advisory Class Details" @close="closeDetailsModal">
+      <template #default>
+        <div class="space-y-6">
           <!-- Basic Information -->
           <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <h4 class="text-sm font-medium text-gray-800 mb-3">Class Information</h4>
-            <div class="grid grid-cols-2 gap-4 text-sm">
+            <h4 class="text-base font-medium text-gray-800 mb-3">Class Information</h4>
+            <div class="grid grid-cols-2 gap-4 text-base">
           <div>
                 <span class="text-gray-500">Class:</span>
                 <span class="ml-2 text-gray-800">{{ getClassName(selectedAdvisoryClass) }}</span>
@@ -329,6 +296,14 @@
           <div>
                 <span class="text-gray-500">Adviser:</span>
                 <span class="ml-2 text-gray-800">{{ getAdviserName(selectedAdvisoryClass?.adviser) }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500">Current Semester:</span>
+            <span class="ml-2 text-gray-800">{{ selectedAdvisoryClass?.currentSemester || inferCurrentSemester(selectedAdvisoryClass) || 'N/A' }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500">Students:</span>
+            <span class="ml-2 text-gray-800">{{ selectedAdvisoryClass?.studentsCount ?? 0 }}</span>
           </div>
               <div v-if="selectedAdvisoryClass?.adviser">
                 <span class="text-gray-500">Email:</span>
@@ -339,21 +314,21 @@
 
         <!-- Class Schedule Information -->
           <div>
-            <h4 class="text-sm font-medium text-gray-800 mb-3">Class Schedule</h4>
+            <h4 class="text-base font-medium text-gray-800 mb-3">Class Schedule</h4>
           
           <!-- Tabs for Semesters -->
           <div class="mb-4">
             <div class="flex bg-gray-100 rounded-lg p-1 inline-flex">
               <button 
                 @click="activeDetailsSemester = '1st'" 
-                  class="px-4 py-1.5 rounded-md text-sm font-normal transition-colors"
+                  class="px-4 py-1.5 rounded-md text-base font-normal transition-colors"
                   :class="activeDetailsSemester === '1st' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'"
               >
                 1st Semester
               </button>
               <button 
                 @click="activeDetailsSemester = '2nd'" 
-                  class="px-4 py-1.5 rounded-md text-sm font-normal transition-colors"
+                  class="px-4 py-1.5 rounded-md text-base font-normal transition-colors"
                   :class="activeDetailsSemester === '2nd' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'"
               >
                 2nd Semester
@@ -364,7 +339,7 @@
           <!-- First Semester Details -->
           <div v-if="activeDetailsSemester === '1st'" class="space-y-4">
               <div v-if="hasFirstSemester(selectedAdvisoryClass)" class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
                 <div>
                     <span class="text-gray-500">Subject:</span>
                     <span class="ml-2 text-gray-800">{{ getFirstSemesterSubjectName(selectedAdvisoryClass) }}</span>
@@ -383,7 +358,7 @@
                 </div>
               </div>
             </div>
-            <div v-else class="bg-gray-50 p-4 rounded-lg text-center text-gray-500">
+            <div v-else class="bg-gray-50 p-4 rounded-lg text-center text-gray-500 text-base">
               No 1st semester schedule information available
             </div>
           </div>
@@ -391,7 +366,7 @@
           <!-- Second Semester Details -->
           <div v-else class="space-y-4">
               <div v-if="hasSecondSemester(selectedAdvisoryClass)" class="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
                 <div>
                     <span class="text-gray-500">Subject:</span>
                     <span class="ml-2 text-gray-800">{{ getSecondSemesterSubjectName(selectedAdvisoryClass) }}</span>
@@ -410,7 +385,7 @@
                 </div>
               </div>
             </div>
-            <div v-else class="bg-gray-50 p-4 rounded-lg text-center text-gray-500">
+            <div v-else class="bg-gray-50 p-4 rounded-lg text-center text-gray-500 text-base">
               No 2nd semester schedule information available
             </div>
           </div>
@@ -419,10 +394,10 @@
         <!-- Students in Advisory Class Section -->
           <div>
             <div class="flex justify-between items-center mb-3">
-              <h4 class="text-sm font-medium text-gray-800">Students in this Class</h4>
+              <h4 class="text-base font-medium text-gray-800">Students in this Class</h4>
             <button 
               @click="toggleStudentList" 
-                class="flex items-center text-sm text-blue-600 hover:text-blue-700 focus:outline-none"
+                class="flex items-center text-base text-blue-600 hover:text-blue-700 focus:outline-none"
             >
               <span>{{ showStudents ? 'Hide Students' : 'Show Students' }}</span>
                 <svg class="w-4 h-4 ml-1 transition-transform" :class="{'rotate-180': showStudents}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -434,7 +409,7 @@
           <div v-if="showStudents">
               <div v-if="loadingStudents" class="flex justify-center items-center p-4">
                 <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span class="ml-3 text-gray-500">Loading students...</span>
+                <span class="ml-3 text-gray-500 text-base">Loading students...</span>
               </div>
               
               <div v-else-if="students.length === 0" class="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
@@ -443,10 +418,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                   </svg>
                 </div>
-                <p class="text-sm text-gray-500">No students found for this class</p>
+                <p class="text-base text-gray-500">No students found for this class</p>
                 <button 
                   @click="fetchStudentsInClass" 
-                  class="mt-2 px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
+                  class="mt-2 px-3 py-1.5 text-sm font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
                 >
                   Refresh List
                 </button>
@@ -455,10 +430,10 @@
               <div v-else class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                 <div class="px-4 py-3 bg-white border-b border-gray-200">
                   <div class="flex justify-between items-center">
-                    <h5 class="text-sm font-medium text-gray-800">Students ({{ students.length }})</h5>
+                    <h5 class="text-base font-medium text-gray-800">Students ({{ students.length }})</h5>
                 <button 
                   @click="fetchStudentsInClass" 
-                      class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
+                      class="px-3 py-1.5 text-sm font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
                       :disabled="loadingStudents"
                 >
                       <span v-if="loadingStudents">Loading...</span>
@@ -471,20 +446,20 @@
                   <table class="min-w-full">
                     <thead class="bg-gray-50 sticky top-0">
                       <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Number</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">ID Number</th>
+                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
                     <tr v-for="student in students" :key="student._id" class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm font-medium text-gray-800">
+                        <td class="px-4 py-3 text-base font-medium text-gray-800">
                         {{ getUserField(student, 'idNumber') || 'N/A' }}
                       </td>
-                        <td class="px-4 py-3 text-sm text-gray-600">
+                        <td class="px-4 py-3 text-base text-gray-600">
                         {{ getFullName(student) }}
                       </td>
-                        <td class="px-4 py-3 text-sm text-gray-600">
+                        <td class="px-4 py-3 text-base text-gray-600">
                         {{ getUserField(student, 'email') || 'N/A' }}
                       </td>
                     </tr>
@@ -495,40 +470,29 @@
             </div>
           </div>
         </div>
-        
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-between p-6 border-t border-gray-200">
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-between w-full">
           <button
             @click="closeDetailsModal"
-            class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
+            class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
           >
             Close
           </button>
           <button
             @click="editAdvisoryClass(selectedAdvisoryClass); closeDetailsModal();"
-            class="px-4 py-2 text-sm font-normal text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
           >
             Edit
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </UnifiedModal>
 
     <!-- Edit Advisory Class Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeEditModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Edit Advisory Class</h3>
-          <button @click="closeEditModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6 space-y-4">
+    <UnifiedModal v-model="showEditModal" title="Edit Advisory Class" @close="closeEditModal">
+      <template #default>
+        <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Adviser *</label>
             <select
@@ -559,41 +523,54 @@
             <p v-if="errors.classId" class="mt-1 text-sm text-red-600">{{ errors.classId }}</p>
           </div>
         </div>
-        
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-end p-6 border-t border-gray-200 space-x-3">
+      </template>
+      <template #footer>
           <button
             @click="closeEditModal"
-            class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
+          class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             @click="updateAdvisoryClass"
-            class="px-4 py-2 text-sm font-normal text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
           >
             Update
           </button>
-        </div>
-      </div>
-    </div>
+      </template>
+    </UnifiedModal>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { adviserService } from '../../services/adviserService';
 import { classService } from '../../services/classService';
 import { notificationService } from '../../services/notificationService';
 import api from '../../services/api';
 import { studentService } from '../../services/studentService';
+import UnifiedModal from '../../components/ui/UnifiedModal.vue';
+import UnifiedTable from '../../components/ui/UnifiedTable.vue';
 
 // State
 const advisoryClasses = ref([]);
 const filteredClasses = ref([]);
 const loading = ref(true);
 const search = ref('');
-const statusFilter = ref('active');
+const yearFilter = ref('');
+const sectionFilter = ref('');
+const majorFilter = ref('');
+const yearLevels = ref(['2nd', '3rd', '4th']);
+const sections = ref({
+  '2nd': ['South-1', 'South-2', 'South-3'],
+  '3rd': ['South-1', 'South-2', 'South-3'],
+  '4th': ['South-1', 'South-2']
+});
+const majors = ref({
+  '2nd': [],
+  '3rd': ['Business Informatics', 'System Development', 'Digital Arts'],
+  '4th': ['Business Informatics', 'System Development', 'Digital Arts', 'Computer Security']
+});
 const showAddModal = ref(false);
 const advisers = ref([]);
 const classes = ref([]);
@@ -624,6 +601,26 @@ const errors = reactive({
   classId: '',
   status: ''
 });
+
+// Table configuration
+const tableColumns = [
+  { key: 'class.yearLevel', label: 'Year Level', class: '' },
+  { key: 'class.section', label: 'Section', class: '' },
+  { key: 'class.major', label: 'Major', class: '' },
+  { key: 'currentSemester', label: 'Semester', class: '' },
+  { key: 'studentsCount', label: 'Students', class: '' },
+  { key: 'adviserFullName', label: 'Adviser', class: '' },
+  { key: 'actions', label: 'Actions', class: 'text-right' }
+];
+
+const sortableColumns = [
+  { value: 'class.yearLevel', label: 'Year Level' },
+  { value: 'class.section', label: 'Section' },
+  { value: 'class.major', label: 'Major' },
+  { value: 'currentSemester', label: 'Semester' },
+  { value: 'studentsCount', label: 'Students' },
+  { value: 'adviserFullName', label: 'Adviser' }
+];
 
 // Unassign adviser from a class
 async function unassignAdviser(advisoryClass) {
@@ -664,7 +661,6 @@ const loadingStudents = ref(false);
 const viewMode = ref('list');
 const selectedYearLevel = ref('');
 const selectedSemester = ref('1st');
-const yearLevels = ref(['2nd', '3rd', '4th']);
 const timeSlots = ref([
   '7:00 AM - 8:00 AM', 
   '8:00 AM - 9:00 AM',
@@ -742,9 +738,37 @@ async function fetchAdvisoryClasses() {
     }));
     
     // Combine both sets
-    const allClasses = [...response.data, ...tempAdvisoryClasses];
+    const allClasses = [...response.data, ...tempAdvisoryClasses].map(c => {
+      const classData = c.class || c
+      // Prefer explicit currentSemester from backend if present
+      let currentSemester = classData.currentSemester || null
+      // Fallback to structure-based inference
+      if (!currentSemester) {
+        if (classData.secondSemester?.sspSubject || classData.secondSemesterSubject) {
+          currentSemester = '2nd'
+        } else if (classData.firstSemester?.sspSubject || classData.firstSemesterSubject) {
+          currentSemester = '1st'
+        } else if (classData.sspSubject?.semester) {
+          currentSemester = classData.sspSubject.semester.includes('2nd') ? '2nd' : '1st'
+        } else {
+          currentSemester = '1st'
+        }
+      }
+
+      // Student count if available on class
+      const studentsCount = Array.isArray(classData.students) ? classData.students.length : (classData.studentsCount || 0)
+
+      return {
+        ...c,
+        currentSemester,
+        studentsCount,
+        adviserFullName: getAdviserName(c.adviser)
+      }
+    });
     
     advisoryClasses.value = allClasses;
+    // Populate live students count from database
+    await populateStudentsCount();
     filterAdvisoryClasses(); // Apply current filters
     console.log(`Loaded ${response.data.length} advisory classes and ${tempAdvisoryClasses.length} unassigned classes`);
   } catch (error) {
@@ -754,6 +778,59 @@ async function fetchAdvisoryClasses() {
     filteredClasses.value = [];
   } finally {
     loading.value = false;
+  }
+}
+
+// Fetch and populate live student counts per class (batched where possible)
+async function populateStudentsCount() {
+  try {
+    // Build a list of distinct class IDs from current advisoryClasses
+    const classIds = advisoryClasses.value
+      .map(item => item?.class?._id)
+      .filter(id => !!id)
+    
+    if (classIds.length === 0) return
+    
+    // Try a batched endpoint first if available
+    try {
+      const batch = await api.get('/students/count-by-classes', { params: { ids: classIds.join(',') } })
+      if (batch?.data && typeof batch.data === 'object') {
+        advisoryClasses.value = advisoryClasses.value.map(item => {
+          const id = item?.class?._id
+          const count = id ? (batch.data[id] || 0) : 0
+          return { ...item, studentsCount: count }
+        })
+        return
+      }
+    } catch (e) {
+      // Fallback to per-class fetch below
+      console.warn('Batch student count endpoint not available, falling back per-class.', e?.message)
+    }
+    
+    // Fallback: fetch per-class counts (sequential to avoid API overload; can be parallel with limits)
+    for (const item of advisoryClasses.value) {
+      const classId = item?.class?._id
+      if (!classId) continue
+      try {
+        // Prefer lightweight count endpoint if exists
+        try {
+          const countResp = await api.get(`/students/count-by-class/${classId}`)
+          if (typeof countResp.data?.count === 'number') {
+            item.studentsCount = countResp.data.count
+            continue
+          }
+        } catch {}
+        
+        // Last resort: fetch students list and count length
+        const studentsResp = await api.get(`/students/by-class/${classId}`)
+        item.studentsCount = Array.isArray(studentsResp.data) ? studentsResp.data.length : 0
+      } catch (err) {
+        console.warn(`Failed to fetch students for class ${classId}:`, err?.message)
+        item.studentsCount = item.studentsCount || 0
+      }
+    }
+  } catch (error) {
+    console.error('populateStudentsCount error:', error)
   }
 }
 
@@ -807,16 +884,36 @@ function filterAdvisoryClasses() {
   
   const searchTerm = search.value.toLowerCase();
   filteredClasses.value = advisoryClasses.value.filter(advisoryClass => {
-    // Apply status filter
-    if (statusFilter.value !== 'all' && advisoryClass.status !== statusFilter.value) {
+    // Apply year filter
+    if (yearFilter.value && getYearLevel(advisoryClass) !== yearFilter.value) {
+      return false;
+    }
+    
+    // Apply section filter
+    if (sectionFilter.value && getSection(advisoryClass) !== sectionFilter.value) {
+      return false;
+    }
+    
+    // Apply major filter
+    if (majorFilter.value && getMajor(advisoryClass) !== majorFilter.value) {
       return false;
     }
     
     // Apply search filter
     if (searchTerm) {
-      // Check class name
-      const className = getClassName(advisoryClass);
-      if (className.toLowerCase().includes(searchTerm)) {
+      // Check year level
+      if (getYearLevel(advisoryClass).toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+      
+      // Check section
+      if (getSection(advisoryClass).toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+      
+      // Check major
+      const major = getMajor(advisoryClass);
+      if (major && major.toLowerCase().includes(searchTerm)) {
         return true;
       }
       
@@ -833,6 +930,35 @@ function filterAdvisoryClasses() {
     // Include all if no search term
     return true;
   });
+}
+
+// Computed properties for filters
+const availableSections = computed(() => {
+  if (!yearFilter.value) return [];
+  return sections.value[yearFilter.value] || [];
+});
+
+const availableMajors = computed(() => {
+  if (!yearFilter.value) return [];
+  return majors.value[yearFilter.value] || [];
+});
+
+// Table event handlers
+function handleSearch(query) {
+  search.value = query;
+  filterAdvisoryClasses();
+}
+
+function handleSort({ field, direction }) {
+  // The UnifiedTable component handles sorting internally
+  // This function is here for future custom sorting logic if needed
+  console.log('Sort by:', field, direction);
+}
+
+function handlePageChange(page) {
+  // The UnifiedTable component handles pagination internally
+  // This function is here for future custom pagination logic if needed
+  console.log('Page changed to:', page);
 }
 
 // Computed property for filtered calendar classes based on year level and semester
@@ -1015,6 +1141,33 @@ function getClassRoom(advisoryClass) {
   }
   
   return semesterData.room || 'No Room';
+}
+
+// Helper functions for table columns
+function getYearLevel(advisoryClass) {
+  if (!advisoryClass || !advisoryClass.class) return 'Unknown';
+  return advisoryClass.class.yearLevel || 'Unknown';
+}
+
+function getSection(advisoryClass) {
+  if (!advisoryClass || !advisoryClass.class) return 'Unknown';
+  return advisoryClass.class.section || 'Unknown';
+}
+
+function getMajor(advisoryClass) {
+  if (!advisoryClass || !advisoryClass.class) return null;
+  return advisoryClass.class.major || null;
+}
+
+// Infer current semester for a given advisory class
+function inferCurrentSemester(advisoryClass) {
+  if (!advisoryClass?.class) return null
+  const classData = advisoryClass.class
+  if (classData.currentSemester) return classData.currentSemester
+  if (classData.secondSemester?.sspSubject || classData.secondSemesterSubject) return '2nd'
+  if (classData.firstSemester?.sspSubject || classData.firstSemesterSubject) return '1st'
+  if (classData.sspSubject?.semester) return classData.sspSubject.semester.includes('2nd') ? '2nd' : '1st'
+  return null
 }
 
 function getClassName(advisoryClass) {
@@ -1741,4 +1894,16 @@ function getPositionedClassBlocks() {
   
   return classBlocks;
 }
+
+// Watch for filter changes
+watch([yearFilter, sectionFilter, majorFilter], () => {
+  // Reset dependent filters when year changes
+  if (yearFilter.value && sectionFilter.value && !sections.value[yearFilter.value]?.includes(sectionFilter.value)) {
+    sectionFilter.value = '';
+  }
+  if (yearFilter.value && majorFilter.value && !majors.value[yearFilter.value]?.includes(majorFilter.value)) {
+    majorFilter.value = '';
+  }
+  filterAdvisoryClasses();
+});
 </script> 

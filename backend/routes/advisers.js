@@ -45,9 +45,10 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { firstName, middleName, lastName, nameExtension, idNumber, salutation, email, password, sendWelcomeEmail, sspAdvisoryClassId, contactNumber } = req.body;
     
-    // Validate email domain
-    if (!email.endsWith('@gmail.com')) {
-      return res.status(400).json({ message: 'Email must be from gmail.com domain' });
+    // Validate email format (allow any valid domain)
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
     }
     
     // Check if user already exists
@@ -81,7 +82,7 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
+    
     // Create adviser user
     const adviser = new User({
       firstName,
@@ -116,19 +117,15 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
     try {
       console.log('Sending verification email to:', adviser.email);
       
-      // Set SendGrid API key
-      sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+      // Check if we're in production (using SendGrid) or development (using Gmail)
+      const isProduction = process.env.NODE_ENV === 'production';
       
       // Verification URL - use frontend URL
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const verificationUrl = `${frontendUrl}/verify-adviser/${verificationToken}`;
       
       // Email message
-      const msg = {
-        to: adviser.email,
-        from: 'spsms.system.au@gmail.com', // This should be a verified sender in SendGrid
-        subject: 'PHINMA SSCMS - Verify Your Adviser Account',
-        html: `
+      const emailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 8px; color: white;">
@@ -169,12 +166,60 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
               <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
             </div>
           </div>
-        `
-      };
+        `;
       
-      // Send email using SendGrid Web API
-      await sgMail.send(msg);
-      console.log('Verification email sent successfully via SendGrid');
+      if (isProduction) {
+        // Production: Use SendGrid
+        if (!process.env.EMAIL_PASSWORD) {
+          throw new Error('EMAIL_PASSWORD environment variable is required for SendGrid in production');
+        }
+        
+        // Validate SendGrid API key format
+        if (!process.env.EMAIL_PASSWORD.startsWith('SG.')) {
+          throw new Error('Invalid SendGrid API key format. API key must start with "SG."');
+        }
+        
+        sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+        
+        const msg = {
+          to: adviser.email,
+          from: 'spsms.system.au@gmail.com',
+          subject: 'PHINMA SSCMS - Verify Your Adviser Account',
+          html: emailHtml
+        };
+        
+        try {
+          await sgMail.send(msg);
+          console.log('Verification email sent successfully via SendGrid');
+        } catch (sendGridError) {
+          console.error('SendGrid API error:', sendGridError);
+          if (sendGridError.response) {
+            console.error('SendGrid response:', sendGridError.response.body);
+          }
+          throw new Error(`SendGrid email failed: ${sendGridError.message}`);
+        }
+      } else {
+        // Development: Use Gmail/Nodemailer
+        const nodemailer = require('nodemailer');
+        
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+          }
+        });
+        
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: adviser.email,
+          subject: 'PHINMA SSCMS - Verify Your Adviser Account',
+          html: emailHtml
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log('Verification email sent successfully via Gmail');
+      }
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
       // Continue with account creation even if email fails
@@ -228,61 +273,106 @@ router.post('/verify/:token', async (req, res) => {
     adviser.verificationExpires = undefined;
     await adviser.save();
     
-    // Send welcome email with login credentials using SendGrid Web API
+    // Send welcome email with login credentials using appropriate service
     try {
-      // Set SendGrid API key
-      sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+      // Check if we're in production (using SendGrid) or development (using Gmail)
+      const isProduction = process.env.NODE_ENV === 'production';
       
       const loginUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const defaultPassword = adviser.firstName + adviser.idNumber;
       
-      const msg = {
-        to: adviser.email,
-        from: 'spsms.system.au@gmail.com',
-        subject: 'PHINMA SSCMS - Your Account is Now Active',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
-            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 8px; color: white;">
-              <h1 style="margin: 0; font-size: 24px; font-weight: bold;">PHINMA ARAULLO UNIVERSITY</h1>
-              <p style="margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">Student Success and Completion Monitoring System</p>
-            </div>
-            
-            <div style="padding: 20px 0;">
-              <h2 style="color: #1e40af; margin-bottom: 20px;">Welcome, ${adviser.salutation} ${adviser.firstName}!</h2>
+      const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
+              <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 8px; color: white;">
+                <h1 style="margin: 0; font-size: 24px; font-weight: bold;">PHINMA ARAULLO UNIVERSITY</h1>
+                <p style="margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">Student Success and Completion Monitoring System</p>
+              </div>
               
-              <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+              <div style="padding: 20px 0;">
+                <h2 style="color: #1e40af; margin-bottom: 20px;">Welcome, ${adviser.salutation} ${adviser.firstName}!</h2>
+                
+                <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
                 Your adviser account has been successfully verified and activated. You can now access the PHINMA Student Success and Completion Monitoring System (SSCMS).
-              </p>
-              
-              <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">Your Login Credentials:</h3>
-                <p style="margin: 5px 0; color: #374151;"><strong>Email:</strong> ${adviser.email}</p>
-                <p style="margin: 5px 0; color: #374151;"><strong>Default Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${defaultPassword}</code></p>
-              </div>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${loginUrl}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
-                  Access SSCMS Portal
-                </a>
-              </div>
-              
-              <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin: 20px 0;">
-                <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 14px;">🔒 Security Notice</h4>
-                <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.5;">
-                  For security reasons, you will be required to change your password on your first login. Please keep your credentials secure and do not share them with others.
                 </p>
+                
+                <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                  <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">Your Login Credentials:</h3>
+                  <p style="margin: 5px 0; color: #374151;"><strong>Email:</strong> ${adviser.email}</p>
+                  <p style="margin: 5px 0; color: #374151;"><strong>Default Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${defaultPassword}</code></p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${loginUrl}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                    Access SSCMS Portal
+                  </a>
+                </div>
+                
+                <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                  <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 14px;">🔒 Security Notice</h4>
+                  <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.5;">
+                    For security reasons, you will be required to change your password on your first login. Please keep your credentials secure and do not share them with others.
+                  </p>
+                </div>
+              </div>
+              
+              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+                <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
               </div>
             </div>
-            
-            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
-              <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
-            </div>
-          </div>
-        `
-      };
+          `;
       
-      await sgMail.send(msg);
-      console.log('Welcome email sent successfully via SendGrid to:', adviser.email);
+      if (isProduction) {
+        // Production: Use SendGrid
+        if (!process.env.EMAIL_PASSWORD) {
+          throw new Error('EMAIL_PASSWORD environment variable is required for SendGrid in production');
+        }
+        
+        // Validate SendGrid API key format
+        if (!process.env.EMAIL_PASSWORD.startsWith('SG.')) {
+          throw new Error('Invalid SendGrid API key format. API key must start with "SG."');
+        }
+        
+        sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+        
+        const msg = {
+          to: adviser.email,
+          from: 'spsms.system.au@gmail.com',
+          subject: 'PHINMA SSCMS - Your Account is Now Active',
+          html: emailHtml
+        };
+        
+        try {
+          await sgMail.send(msg);
+          console.log('Welcome email sent successfully via SendGrid to:', adviser.email);
+        } catch (sendGridError) {
+          console.error('SendGrid API error:', sendGridError);
+          if (sendGridError.response) {
+            console.error('SendGrid response:', sendGridError.response.body);
+          }
+          throw new Error(`SendGrid email failed: ${sendGridError.message}`);
+        }
+      } else {
+        // Development: Use Gmail/Nodemailer
+        const nodemailer = require('nodemailer');
+        
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+          }
+        });
+        
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: adviser.email,
+          subject: 'PHINMA SSCMS - Your Account is Now Active',
+          html: emailHtml
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log('Welcome email sent successfully via Gmail to:', adviser.email);
+      }
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
     }
@@ -321,9 +411,10 @@ router.put('/:id', authenticate, authorizeAdmin, async (req, res) => {
     if (salutation) adviser.salutation = salutation;
     if (contactNumber) adviser.contactNumber = contactNumber;
     if (email) {
-      // Validate email domain
-      if (!email.endsWith('@phinmaed.com')) {
-        return res.status(400).json({ message: 'Email must be from phinmaed.com domain' });
+      // Validate email format (allow any valid domain)
+      const emailRegex = /^\S+@\S+\.\S+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
       }
       adviser.email = email;
     }

@@ -11,76 +11,54 @@
         </div>
       </div>
 
-      <!-- Archived Classes Table -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <!-- Search Header -->
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex items-center">
-            <div class="relative max-w-md">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-              </div>
-              <input 
-                v-model="search" 
-                type="text" 
-                placeholder="Search classes" 
-                class="pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                @input="filterClasses"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <!-- Table Content -->
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SSP Subject</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr v-if="loading">
-                <td colspan="4" class="px-6 py-12 text-center">
-                  <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span class="ml-3 text-gray-500">Loading archived classes...</span>
-                  </div>
-                </td>
-              </tr>
-              <tr v-else-if="filteredClasses.length === 0">
-                <td colspan="4" class="px-6 py-12 text-center">
-                  <div class="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                    </svg>
-                  </div>
-                  <h3 class="text-base font-normal text-gray-800 mb-1">
-                    {{ search ? 'No archived classes found' : 'No archived classes yet' }}
-                  </h3>
-                  <p class="text-gray-500 font-normal">
-                    {{ search ? 'Try adjusting your search criteria' : 'Archived classes will appear here when available' }}
-                  </p>
-                </td>
-              </tr>
-              <tr v-for="classItem in filteredClasses" :key="classItem._id" class="hover:bg-gray-50">
-                <td class="px-6 py-4">
-                  <div class="flex items-center">
-                    <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-                      <span class="text-sm font-normal text-gray-600">
-                        {{ classItem.yearLevel?.charAt(0) || 'C' }}
-                      </span>
-                    </div>
-                    <div>
-                      <div class="text-sm font-normal text-gray-800">{{ getClassName(classItem) }}</div>
-                      <div class="text-xs text-gray-500">Archived</div>
-                    </div>
-                  </div>
+      <!-- Archived Classes using UnifiedTable -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 max-w-7xl mx-auto mt-4">
+        <UnifiedTable
+          :data="filteredClasses"
+          :columns="tableColumns"
+          :sortable-columns="sortableColumns"
+          :loading="loading"
+          loading-text="Loading archived classes..."
+          search-placeholder="Search by year, section, major, subject"
+          empty-state-title="No archived classes found"
+          empty-state-message="Try adjusting your search criteria"
+          @search="handleSearch"
+          @sort="handleSort"
+          @page-change="handlePageChange"
+        >
+          <template #filters>
+            <!-- Year Level Filter -->
+            <select 
+              v-model="yearFilter" 
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Years</option>
+              <option v-for="year in yearLevels" :key="year" :value="year">{{ year }} Year</option>
+            </select>
+
+            <!-- Section Filter -->
+            <select 
+              v-model="sectionFilter" 
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Sections</option>
+              <option v-for="section in availableSections" :key="section" :value="section">{{ section }}</option>
+            </select>
+
+            <!-- Major Filter (hide for 2nd year) -->
+            <select 
+              v-if="!yearFilter || yearFilter !== '2nd'"
+              v-model="majorFilter" 
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Majors</option>
+              <option v-for="major in availableMajors" :key="major" :value="major">{{ major }}</option>
+            </select>
+          </template>
+
+          <template #row="{ item: classItem }">
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ classItem.yearLevel || 'Unknown' }} Year - {{ classItem.section || 'Unknown' }} ({{ classItem.major || '-' }})
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-800">
                   {{ getSubjectName(classItem) }}
@@ -96,10 +74,8 @@
                     Restore
                   </button>
                 </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          </template>
+        </UnifiedTable>
       </div>
     </div>
 
@@ -167,16 +143,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { classService } from '../../services/classService';
 import { notificationService } from '../../services/notificationService';
 import api from '../../services/api';
+import UnifiedTable from '../../components/ui/UnifiedTable.vue';
 
 // State
 const archivedClasses = ref([]);
 const filteredClasses = ref([]);
 const loading = ref(true);
 const search = ref('');
+const yearFilter = ref('');
+const sectionFilter = ref('');
+const majorFilter = ref('');
+const yearLevels = ref(['2nd', '3rd', '4th']);
+
+// Replace simple filter with computed that applies filters and search
+const availableSections = computed(() => {
+  if (!yearFilter.value) return []
+  const sectionsMap = {
+    '2nd': ['South-1', 'South-2', 'South-3', 'South-4', 'South-5'],
+    '3rd': ['South-1', 'South-2', 'South-3'],
+    '4th': ['South-1', 'South-2']
+  }
+  return sectionsMap[yearFilter.value] || []
+})
+
+const availableMajors = computed(() => {
+  if (!yearFilter.value) return []
+  const majorsMap = {
+    '2nd': [],
+    '3rd': ['Business Informatics', 'System Development', 'Digital Arts'],
+    '4th': ['Business Informatics', 'System Development', 'Digital Arts', 'Computer Security']
+  }
+  return majorsMap[yearFilter.value] || []
+})
 
 // Modal state
 const showRestoreModal = ref(false);
@@ -204,20 +206,40 @@ async function fetchArchivedClasses() {
 }
 
 function filterClasses() {
-  if (!search.value) {
-    filteredClasses.value = archivedClasses.value;
-    return;
-  }
-  
-  const searchTerm = search.value.toLowerCase();
-  filteredClasses.value = archivedClasses.value.filter(classItem => {
+  const searchTerm = (search.value || '').toLowerCase();
+  filteredClasses.value = (archivedClasses.value || []).filter(classItem => {
+    if (yearFilter.value && classItem.yearLevel !== yearFilter.value) return false;
+    if (sectionFilter.value && classItem.section !== sectionFilter.value) return false;
+    if (majorFilter.value && classItem.major !== majorFilter.value) return false;
+
+    if (!searchTerm) return true;
     const className = getClassName(classItem).toLowerCase();
     const subjectName = getSubjectName(classItem).toLowerCase();
     const schedule = getSchedule(classItem).toLowerCase();
-    
     return className.includes(searchTerm) || subjectName.includes(searchTerm) || schedule.includes(searchTerm);
   });
 }
+
+// UnifiedTable configuration and handlers
+const tableColumns = [
+  { key: 'className', label: 'Class', class: '' },
+  { key: 'subjectName', label: 'SSP Subject', class: '' },
+  { key: 'schedule', label: 'Schedule', class: '' },
+  { key: 'actions', label: 'Actions', class: 'text-right' }
+]
+
+const sortableColumns = [
+  { value: 'yearLevel', label: 'Year Level' },
+  { value: 'section', label: 'Section' },
+  { value: 'major', label: 'Major' }
+]
+
+function handleSearch(q) {
+  search.value = q
+  filterClasses()
+}
+function handleSort() {}
+function handlePageChange() {}
 
 function getClassName(classItem) {
   return `${classItem.yearLevel} Year - ${classItem.section} (${classItem.major})`;

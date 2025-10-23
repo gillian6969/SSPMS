@@ -106,65 +106,50 @@
     </div>
 
     <!-- Restore Confirmation Modal -->
-    <div v-if="showRestoreModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeRestoreModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Restore Adviser</h3>
-          <button @click="closeRestoreModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+    <UnifiedModal v-model="showRestoreModal" title="Restore Adviser" @close="closeRestoreModal">
+      <template #default>
+        <div class="flex items-start space-x-3">
+          <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
             </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6">
-          <div class="flex items-start space-x-3">
-            <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
-            </div>
-            <div>
-              <h4 class="text-base font-medium text-gray-800 mb-2">Confirm Restoration</h4>
-              <p class="text-sm text-gray-600 mb-4">
-                Are you sure you want to restore <strong>{{ selectedAdviser ? getAdviserName(selectedAdviser) : '' }}</strong>? 
-                This will reactivate their account and they will be able to access the system again.
-              </p>
-              <div class="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-                <div class="flex">
-                  <svg class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                  </svg>
-                  <div class="ml-2">
-                    <p class="text-sm text-emerald-700">The adviser will be moved back to the active advisers list and can immediately access their account.</p>
-                  </div>
+          </div>
+          <div>
+            <h4 class="text-base font-medium text-gray-800 mb-2">Confirm Restoration</h4>
+            <p class="text-sm text-gray-600 mb-4">
+              Are you sure you want to restore <strong>{{ selectedAdviser ? getAdviserName(selectedAdviser) : '' }}</strong>? 
+              This will reactivate their account and they will be able to access the system again.
+            </p>
+            <div class="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+              <div class="flex">
+                <svg class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                </svg>
+                <div class="ml-2">
+                  <p class="text-sm text-emerald-700">The adviser will be moved back to the active advisers list and can immediately access their account.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-end p-6 border-t border-gray-200 space-x-3">
-          <button
-            @click="closeRestoreModal"
-            class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            @click="confirmRestore"
-            :disabled="restoring"
-            class="px-4 py-2 text-sm font-normal text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="restoring">Restoring...</span>
-            <span v-else>Restore Adviser</span>
-          </button>
-        </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeRestoreModal"
+          class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
+        >
+          Cancel
+        </button>
+        <button
+          @click="confirmRestore"
+          :disabled="restoring"
+          class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          <span v-if="restoring">Restoring...</span>
+          <span v-else>Restore Adviser</span>
+        </button>
+      </template>
+    </UnifiedModal>
   </div>
 </template>
 
@@ -173,6 +158,7 @@ import { ref, onMounted } from 'vue';
 import { adviserService } from '../../services/adviserService';
 import { notificationService } from '../../services/notificationService';
 import api from '../../services/api';
+import UnifiedModal from '../../components/ui/UnifiedModal.vue';
 
 // State
 const archivedAdvisers = ref([]);

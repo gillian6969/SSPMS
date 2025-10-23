@@ -6,7 +6,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-normal text-gray-800">Notifications</h1>
-            <p class="text-gray-500 mt-1 font-normal">Stay updated with consultation schedules, adviser responses, and system messages</p>
+            <p class="text-gray-500 mt-1 font-normal">Stay updated with consultation schedules and system messages</p>
           </div>
           <button 
             @click="refreshNotifications"
@@ -15,7 +15,7 @@
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" :class="{'animate-spin': loading}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+            </svg>
             <span>{{ loading ? 'Refreshing...' : 'Refresh' }}</span>
           </button>
         </div>
@@ -27,8 +27,8 @@
         <div v-if="loading" class="flex items-center justify-center py-12">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
           <span class="text-sm text-gray-600">Loading notifications...</span>
-          </div>
-          
+        </div>
+
         <!-- Empty State -->
         <div v-else-if="!notifications.length" class="text-center py-12">
           <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
@@ -47,11 +47,10 @@
               <span>Filter:</span>
               <button @click="activeFilter = 'all'" class="px-3 py-1 rounded-full" :class="activeFilter === 'all' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">All</button>
               <button @click="activeFilter = 'consultation'" class="px-3 py-1 rounded-full" :class="activeFilter === 'consultation' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">Consultation</button>
-              <button @click="activeFilter = 'reschedule'" class="px-3 py-1 rounded-full" :class="activeFilter === 'reschedule' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">Reschedule</button>
               <button @click="activeFilter = 'system'" class="px-3 py-1 rounded-full" :class="activeFilter === 'system' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">System</button>
             </div>
           </div>
-          
+
           <!-- Notifications List -->
           <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div 
@@ -72,7 +71,6 @@
                       notification.type === 'warning' ? 'bg-amber-100 text-amber-500' :
                       notification.type === 'success' ? 'bg-green-100 text-green-500' :
                       notification.type === 'error' ? 'bg-red-100 text-red-500' :
-                      notification.type === 'reschedule' ? 'bg-orange-100 text-orange-500' :
                       'bg-blue-100 text-blue-500'
                     ]"
                   >
@@ -84,9 +82,6 @@
                     </svg>
                     <svg v-else-if="notification.type === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <svg v-else-if="notification.type === 'reschedule'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -100,14 +95,14 @@
                     <h3 class="font-medium text-gray-900">{{ notification.title }}</h3>
                     <div class="flex items-center space-x-2">
                       <span class="text-xs text-gray-500">{{ formatDate(notification.createdAt) }}</span>
-              </div>
-            </div>
+                    </div>
+                  </div>
                   <p class="text-sm text-gray-700 mb-1">{{ notification.message }}</p>
                   <div v-if="notification.link" class="mt-1">
                     <span class="text-primary text-sm hover:underline">View details →</span>
-          </div>
-        </div>
-            </div>
+                  </div>
+                </div>
+              </div>
 
               <!-- Unread indicator dot -->
               <div v-if="!notification.read" class="absolute top-4 right-4 h-2 w-2 rounded-full bg-primary"></div>
@@ -119,7 +114,7 @@
       </div>
     </div>
   </div>
-</template>
+  </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -129,18 +124,13 @@ import { useRouter } from 'vue-router'
 
 const loading = ref(true)
 const notifications = ref([])
-const activeFilter = ref('all') // 'all' | 'consultation' | 'reschedule' | 'system'
+const activeFilter = ref('all') // 'all' | 'consultation' | 'system'
 
 const filteredNotifications = computed(() => {
   if (activeFilter.value === 'consultation') {
     return notifications.value.filter(n =>
       (n.title || '').toLowerCase().includes('consultation') ||
       (n.message || '').toLowerCase().includes('consultation')
-    )
-  } else if (activeFilter.value === 'reschedule') {
-    return notifications.value.filter(n =>
-      (n.title || '').toLowerCase().includes('reschedule') ||
-      (n.message || '').toLowerCase().includes('reschedule')
     )
   } else if (activeFilter.value === 'system') {
     return notifications.value.filter(n =>
@@ -186,12 +176,13 @@ const markAsRead = async (id) => {
 
 const router = useRouter()
 const openNotification = async (n) => {
+  // Mark as read first (but don't block navigation)
   if (!n.read && n._id) {
     try { await markAsRead(n._id) } catch {}
   }
-  // For consultation-related notifications, always route to admin's consultations page
+  // For consultation-related notifications, always route to adviser's consultations page
   if (n.meta?.consultationId || /(consultation|reschedule)/i.test(`${n.title} ${n.message}`)) {
-    try { router.push('/admin/consultations') } catch {}
+    try { router.push('/adviser/consultations') } catch {}
     return
   }
   // Else, navigate if link exists (supports absolute URLs to our app)
@@ -218,3 +209,5 @@ onMounted(async () => {
 .bg-primary-light { background-color: #EFF6FF; }
 .text-primary { color: #3B82F6; }
 </style>
+
+

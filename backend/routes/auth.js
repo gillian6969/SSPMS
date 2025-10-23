@@ -124,23 +124,47 @@ router.post('/reset-password', async (req, res) => {
     
     await user.save();
     
-    // Set SendGrid API key
-    sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+    // Check if we're in production (using SendGrid) or development (using Gmail)
+    const isProduction = process.env.NODE_ENV === 'production';
     
     // Reset link
     const resetUrl = `${process.env.BASE_URL}/reset-password/${resetToken}`;
     
-    // Email options
-    const msg = {
-      to: user.email,
-      from: 'spsms.system.au@gmail.com',
-      subject: 'SSP Management System - Password Reset',
-      text: `You are receiving this email because you (or someone else) requested a password reset. 
-      Please click the following link to reset your password: ${resetUrl}`
-    };
-    
-    // Send email
-    await sgMail.send(msg);
+    if (isProduction) {
+      // Production: Use SendGrid
+      sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+      
+      const msg = {
+        to: user.email,
+        from: 'spsms.system.au@gmail.com',
+        subject: 'SSP Management System - Password Reset',
+        text: `You are receiving this email because you (or someone else) requested a password reset. 
+        Please click the following link to reset your password: ${resetUrl}`
+      };
+      
+      await sgMail.send(msg);
+    } else {
+      // Development: Use Gmail/Nodemailer
+      const nodemailer = require('nodemailer');
+      
+      const transporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD
+        }
+      });
+      
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: user.email,
+        subject: 'SSP Management System - Password Reset',
+        text: `You are receiving this email because you (or someone else) requested a password reset. 
+        Please click the following link to reset your password: ${resetUrl}`
+      };
+      
+      await transporter.sendMail(mailOptions);
+    }
     
     res.json({ message: 'Password reset email sent' });
   } catch (error) {
@@ -381,34 +405,77 @@ router.post('/request-otp', async (req, res) => {
     
     await user.save();
     
-    // Set SendGrid API key
-    sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+    // Check if we're in production (using SendGrid) or development (using Gmail)
+    const isProduction = process.env.NODE_ENV === 'production';
     
-    // Email options
-    const msg = {
-      to: user.email,
-      from: 'spsms.system.au@gmail.com',
-      subject: 'PHINMA SSCMS - Password Reset Code',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <h2 style="color: #3B82F6; text-align: center;">Password Reset</h2>
-          <p>Hello ${user.firstName},</p>
-          <p>You requested a password reset for your PHINMA Student Success Plan Management System account.</p>
-          <p>Your verification code is:</p>
-          <div style="background-color: #f0f4f8; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0;">
-            ${otp}
-          </div>
-          <p>This code will expire in 10 minutes.</p>
-          <p>If you did not request a password reset, please ignore this email or contact support.</p>
-          <p>Thank you,<br/>SSCMS Team</p>
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+        <h2 style="color: #3B82F6; text-align: center;">Password Reset</h2>
+        <p>Hello ${user.firstName},</p>
+        <p>You requested a password reset for your PHINMA Student Success Plan Management System account.</p>
+        <p>Your verification code is:</p>
+        <div style="background-color: #f0f4f8; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0;">
+          ${otp}
         </div>
-      `
-    };
+        <p>This code will expire in 10 minutes.</p>
+        <p>If you did not request a password reset, please ignore this email or contact support.</p>
+        <p>Thank you,<br/>SSCMS Team</p>
+      </div>
+    `;
     
     // Send email
     try {
-      await sgMail.send(msg);
-      console.log('OTP email sent successfully via SendGrid to:', user.email);
+      if (isProduction) {
+        // Production: Use SendGrid
+        if (!process.env.EMAIL_PASSWORD) {
+          throw new Error('EMAIL_PASSWORD environment variable is required for SendGrid in production');
+        }
+        
+        // Validate SendGrid API key format
+        if (!process.env.EMAIL_PASSWORD.startsWith('SG.')) {
+          throw new Error('Invalid SendGrid API key format. API key must start with "SG."');
+        }
+        
+        sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+        
+        const msg = {
+          to: user.email,
+          from: 'spsms.system.au@gmail.com',
+          subject: 'PHINMA SSCMS - Password Reset Code',
+          html: emailHtml
+        };
+        
+        try {
+          await sgMail.send(msg);
+        } catch (sendGridError) {
+          console.error('SendGrid API error:', sendGridError);
+          if (sendGridError.response) {
+            console.error('SendGrid response:', sendGridError.response.body);
+          }
+          throw new Error(`SendGrid email failed: ${sendGridError.message}`);
+        }
+      } else {
+        // Development: Use Gmail/Nodemailer
+        const nodemailer = require('nodemailer');
+        
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+          }
+        });
+        
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: 'PHINMA SSCMS - Password Reset Code',
+          html: emailHtml
+        };
+        
+        await transporter.sendMail(mailOptions);
+      }
+      console.log('OTP email sent successfully to:', user.email);
       res.json({ message: 'Password reset code sent to your email' });
     } catch (emailError) {
       console.error('Failed to send OTP email:', emailError);

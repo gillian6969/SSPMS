@@ -50,7 +50,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -212,6 +212,15 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// Start notification scheduler
+try {
+  const notificationScheduler = require('./services/notificationScheduler');
+  notificationScheduler.start();
+} catch (schedulerError) {
+  console.error('❌ Failed to start notification scheduler:', schedulerError);
+  console.log('⚠️  Server will continue without automated reminders');
+}
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
@@ -219,4 +228,12 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📊 Health check available at: http://localhost:${PORT}/api/health`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`💾 Database: ${process.env.MONGODB_URI ? 'configured' : 'not configured'}`);
+  
+  // Check notification scheduler status safely
+  try {
+    const notificationScheduler = require('./services/notificationScheduler');
+    console.log(`⏰ Notification scheduler: ${notificationScheduler.getStatus().isRunning ? 'running' : 'stopped'}`);
+  } catch (error) {
+    console.log(`⏰ Notification scheduler: unavailable`);
+  }
 }); 

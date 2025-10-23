@@ -13,7 +13,7 @@ const StudentSchema = new mongoose.Schema({
     firstName: {
       type: String,
       required: function() {
-        return this.approvalStatus === 'pending';
+        return this.approvalStatus === 'pending' || this.approvalStatus === 'verification_pending';
       }
     },
     middleName: {
@@ -22,7 +22,7 @@ const StudentSchema = new mongoose.Schema({
     lastName: {
       type: String,
       required: function() {
-        return this.approvalStatus === 'pending';
+        return this.approvalStatus === 'pending' || this.approvalStatus === 'verification_pending';
       }
     },
     nameExtension: {
@@ -32,19 +32,19 @@ const StudentSchema = new mongoose.Schema({
     idNumber: {
       type: String,
       required: function() {
-        return this.approvalStatus === 'pending';
+        return this.approvalStatus === 'pending' || this.approvalStatus === 'verification_pending';
       }
     },
     email: {
       type: String,
       required: function() {
-        return this.approvalStatus === 'pending';
+        return this.approvalStatus === 'pending' || this.approvalStatus === 'verification_pending';
       }
     },
     password: {
       type: String,
       required: function() {
-        return this.approvalStatus === 'pending';
+        return this.approvalStatus === 'pending' || this.approvalStatus === 'verification_pending';
       }
     }
   },
@@ -179,12 +179,28 @@ const StudentSchema = new mongoose.Schema({
   }],
   approvalStatus: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
+    enum: ['verification_pending', 'pending', 'approved', 'rejected'],
     default: 'pending'
   },
   approvalNotes: {
     type: String,
     default: ''
+  },
+  verificationToken: {
+    type: String,
+    required: false
+  },
+  tokenExpiry: {
+    type: Date,
+    required: false
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerifiedAt: {
+    type: Date,
+    required: false
   },
   
   // Graduation tracking fields

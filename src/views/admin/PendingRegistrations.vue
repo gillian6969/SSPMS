@@ -27,19 +27,33 @@
       </div>
 
       <!-- Header -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-              </svg>
-            </div>
             <div>
               <h1 class="text-2xl font-normal text-gray-800">Pending Registrations</h1>
               <p class="text-gray-500 font-normal">Review and manage student registration requests</p>
             </div>
-          </div>
+          <div class="flex items-center space-x-3">
+            <button 
+              @click="approveSelected" 
+              :disabled="selectedStudents.length === 0"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Approve Selected ({{ selectedStudents.length }})
+            </button>
+            <button 
+              @click="rejectSelected" 
+              :disabled="selectedStudents.length === 0"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Reject Selected ({{ selectedStudents.length }})
+            </button>
           <button 
             @click="fetchPendingRegistrations" 
             class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-md shadow-sm text-sm font-normal text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -50,151 +64,138 @@
             Refresh
           </button>
         </div>
-      </div>
+          </div>
+        </div>
+        
+      <!-- UnifiedTable for Pending Registrations -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mt-4">
+        <UnifiedTable
+          :data="filteredPendingStudents"
+          :columns="tableColumns"
+          :sortable-columns="sortableColumns"
+          :loading="loading"
+          loading-text="Loading pending registrations..."
+          search-placeholder="Search by name, ID, or email"
+          empty-state-title="No pending registrations found"
+          empty-state-message="There are currently no student registration requests waiting for approval"
+          @search="handleUnifiedSearch"
+          @sort="handleUnifiedSort"
+          @page-change="handleUnifiedPageChange"
+        >
+          <template #filters>
+            <!-- Gender Filter -->
+    
 
-      <!-- Pending Registrations -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <div v-if="loading" class="flex justify-center items-center p-12">
-          <div class="flex flex-col items-center">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-4"></div>
-            <p class="text-gray-500">Loading registration requests...</p>
-          </div>
-        </div>
-        
-        <div v-else-if="pendingStudents.length === 0" class="flex flex-col items-center justify-center p-12 text-center">
-          <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-            <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-normal text-gray-800 mb-1">No Pending Registrations</h3>
-          <p class="text-gray-500 font-normal max-w-md">There are currently no student registration requests waiting for approval.</p>
-        </div>
-        
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Student</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">ID No.</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Email</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Class</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Registered</th>
-                <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr v-for="student in pendingStudents" :key="student._id" class="hover:bg-gray-50 transition-colors duration-150">
-                <td class="px-4 py-2">
+            <!-- Major Filter -->
+            <select
+              v-model="filters.major"
+              @change="applyFilters"
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Majors</option>
+              <option value="Business Informatics">Business Informatics</option>
+              <option value="System Development">System Development</option>
+              <option value="Digital Arts">Digital Arts</option>
+              <option value="Computer Security">Computer Security</option>
+            </select>
+
+            <!-- Registration Date Filter -->
+            <select
+              v-model="filters.registrationDate"
+              @change="applyFilters"
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Dates</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+          </template>
+
+          <template #row="{ item: student }">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <input 
+                type="checkbox" 
+                :value="student._id"
+                v-model="selectedStudents"
+                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
-                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-xs">
-                      {{ getInitials(student.user) }}
+                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span class="text-sm font-medium text-blue-600">{{ getInitials(student.user) }}</span>
                     </div>
-                    <div class="ml-3">
-                      <div class="text-sm font-medium text-gray-900 leading-tight">
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900">
                         {{ student.user.firstName }} {{ student.user.middleName ? student.user.middleName + ' ' : '' }}{{ student.user.lastName }} {{ student.user.nameExtension !== 'N/A' ? student.user.nameExtension : '' }}
                       </div>
-                      <div class="text-xs text-gray-500 flex items-center space-x-1 mt-0.5">
-                        <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{{ student.gender }}</span>
-                        <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ student.major }}</span>
+                  <div class="text-sm text-gray-500 flex items-center space-x-2 mt-1">
+                    <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">{{ student.gender }}</span>
+                    <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">{{ student.major }}</span>
                       </div>
                     </div>
                   </div>
                 </td>
-                <td class="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">
-                  <span class="font-mono">{{ student.user.idNumber }}</span>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+              {{ student.user.idNumber }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.user.email }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.classInfo ? student.classInfo.yearLevel : '-' }}
                 </td>
-                <td class="px-4 py-2 text-xs text-gray-600">
-                  <a href="#" class="text-blue-600 hover:text-blue-800 max-w-[180px] truncate inline-block">{{ student.user.email }}</a>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.classInfo ? student.classInfo.section : '-' }}
                 </td>
-                <td class="px-4 py-2 text-xs text-gray-700">
-                  <span class="px-2 py-0.5 bg-gray-100 text-gray-800 rounded">
-                    {{ getStudentClassInfo(student) }}
-                  </span>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.classInfo ? student.classInfo.major : '-' }}
                 </td>
-                <td class="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {{ formatDate(student.createdAt) }}
                 </td>
-                <td class="px-4 py-2 text-center text-xs font-medium whitespace-nowrap">
-                  <div class="flex justify-center space-x-2">
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <div class="flex items-center justify-center space-x-2">
                     <button 
                       @click="viewStudent(student)"
-                      class="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs rounded text-gray-700 bg-white hover:bg-gray-50"
+                  class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
                       View
-                    </button>
-                    <button 
-                      @click="confirmAction('approve', student._id)"
-                      class="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs rounded text-white bg-green-600 hover:bg-green-700"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                      Approve
-                    </button>
-                    <button 
-                      @click="confirmAction('reject', student._id)"
-                      class="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs rounded text-white bg-red-600 hover:bg-red-700"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Reject
                     </button>
                   </div>
                 </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          </template>
+        </UnifiedTable>
       </div>
     </div>
   </div>
 
   <!-- Confirmation Modal -->
-    <div v-if="confirmModal.show" class="fixed inset-0 z-10 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="confirmModal.show = false"></div>
-
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
+  <UnifiedModal v-model="confirmModal.show" :title="confirmModal.title" @close="confirmModal.show = false">
+    <template #default>
+      <div class="flex items-start space-x-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                 :class="confirmModal.type === 'approve' ? 'bg-green-100' : 'bg-red-100'">
-                <svg class="h-6 w-6" 
+          <svg class="w-5 h-5" 
                   :class="confirmModal.type === 'approve' ? 'text-green-600' : 'text-red-600'"
                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path v-if="confirmModal.type === 'approve'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  {{ confirmModal.title }}
-                </h3>
-                <div class="mt-2">
-                  <p class="text-sm text-gray-500">
-                    {{ confirmModal.message }}
-                  </p>
+        <div class="flex-1">
+          <p class="text-sm text-gray-600">{{ confirmModal.message }}</p>
                 </div>
               </div>
-            </div>
-          </div>
-          <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
+    </template>
+    <template #footer>
             <button 
               @click="confirmModal.onConfirm"
               type="button" 
               :class="[
-                'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm',
-                confirmModal.type === 'approve' ? 
-                  'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 
-                  'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+          'px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200',
+          confirmModal.type === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
               ]"
               :disabled="isProcessing"
             >
@@ -202,20 +203,10 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              {{ isProcessing ? 'Processing...' : confirmModal.type === 'approve' ? 'Approve' : 'Reject' }}
+        {{ isProcessing ? 'Processing...' : confirmModal.confirmText }}
             </button>
-            <button 
-              @click="confirmModal.show = false" 
-              type="button" 
-              class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
-              :disabled="isProcessing"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </template>
+  </UnifiedModal>
 
     <!-- View Student Modal (Registration Application) -->
     <div v-if="viewModal.show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeViewModal">
@@ -296,8 +287,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { studentService } from '../../services/studentService';
+import UnifiedTable from '../../components/ui/UnifiedTable.vue';
+import UnifiedModal from '../../components/ui/UnifiedModal.vue';
 
 // State
 const loading = ref(false);
@@ -305,6 +298,37 @@ const error = ref('');
 const pendingStudents = ref([]);
 const notification = ref(null);
 const isProcessing = ref(false);
+const selectedStudents = ref([]);
+
+// Filters
+const filters = reactive({
+  major: '',
+  registrationDate: '',
+  search: ''
+});
+
+// UnifiedTable config
+const tableColumns = [
+  { key: 'select', label: '', class: 'w-12' },
+  { key: 'student', label: 'Student', class: '' },
+  { key: 'idNumber', label: 'ID No.', class: '' },
+  { key: 'email', label: 'Email', class: '' },
+  { key: 'yearLevel', label: 'Year Level', class: '' },
+  { key: 'section', label: 'Section', class: '' },
+  { key: 'major', label: 'Major', class: '' },
+  { key: 'registered', label: 'Registered', class: '' },
+  { key: 'actions', label: 'Actions', class: 'text-center' }
+];
+
+const sortableColumns = [
+  { value: 'user.lastName', label: 'Student' },
+  { value: 'user.idNumber', label: 'ID Number' },
+  { value: 'user.email', label: 'Email' },
+  { value: 'classInfo.yearLevel', label: 'Year Level' },
+  { value: 'classInfo.section', label: 'Section' },
+  { value: 'classInfo.major', label: 'Major' },
+  { value: 'createdAt', label: 'Registration Date' }
+];
 
 const viewModal = reactive({
   show: false,
@@ -319,6 +343,68 @@ const confirmModal = reactive({
   studentId: null,
   onConfirm: null
 });
+
+// Computed
+const filteredPendingStudents = computed(() => {
+  let filtered = pendingStudents.value;
+
+  // Filter by major
+  if (filters.major) {
+    filtered = filtered.filter(student => student.major === filters.major);
+  }
+
+  // Filter by registration date
+  if (filters.registrationDate) {
+    const now = new Date();
+    filtered = filtered.filter(student => {
+      const registrationDate = new Date(student.createdAt);
+      switch (filters.registrationDate) {
+        case 'today':
+          return registrationDate.toDateString() === now.toDateString();
+        case 'week':
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return registrationDate >= weekAgo;
+        case 'month':
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          return registrationDate >= monthAgo;
+        default:
+          return true;
+      }
+    });
+  }
+
+  // Filter by search
+  if (filters.search) {
+    const searchTerm = filters.search.toLowerCase();
+    filtered = filtered.filter(student => {
+      const fullName = `${student.user.firstName} ${student.user.middleName || ''} ${student.user.lastName}`.toLowerCase();
+      return fullName.includes(searchTerm) ||
+             student.user.idNumber.toLowerCase().includes(searchTerm) ||
+             student.user.email.toLowerCase().includes(searchTerm);
+    });
+  }
+
+  return filtered;
+});
+
+// UnifiedTable handlers
+const handleUnifiedSearch = (searchTerm) => {
+  filters.search = searchTerm;
+};
+
+const handleUnifiedSort = (sortConfig) => {
+  // Handle sorting if needed
+  console.log('Sort:', sortConfig);
+};
+
+const handleUnifiedPageChange = (page) => {
+  // Handle pagination if needed
+  console.log('Page change:', page);
+};
+
+const applyFilters = () => {
+  // Trigger reactive update
+};
 
 onMounted(() => {
   fetchPendingRegistrations();
@@ -344,6 +430,7 @@ const fetchPendingRegistrations = async () => {
     // Simple validation - we expect an array
     if (Array.isArray(data)) {
       console.log(`Received ${data.length} pending registrations`);
+      console.log('First student data structure:', data[0]);
       pendingStudents.value = data;
       
       if (data.length === 0) {
@@ -547,12 +634,80 @@ function confirmAction(type, studentId) {
   confirmModal.message = type === 'approve' 
     ? 'Are you sure you want to approve this student registration?' 
     : 'Are you sure you want to reject this student registration?';
+  confirmModal.confirmText = type === 'approve' ? 'Approve' : 'Reject';
   
   confirmModal.onConfirm = () => {
     if (type === 'approve') {
       approveRegistration(studentId);
     } else {
       rejectRegistration(studentId);
+    }
+  };
+  
+  confirmModal.show = true;
+}
+
+// Bulk actions
+function approveSelected() {
+  if (selectedStudents.value.length === 0) return;
+  
+  confirmModal.type = 'approve';
+  confirmModal.title = 'Approve Selected Registrations';
+  confirmModal.message = `Are you sure you want to approve ${selectedStudents.value.length} student registration(s)?`;
+  confirmModal.confirmText = 'Approve All';
+  
+  confirmModal.onConfirm = async () => {
+    try {
+      isProcessing.value = true;
+      confirmModal.show = false;
+      
+      for (const studentId of selectedStudents.value) {
+        await studentService.approveRegistration(studentId);
+      }
+      
+      // Remove approved students from list
+      pendingStudents.value = pendingStudents.value.filter(student => !selectedStudents.value.includes(student._id));
+      selectedStudents.value = [];
+      
+      showNotification('success', `${selectedStudents.value.length} registration(s) approved successfully.`);
+    } catch (error) {
+      showNotification('error', 'Failed to approve some registrations');
+      console.error('Error approving registrations:', error);
+    } finally {
+      isProcessing.value = false;
+    }
+  };
+  
+  confirmModal.show = true;
+}
+
+function rejectSelected() {
+  if (selectedStudents.value.length === 0) return;
+  
+  confirmModal.type = 'reject';
+  confirmModal.title = 'Reject Selected Registrations';
+  confirmModal.message = `Are you sure you want to reject ${selectedStudents.value.length} student registration(s)?`;
+  confirmModal.confirmText = 'Reject All';
+  
+  confirmModal.onConfirm = async () => {
+    try {
+      isProcessing.value = true;
+      confirmModal.show = false;
+      
+      for (const studentId of selectedStudents.value) {
+        await studentService.rejectRegistration(studentId);
+      }
+      
+      // Remove rejected students from list
+      pendingStudents.value = pendingStudents.value.filter(student => !selectedStudents.value.includes(student._id));
+      selectedStudents.value = [];
+      
+      showNotification('success', `${selectedStudents.value.length} registration(s) rejected successfully.`);
+    } catch (error) {
+      showNotification('error', 'Failed to reject some registrations');
+      console.error('Error rejecting registrations:', error);
+    } finally {
+      isProcessing.value = false;
     }
   };
   

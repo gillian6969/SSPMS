@@ -37,7 +37,7 @@
             
             <button 
               @click="openAddModal" 
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              class="px-4 py-2 bg-green-800 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 transition-colors"
             >
               <span class="flex items-center">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -50,66 +50,18 @@
         </div>
       </div>
 
-      <!-- Advisers Table -->
+      <!-- Advisers Table (Unified) -->
       <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <!-- Search Header -->
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex items-center">
-            <div class="relative max-w-md">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-              </div>
-              <input 
-                v-model="search" 
-                type="text" 
-                placeholder="Search by name or ID" 
-                class="pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <!-- Table Content -->
-        <div class="overflow-x-auto">
-          <!-- Active Advisers Table -->
-          <table v-if="!showPending" class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Number</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr v-if="loading">
-                <td colspan="6" class="px-6 py-12 text-center">
-                  <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span class="ml-3 text-gray-500">Loading advisers...</span>
-                  </div>
-                </td>
-              </tr>
-              <tr v-else-if="filteredAdvisers.length === 0">
-                <td colspan="6" class="px-6 py-12 text-center">
-                  <div class="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                    </svg>
-                  </div>
-                  <h3 class="text-base font-normal text-gray-800 mb-1">
-                    {{ search ? 'No advisers found' : 'No advisers yet' }}
-                  </h3>
-                  <p class="text-gray-500 font-normal">
-                    {{ search ? 'Try adjusting your search criteria' : 'Add your first adviser to get started' }}
-                  </p>
-                </td>
-              </tr>
-              <tr v-for="adviser in filteredAdvisers" :key="adviser._id" class="hover:bg-gray-50">
+        <div v-if="!showPending">
+          <UnifiedTable
+            :data="advisersMapped"
+            :columns="adviserTableColumns"
+            :sortable-columns="adviserSortableColumns"
+            :loading="loading"
+            loading-text="Loading advisers..."
+            search-placeholder="Search by name, ID, or email"
+          >
+            <template #row="{ item: adviser }">
                 <td class="px-6 py-4 text-sm text-gray-500">
                   {{ adviser.idNumber || 'N/A' }}
                 </td>
@@ -117,12 +69,12 @@
                   <div class="flex items-center">
                     <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                       <span class="text-sm font-normal text-blue-600">
-                        {{ adviser.firstName?.charAt(0) }}{{ adviser.lastName?.charAt(0) }}
+                      {{ (adviser.firstName || '').charAt(0) }}{{ (adviser.lastName || '').charAt(0) }}
                       </span>
                     </div>
                     <div>
                       <div class="text-sm font-normal text-gray-800">
-                        {{ adviser.salutation || '' }} {{ adviser.firstName || '' }} {{ adviser.middleName ? adviser.middleName + ' ' : '' }}{{ adviser.lastName || '' }} {{ adviser.nameExtension && adviser.nameExtension !== 'N/A' ? adviser.nameExtension : '' }}
+                      {{ adviserFull(adviser) }}
                       </div>
                     </div>
                   </div>
@@ -157,42 +109,21 @@
                     </button>
                   </div>
                 </td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <!-- Pending Advisers Table -->
-          <table v-else class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Number</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-if="pendingAdvisers.length === 0">
-                <td colspan="7" class="px-6 py-12 text-center">
-                  <div class="flex flex-col items-center">
-                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                      <svg class="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                      </svg>
+            </template>
+          </UnifiedTable>
                     </div>
-                    <h3 class="text-base font-normal text-gray-800 mb-1">
-                      No pending advisers
-                    </h3>
-                    <p class="text-gray-500 font-normal">
-                      All advisers have been verified
-                    </p>
-                  </div>
-                </td>
-              </tr>
-              <tr v-for="adviser in pendingAdvisers" :key="adviser._id" class="hover:bg-gray-50">
+          
+          <!-- Pending Advisers Table (UnifiedTable) -->
+          <div v-else>
+            <UnifiedTable
+              :data="pendingMapped"
+              :columns="pendingTableColumns"
+              :sortable-columns="pendingSortableColumns"
+              :loading="loading"
+              loading-text="Loading pending advisers..."
+              search-placeholder="Search by name, ID, or email"
+            >
+              <template #row="{ item: adviser }">
                 <td class="px-6 py-4 text-sm text-gray-500">
                   {{ adviser.idNumber || 'N/A' }}
                 </td>
@@ -200,29 +131,24 @@
                   <div class="flex items-center">
                     <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
                       <span class="text-sm font-normal text-orange-600">
-                        {{ adviser.firstName?.charAt(0) }}{{ adviser.lastName?.charAt(0) }}
+                        {{ (adviser.firstName || '').charAt(0) }}{{ (adviser.lastName || '').charAt(0) }}
                       </span>
                     </div>
                     <div>
                       <div class="text-sm font-medium text-gray-900">
-                        {{ adviser.salutation }} {{ adviser.firstName }} {{ adviser.middleName }} {{ adviser.lastName }} {{ adviser.nameExtension }}
+                        {{ adviserFull(adviser) }}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
-                  {{ adviser.email }}
+                  {{ adviser.email || 'N/A' }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
-                  {{ adviser.contactNumber }}
-                </td>
-                <td class="px-6 py-4">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                    Pending Verification
-                  </span>
+                  {{ adviser.contactNumber || 'N/A' }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
-                  {{ new Date(adviser.createdAt).toLocaleDateString() }}
+                  {{ adviser.createdAt ? new Date(adviser.createdAt).toLocaleDateString() : '—' }}
                 </td>
                 <td class="px-6 py-4 text-sm font-medium">
                   <button
@@ -232,34 +158,22 @@
                     View
                   </button>
                 </td>
-              </tr>
-            </tbody>
-          </table>
+              </template>
+            </UnifiedTable>
         </div>
       </div>
     </div>
-
-    <!-- Add Modal -->
-    <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeAddModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Add New Adviser</h3>
-          <button @click="closeAddModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
         
-        <!-- Modal Content -->
-        <div class="p-6 space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Add Modal -->
+    <UnifiedModal v-model="showAddModal" title="Add New Adviser" @close="closeAddModal">
+      <template #default>
+        <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Salutation</label>
               <select
                 v-model="newAdviser.salutation"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm"
               >
                 <option value="">Select Salutation</option>
                 <option value="Mr.">Mr.</option>
@@ -269,46 +183,34 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-              <input
-                v-model="newAdviser.firstName"
-                type="text"
-                placeholder="First Name"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.firstName }"
-              />
+              <div class="fl-group">
+                <input v-model="newAdviser.firstName" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.firstName }" />
+                <span class="fl-label font-medium">First Name</span>
+              </div>
               <p v-if="errors.firstName" class="mt-1 text-sm text-red-600">{{ errors.firstName }}</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
-              <input
-                v-model="newAdviser.middleName"
-                type="text"
-                placeholder="Middle Name"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              />
+              <div class="fl-group">
+                <input v-model="newAdviser.middleName" type="text" placeholder=" " class="fl-input" />
+                <span class="fl-label">Middle Name</span>
+              </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-              <input
-                v-model="newAdviser.lastName"
-                type="text"
-                placeholder="Last Name"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.lastName }"
-              />
+              <div class="fl-group">
+                <input v-model="newAdviser.lastName" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.lastName }" />
+                <span class="fl-label font-medium">Last Name</span>
+              </div>
               <p v-if="errors.lastName" class="mt-1 text-sm text-red-600">{{ errors.lastName }}</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Name Extension</label>
               <select
                 v-model="newAdviser.nameExtension"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm"
               >
-                <option value="">None</option>
+                <option value="">Select Name Extension</option>
                 <option value="Jr.">Jr.</option>
                 <option value="Sr.">Sr.</option>
                 <option value="II">II</option>
@@ -319,37 +221,25 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">ID Number</label>
-              <input
-                v-model="newAdviser.idNumber"
-                type="text"
-                placeholder="Enter ID Number"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }"
-              />
+              <div class="fl-group">
+                <input v-model="newAdviser.idNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }" />
+                <span class="fl-label font-medium">ID Number</span>
+              </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                v-model="newAdviser.email"
-                type="email"
-                placeholder="example@gmail.com"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.email }"
-              />
+              <div class="fl-group">
+                <input v-model="newAdviser.email" type="email" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.email }" />
+                <span class="fl-label font-medium">Email</span>
+              </div>
               <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
-              <input
-                v-model="newAdviser.contactNumber"
-                type="text"
-                placeholder="09123456789"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }"
-              />
+              <div class="fl-group">
+                <input v-model="newAdviser.contactNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }" />
+                <span class="fl-label font-medium">Contact Number</span>
+              </div>
               <p v-if="errors.contactNumber" class="mt-1 text-sm text-red-600">{{ errors.contactNumber }}</p>
             </div>
           </div>
@@ -366,40 +256,61 @@
             </div>
           </div>
         </div>
-
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-end p-6 border-t border-gray-200 space-x-3">
+      </template>
+      <template #footer>
           <button
             @click="closeAddModal"
-            class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
+          class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             @click="addAdviser"
-            class="px-4 py-2 text-sm font-normal text-white bg-green-800 rounded-md hover:bg-green-500"
+          class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
           >
             Add Adviser
           </button>
+      </template>
+    </UnifiedModal>
+
+    <!-- Archive Confirmation Modal -->
+    <UnifiedModal v-model="showArchiveConfirm" title="Archive Adviser" @close="closeArchiveConfirm">
+      <template #default>
+        <div class="flex items-start space-x-3">
+          <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 4h.01M4.93 4.93a10 10 0 1114.14 14.14A10 10 0 014.93 4.93z" />
+            </svg>
         </div>
+          <div>
+            <h4 class="text-base font-medium text-gray-800 mb-2">Confirm Archive</h4>
+            <p class="text-sm text-gray-600 mb-4">
+              Are you sure you want to archive <strong>{{ adviserToArchive ? (adviserToArchive.firstName + ' ' + adviserToArchive.lastName) : '' }}</strong>?
+              This will move the adviser to the archive list and deactivate their access.
+            </p>
       </div>
     </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeArchiveConfirm"
+          class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
+        >
+          Cancel
+          </button>
+        <button
+          @click="confirmArchiveAdviser"
+          class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors duration-200"
+        >
+          Archive Adviser
+        </button>
+      </template>
+    </UnifiedModal>
 
     <!-- Details Modal -->
-    <div v-if="showDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeDetailsModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Adviser Details</h3>
-          <button @click="closeDetailsModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6 space-y-4">
+    <UnifiedModal v-model="showDetailsModal" title="Adviser Details" @close="closeDetailsModal">
+      <template #default>
+        <div class="space-y-4">
           <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
             <div class="flex items-center space-x-3">
               <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-blue-200">
@@ -454,47 +365,32 @@
             </div>
           </div>
         </div>
-        
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-between p-6 border-t border-gray-200">
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-between w-full">
           <button
             @click="closeDetailsModal"
-            class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
+            class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
           >
             Close
           </button>
           <button
             @click="() => { editAdviser(selectedAdviser); closeDetailsModal(); }"
-            class="px-4 py-2 text-sm font-normal text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
           >
             Edit Adviser
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </UnifiedModal>
 
     <!-- Edit Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeEditModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Edit Adviser</h3>
-          <button @click="closeEditModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6 space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <UnifiedModal v-model="showEditModal" title="Edit Adviser" @close="closeEditModal">
+      <template #default>
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Salutation</label>
-              <select
-                v-model="editedAdviser.salutation"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              >
+              <select v-model="editedAdviser.salutation" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm">
                 <option value="">Select Salutation</option>
                 <option value="Mr.">Mr.</option>
                 <option value="Mrs.">Mrs.</option>
@@ -503,124 +399,94 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-              <input
-                v-model="editedAdviser.firstName"
-                type="text"
-                placeholder="First Name"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.firstName }"
-              />
+              <div class="fl-group">
+                <input v-model="editedAdviser.firstName" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.firstName }" />
+                <span class="fl-label font-medium">First Name *</span>
+              </div>
               <p v-if="errors.firstName" class="mt-1 text-sm text-red-600">{{ errors.firstName }}</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
-              <input
-                v-model="editedAdviser.middleName"
-                type="text"
-                placeholder="Middle Name"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              />
+              <div class="fl-group">
+                <input v-model="editedAdviser.middleName" type="text" placeholder=" " class="fl-input" />
+                <span class="fl-label">Middle Name</span>
+              </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-              <input
-                v-model="editedAdviser.lastName"
-                type="text"
-                placeholder="Last Name"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.lastName }"
-              />
+              <div class="fl-group">
+                <input v-model="editedAdviser.lastName" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.lastName }" />
+                <span class="fl-label font-medium">Last Name *</span>
+              </div>
               <p v-if="errors.lastName" class="mt-1 text-sm text-red-600">{{ errors.lastName }}</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Name Extension</label>
-              <input
-                v-model="editedAdviser.nameExtension"
-                type="text"
-                placeholder="e.g., Jr., Sr., III"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              />
+              <div class="fl-group">
+                <input v-model="editedAdviser.nameExtension" type="text" placeholder=" " class="fl-input" />
+                <span class="fl-label">Name Extension</span>
+              </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">ID Number *</label>
-              <input
-                v-model="editedAdviser.idNumber"
-                type="text"
-                placeholder="ID Number"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }"
-              />
+              <div class="fl-group">
+                <input v-model="editedAdviser.idNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }" />
+                <span class="fl-label font-medium">ID Number *</span>
+              </div>
               <p v-if="errors.idNumber" class="mt-1 text-sm text-red-600">{{ errors.idNumber }}</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-              <input
-                v-model="editedAdviser.email"
-                type="email"
-                placeholder="Email"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.email }"
-              />
+              <div class="fl-group">
+                <input v-model="editedAdviser.email" type="email" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.email }" />
+                <span class="fl-label font-medium">Email *</span>
+              </div>
               <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number *</label>
-              <input
-                v-model="editedAdviser.contactNumber"
-                type="text"
-                placeholder="e.g., 09123456789"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }"
-              />
+              <div class="fl-group">
+                <input v-model="editedAdviser.contactNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }" />
+                <span class="fl-label font-medium">Contact Number *</span>
+              </div>
               <p v-if="errors.contactNumber" class="mt-1 text-sm text-red-600">{{ errors.contactNumber }}</p>
             </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                v-model="editedAdviser.status"
-                class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              >
+              <select v-model="editedAdviser.status" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
             </div>
           </div>
         </div>
-
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-between p-6 border-t border-gray-200">
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-between w-full">
           <button
             @click="archiveAdviser"
-            class="px-4 py-2 text-sm font-normal text-white bg-amber-600 rounded-md hover:bg-amber-700"
+            class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors duration-200"
           >
             Archive
           </button>
           <div class="flex space-x-3">
             <button
               @click="closeEditModal"
-              class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
+              class="px-5 py-2.5 mr-1 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               @click="updateAdviser"
-              class="px-4 py-2 text-sm font-normal text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
             >
               Update
             </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
+      </template>
+    </UnifiedModal>
 </template>
 
 <script setup>
@@ -628,6 +494,8 @@ import { ref, reactive, onMounted, computed, watchEffect } from 'vue'
 import { adviserService } from '../../services/adviserService'
 import { notificationService } from '../../services/notificationService'
 import api from '../../services/api'
+import UnifiedModal from '../../components/ui/UnifiedModal.vue'
+import UnifiedTable from '../../components/ui/UnifiedTable.vue'
 
 // State
 const advisers = ref([])
@@ -640,6 +508,9 @@ const showDetailsModal = ref(false)
 const showEditModal = ref(false)
 const selectedAdviser = ref(null)
 const showPending = ref(false)
+// Archive confirmation modal state
+const showArchiveConfirm = ref(false)
+const adviserToArchive = ref(null)
 
 // Form state
 const newAdviser = reactive({
@@ -681,29 +552,67 @@ onMounted(() => {
   fetchAdvisers()
 })
 
-// Filter advisers based on search
-const filteredAdvisers = computed(() => {
-  if (!search.value) return advisers.value
-  
-  const searchTerm = search.value.toLowerCase()
-  return advisers.value.filter(adviser => {
-    const fullName = `${adviser.salutation || ''} ${adviser.firstName || ''} ${adviser.lastName || ''}`.toLowerCase()
-    const idNumber = adviser.idNumber?.toLowerCase() || ''
-    const email = adviser.email?.toLowerCase() || ''
-    
-    return fullName.includes(searchTerm) || 
-           idNumber.includes(searchTerm) ||
-           email.includes(searchTerm)
-  })
+// UnifiedTable data mapping (adds adviserFullName for searching/sorting)
+const advisersMapped = computed(() => {
+  return advisers.value.map(a => ({
+    ...a,
+    adviserFullName: adviserFull(a)
+  }))
 })
 
-// Watch for search changes
-watchEffect(() => {
-  console.log('Search changed:', search.value)
-  // Just reference search.value to trigger the watcher
-  const searchTerm = search.value
-  // No need to do anything in the body, the computed property will handle filtering
+const adviserTableColumns = [
+  { key: 'idNumber', label: 'ID Number', class: '' },
+  { key: 'adviserFullName', label: 'Name', class: '' },
+  { key: 'email', label: 'Email', class: '' },
+  { key: 'contactNumber', label: 'Contact', class: '' },
+  { key: 'status', label: 'Status', class: '' },
+  { key: 'actions', label: 'Actions', class: 'text-right' }
+]
+
+const adviserSortableColumns = [
+  { value: 'idNumber', label: 'ID Number' },
+  { value: 'adviserFullName', label: 'Name' },
+  { value: 'email', label: 'Email' },
+  { value: 'contactNumber', label: 'Contact' },
+  { value: 'status', label: 'Status' }
+]
+
+function adviserFull(a) {
+  const sal = a.salutation || ''
+  const fn = a.firstName || ''
+  const mn = a.middleName ? a.middleName + ' ' : ''
+  const ln = a.lastName || ''
+  const ne = a.nameExtension && a.nameExtension !== 'N/A' ? ` ${a.nameExtension}` : ''
+  return `${sal} ${fn} ${mn}${ln}${ne}`.trim()
+}
+
+// Pending table setup
+const pendingMapped = computed(() => {
+  return pendingAdvisers.value.map(a => ({
+    ...a,
+    adviserFullName: adviserFull(a)
+  }))
 })
+
+const pendingTableColumns = [
+  { key: 'idNumber', label: 'ID Number', class: '' },
+  { key: 'adviserFullName', label: 'Name', class: '' },
+  { key: 'email', label: 'Email', class: '' },
+  { key: 'contactNumber', label: 'Contact', class: '' },
+  { key: 'createdAt', label: 'Created', class: '' },
+  { key: 'actions', label: 'Actions', class: '' }
+]
+
+const pendingSortableColumns = [
+  { value: 'idNumber', label: 'ID Number' },
+  { value: 'adviserFullName', label: 'Name' },
+  { value: 'email', label: 'Email' },
+  { value: 'contactNumber', label: 'Contact' },
+  { value: 'createdAt', label: 'Created' }
+]
+
+// Watch for search changes
+// No manual filter needed; UnifiedTable handles search/sort/pagination
 
 async function fetchAdvisers() {
   try {
@@ -964,30 +873,42 @@ function validateAdviserForm(adviser) {
   return isValid
 }
 
-async function archiveAdviser() {
-  try {
-    if (!confirm(`Are you sure you want to archive ${selectedAdviser.value.firstName} ${selectedAdviser.value.lastName}? This adviser will be moved to the archive list.`)) {
-      return;
-    }
-    
-    // Set status to inactive to archive
-    await api.put(`/advisers/${selectedAdviser.value._id}`, {
-      ...selectedAdviser.value,
-      status: 'inactive'
-    });
-    
-    await fetchAdvisers();
-    notificationService.showSuccess('Adviser archived successfully');
-    closeEditModal();
-  } catch (error) {
-    console.error('Error archiving adviser:', error);
-    let errorMessage = 'Failed to archive adviser. Please try again later.';
-    
-    if (error.response && error.response.data && error.response.data.message) {
-      errorMessage = error.response.data.message;
-    }
-    
-    notificationService.showError(errorMessage);
+function archiveAdviser() {
+  adviserToArchive.value = { ...selectedAdviser.value }
+  // Close the edit modal to avoid stacking/z-index issues
+  showEditModal.value = false
+  // Defer opening confirmation to next tick to ensure DOM updates
+  setTimeout(() => {
+    showArchiveConfirm.value = true
+  }, 0)
+}
+
+async function confirmArchiveAdviser() {
+  if (!adviserToArchive.value?._id) {
+    showArchiveConfirm.value = false
+    return
   }
+  try {
+    await api.put(`/advisers/${adviserToArchive.value._id}`, {
+      ...adviserToArchive.value,
+      status: 'inactive'
+    })
+    await fetchAdvisers()
+    notificationService.showSuccess('Adviser archived successfully')
+    showArchiveConfirm.value = false
+    closeEditModal()
+  } catch (error) {
+    console.error('Error archiving adviser:', error)
+    let errorMessage = 'Failed to archive adviser. Please try again later.'
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message
+    }
+    notificationService.showError(errorMessage)
+  }
+}
+
+function closeArchiveConfirm() {
+  showArchiveConfirm.value = false
+  adviserToArchive.value = null
 }
 </script>

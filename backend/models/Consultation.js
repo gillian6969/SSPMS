@@ -6,6 +6,36 @@ const ConsultationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  // Weekly scheduling fields
+  weekStart: {
+    type: Date,
+    required: true
+  },
+  weekEnd: {
+    type: Date,
+    required: true
+  },
+  // Exact calendar date computed from weekStart + dayOfWeek
+  consultationDate: {
+    type: Date,
+    required: false
+  },
+  // Adviser acceptance status
+  adviserAccepted: {
+    type: Boolean,
+    default: false
+  },
+  adviserAcceptedAt: {
+    type: Date
+  },
+  adviserDeclinedAt: {
+    type: Date
+  },
+  adviserDeclineReason: {
+    type: String,
+    trim: true
+  },
+  // Original consultation fields
   dayOfWeek: {
     type: Number,
     required: true,
@@ -42,12 +72,58 @@ const ConsultationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Active', 'Inactive', 'Full'],
-    default: 'Active'
+    enum: ['Active', 'Inactive', 'Full', 'Pending_Adviser_Acceptance', 'Not_Available', 'Reschedule_Requested', 'Not_Available_Requested'],
+    default: 'Pending_Adviser_Acceptance'
   },
   notes: {
     type: String,
     trim: true
+  },
+  // Reschedule request details
+  rescheduleRequest: {
+    reason: {
+      type: String,
+      trim: true
+    },
+    originalValues: {
+      dayOfWeek: {
+        type: Number,
+        min: 0,
+        max: 4
+      },
+      startTime: {
+        type: Number,
+        min: 7,
+        max: 17
+      },
+      endTime: {
+        type: Number,
+        min: 7,
+        max: 17
+      }
+    },
+    newDayOfWeek: {
+      type: Number,
+      min: 0,
+      max: 4
+    },
+    newStartTime: {
+      type: Number,
+      min: 7,
+      max: 17
+    },
+    newEndTime: {
+      type: Number,
+      min: 7,
+      max: 17
+    },
+    requestedAt: {
+      type: Date
+    },
+    requestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
   },
   // Array of student bookings
   bookings: [{
@@ -61,8 +137,14 @@ const ConsultationSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['Pending', 'Confirmed', 'Cancelled', 'Resolved', 'Escalated'],
-      default: 'Pending'
+      enum: ['Booked', 'Pending', 'Confirmed', 'Cancelled', 'Resolved', 'Escalated', 'Completed'],
+      default: 'Booked'
+    },
+    // Consultation type (in-person or chat)
+    consultationType: {
+      type: String,
+      enum: ['in-person', 'chat'],
+      default: 'in-person'
     },
     concern: {
       type: String,
@@ -90,6 +172,23 @@ const ConsultationSchema = new mongoose.Schema({
       type: Number, // Duration in minutes
       default: 30 // Default 30 minutes per student
     },
+    // Virtual meeting link
+    meetingLink: {
+      type: String,
+      trim: true
+    },
+    meetingStarted: {
+      type: Boolean,
+      default: false
+    },
+    meetingStartedAt: {
+      type: Date
+    },
+    // Google Calendar event ID for meeting management
+    googleEventId: {
+      type: String,
+      trim: true
+    },
     // Notifications
     scheduleNotificationSent: {
       type: Boolean,
@@ -113,6 +212,14 @@ const ConsultationSchema = new mongoose.Schema({
     },
     feedbackAt: {
       type: Date
+    },
+    // Completion notes (when status is 'Completed')
+    completionNotes: {
+      type: String,
+      trim: true
+    },
+    completedAt: {
+      type: Date
     }
   }]
 }, {
@@ -135,20 +242,39 @@ ConsultationSchema.virtual('availableSlots').get(function() {
 
 // Pre-save middleware to update status based on bookings
 ConsultationSchema.pre('save', function(next) {
-  // Update bookedStudents count (only count active bookings)
+  // Update bookedStudents count (count all bookings except cancelled)
   this.bookedStudents = this.bookings.filter(booking => 
-    booking.status === 'Pending' || booking.status === 'Confirmed'
+    booking.status !== 'Cancelled'
   ).length;
   
-  // Update status based on availability
-  if (this.bookedStudents >= this.maxStudents) {
-    this.status = 'Full';
-  } else if (this.status === 'Full' && this.bookedStudents < this.maxStudents) {
-    this.status = 'Active';
+  // Update status based on availability and adviser acceptance
+  // Don't override Reschedule_Requested or Not_Available_Requested status
+  if (this.status !== 'Reschedule_Requested' && this.status !== 'Not_Available_Requested') {
+    if (!this.adviserAccepted) {
+      this.status = 'Pending_Adviser_Acceptance';
+    } else if (this.bookedStudents >= this.maxStudents) {
+      this.status = 'Full';
+    } else if (this.status === 'Full' && this.bookedStudents < this.maxStudents) {
+      this.status = 'Active';
+    } else if (this.adviserAccepted && this.status === 'Pending_Adviser_Acceptance') {
+      this.status = 'Active';
+    }
   }
   
   // Auto-allocate time slots for confirmed bookings that don't have them yet
   this.autoAllocateTimeSlots();
+
+  // Ensure consultationDate is set from weekStart + dayOfWeek
+  try {
+    if (this.weekStart && (this.dayOfWeek === 0 || this.dayOfWeek === 1 || this.dayOfWeek === 2 || this.dayOfWeek === 3 || this.dayOfWeek === 4)) {
+      const base = new Date(this.weekStart);
+      const d = new Date(base);
+      d.setDate(base.getDate() + Number(this.dayOfWeek));
+      this.consultationDate = d;
+    }
+  } catch (e) {
+    // noop
+  }
   
   next();
 });
@@ -225,6 +351,49 @@ ConsultationSchema.statics.findByAdviser = function(adviserId) {
         select: 'firstName lastName email idNumber'
       }
     });
+};
+
+// Static method to find consultations for a specific week
+ConsultationSchema.statics.findByWeek = function(weekStart, weekEnd) {
+  return this.find({
+    weekStart: { $gte: weekStart },
+    weekEnd: { $lte: weekEnd }
+  })
+  .populate('adviser', 'firstName lastName email')
+  .populate({
+    path: 'bookings.student',
+    populate: {
+      path: 'user',
+      select: 'firstName lastName email idNumber'
+    }
+  });
+};
+
+// Static method to find pending adviser acceptances
+ConsultationSchema.statics.findPendingAcceptance = function(adviserId) {
+  return this.find({
+    adviser: adviserId,
+    adviserAccepted: false,
+    status: 'Pending_Adviser_Acceptance'
+  })
+  .populate('adviser', 'firstName lastName email');
+};
+
+// Method to accept weekly schedule
+ConsultationSchema.methods.acceptSchedule = function() {
+  this.adviserAccepted = true;
+  this.adviserAcceptedAt = new Date();
+  this.status = 'Active';
+  return this.save();
+};
+
+// Method to decline weekly schedule
+ConsultationSchema.methods.declineSchedule = function(reason) {
+  this.adviserAccepted = false;
+  this.adviserDeclinedAt = new Date();
+  this.adviserDeclineReason = reason;
+  this.status = 'Inactive';
+  return this.save();
 };
 
 module.exports = mongoose.model('Consultation', ConsultationSchema); 

@@ -8,10 +8,10 @@
             <h1 class="text-2xl font-normal text-gray-800">SSP Subjects</h1>
             <p class="text-gray-500 mt-1 font-normal">Manage Student Success Program subjects and sessions</p>
           </div>
-          <button 
-            @click="openAddModal" 
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-          >
+            <button 
+              @click="openAddModal" 
+              class="px-4 py-2 bg-green-800 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 transition-colors"
+            >
             <span class="flex items-center">
               <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -22,151 +22,110 @@
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
-            <select
-              v-model="filters.yearLevel"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              @change="fetchSubjects"
+      <!-- Subjects Table using UnifiedTable -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 max-w-7xl mx-auto mt-4">
+        <UnifiedTable
+          :data="filteredSubjects"
+          :columns="tableColumns"
+          :sortable-columns="sortableColumns"
+          :loading="loading"
+          loading-text="Loading subjects..."
+          search-placeholder="Search by SSP code"
+          empty-state-title="No subjects found"
+          empty-state-message="Try adjusting your search criteria or add a subject to get started"
+          @search="handleUnifiedSearch"
+          @sort="handleUnifiedSort"
+          @page-change="handleUnifiedPageChange"
+        >
+          <template #filters>
+            <!-- Year Level Filter from system options -->
+            <select 
+              v-model="filters.yearLevel" 
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             >
-              <option value="">All Year Levels</option>
+              <option value="">All Years</option>
               <option v-for="option in yearLevelOptions" :key="option" :value="option">{{ option }} Year</option>
             </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-              </div>
-              <input
-                v-model="filters.search"
-                type="text"
-                placeholder="Search by SSP code"
-                class="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                @input="handleSearchInput"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Subjects Table -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SSP Code</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year Level</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">School Year</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sessions</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr v-if="loading">
-                <td colspan="7" class="px-6 py-12 text-center">
-                  <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span class="ml-3 text-gray-500">Loading subjects...</span>
-                  </div>
-                </td>
-              </tr>
-              <tr v-else-if="subjects.length === 0">
-                <td colspan="7" class="px-6 py-12 text-center">
-                  <div class="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                  </div>
-                  <h3 class="text-base font-normal text-gray-800 mb-1">
-                    {{ (filters.search || filters.yearLevel) ? 'No subjects found' : 'No subjects yet' }}
-                  </h3>
-                  <p class="text-gray-500 font-normal">
-                    {{ (filters.search || filters.yearLevel) ? 'Try adjusting your search criteria' : 'Add your first SSP subject to get started' }}
-                  </p>
-                </td>
-              </tr>
-              <tr v-for="(subject, index) in subjects" :key="subject._id || index" class="hover:bg-gray-50">
-                <td class="px-6 py-4">
-                  <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span class="text-sm font-normal text-blue-600">
-                        {{ subject.sspCode?.charAt(0) || 'S' }}
-                      </span>
-                    </div>
-                    <div>
-                      <div class="text-sm font-normal text-gray-800">{{ subject.sspCode || 'No Code' }}</div>
-                      <div class="text-xs text-gray-500">Subject Code</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-800">
-                  {{ subject.yearLevel }} Year
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-800">
-                  {{ subject.schoolYear || '2024 - 2025' }}
-                </td>
-                <td class="px-6 py-4">
-                  <span 
-                    class="inline-flex px-2 py-1 text-xs font-normal rounded-md"
-                    :class="subject.semester === '1st Semester' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
-                  >
-                    {{ subject.semester }}
+            <!-- Semester Filter -->
+            <select 
+              v-model="filters.semester" 
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Semesters</option>
+              <option value="1st Semester">1st Semester</option>
+              <option value="2nd Semester">2nd Semester</option>
+            </select>
+
+            <!-- Hours Filter from system options -->
+            <select 
+              v-model="filters.hours" 
+              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Hours</option>
+              <option v-for="hour in hoursOptions" :key="hour" :value="hour">{{ hour }} {{ hour === 1 ? 'Hour' : 'Hours' }}</option>
+            </select>
+          </template>
+
+          <template #row="{ item: subject }">
+            <td class="px-6 py-4">
+              <div class="flex items-center">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                  <span class="text-sm font-normal text-blue-600">
+                    {{ subject.sspCode?.charAt(0) || 'S' }}
                   </span>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-800">
-                  {{ subject.hours || '1' }} {{ subject.hours === 1 ? 'Hour' : 'Hours' }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-800">
-                  {{ subject.sessions ? subject.sessions.length : 0 }} / 18
-                </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex items-center justify-end space-x-2">
-                    <button 
-                      @click="viewSessions(subject)" 
-                      class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
-                    >
-                      View Sessions
-                    </button>
-                    <button 
-                      @click="editSubject(subject)" 
-                      class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                </div>
+                <div>
+                  <div class="text-sm font-normal text-gray-800">{{ subject.sspCode || 'No Code' }}</div>
+                  <div class="text-xs text-gray-500">Subject Code</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ subject.yearLevel }} Year
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ subject.schoolYear || '2024 - 2025' }}
+            </td>
+            <td class="px-6 py-4">
+              <span 
+                class="inline-flex px-2 py-1 text-xs font-normal rounded-md"
+                :class="subject.semester === '1st Semester' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+              >
+                {{ subject.semester }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ subject.hours || '1' }} {{ subject.hours === 1 ? 'Hour' : 'Hours' }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-800">
+              {{ subject.sessions ? subject.sessions.length : 0 }} / 18
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end space-x-2">
+                <button 
+                  @click="viewSessions(subject)" 
+                  class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
+                >
+                  View Sessions
+                </button>
+                <button 
+                  @click="editSubject(subject)" 
+                  class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
+                >
+                  Edit
+                </button>
+              </div>
+            </td>
+          </template>
+        </UnifiedTable>
       </div>
     </div>
 
     <!-- Add Subject Modal -->
-    <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeAddModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Add New SSP Subject</h3>
-          <button @click="closeAddModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6 space-y-6">
+    <UnifiedModal v-model="showAddModal" title="Add New SSP Subject" @close="closeAddModal">
+      <template #default>
+        <div class="space-y-6">
           <!-- Basic Information -->
           <div>
             <h4 class="text-sm font-medium text-gray-800 mb-4">Subject Information</h4>
@@ -177,7 +136,7 @@
                   <input
                     v-model="newSubject.sspCode"
                     type="text"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm"
                     :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.sspCode }"
                   />
                   <p v-if="errors.sspCode" class="mt-1 text-sm text-red-600">{{ errors.sspCode }}</p>
@@ -185,11 +144,7 @@
                 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Year Level *</label>
-                  <select
-                    v-model="newSubject.yearLevel"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.yearLevel }"
-                  >
+                  <select v-model="newSubject.yearLevel" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.yearLevel }">
                     <option value="">Select Year Level</option>
                     <option v-for="option in yearLevelOptions" :key="option" :value="option">{{ option }} Year</option>
                   </select>
@@ -198,11 +153,7 @@
                 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Hours *</label>
-                  <select
-                    v-model="newSubject.hours"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.hours }"
-                  >
+                  <select v-model="newSubject.hours" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.hours }">
                     <option v-for="hour in hoursOptions" :key="hour" :value="hour.toString()">{{ hour }} {{ hour === 1 ? 'Hour' : 'Hours' }}</option>
                   </select>
                   <p v-if="errors.hours" class="mt-1 text-sm text-red-600">{{ errors.hours }}</p>
@@ -210,11 +161,7 @@
                 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Semester *</label>
-                  <select
-                    v-model="newSubject.semester"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.semester }"
-                  >
+                  <select v-model="newSubject.semester" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.semester }">
                     <option value="1st Semester">1st Semester</option>
                     <option value="2nd Semester">2nd Semester</option>
                   </select>
@@ -289,24 +236,12 @@
             </div>
           </div>
         </div>
-
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-end p-6 border-t border-gray-200 space-x-3">
-          <button
-            @click="closeAddModal"
-            class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            @click="addSubject"
-            class="px-4 py-2 text-sm font-normal text-white bg-blue-600 rounded-md hover:bg-blue-700"
-          >
-            Add Subject
-          </button>
-        </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button @click="closeAddModal" class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">Cancel</button>
+        <button @click="addSubject" class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200">Add Subject</button>
+      </template>
+    </UnifiedModal>
     
     <!-- View Sessions Modal -->
     <div v-if="showSessionsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showSessionsModal = false">
@@ -535,6 +470,8 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
+import UnifiedTable from '../../components/ui/UnifiedTable.vue'
+import UnifiedModal from '../../components/ui/UnifiedModal.vue'
 import { subjectService } from '../../services/subjectService'
 import { notificationService } from '../../services/notificationService'
 import { systemOptionsService } from '../../services/systemOptionsService'
@@ -585,6 +522,8 @@ const errors = reactive({
 // Filters
 const filters = reactive({
   yearLevel: '',
+  semester: '',
+  hours: '',
   search: ''
 })
 
@@ -673,6 +612,14 @@ function filterSubjects(subjectsData) {
     if (filters.yearLevel && subject.yearLevel !== filters.yearLevel) {
       return false
     }
+    // Filter by semester
+    if (filters.semester && subject.semester !== filters.semester) {
+      return false
+    }
+    // Filter by hours
+    if (filters.hours && Number(subject.hours) !== Number(filters.hours)) {
+      return false
+    }
     
     // Filter by search term
     if (filters.search) {
@@ -687,6 +634,39 @@ function filterSubjects(subjectsData) {
     return true
   })
 }
+
+// UnifiedTable events
+function handleUnifiedSearch(query) {
+  filters.search = query
+}
+
+function handleUnifiedSort() {
+  // Sorting handled internally by UnifiedTable
+}
+
+function handleUnifiedPageChange() {
+  // Pagination handled internally by UnifiedTable
+}
+
+// UnifiedTable columns and sortables
+const tableColumns = [
+  { key: 'sspCode', label: 'SSP Code', class: '' },
+  { key: 'yearLevel', label: 'Year Level', class: '' },
+  { key: 'schoolYear', label: 'School Year', class: '' },
+  { key: 'semester', label: 'Semester', class: '' },
+  { key: 'hours', label: 'Hours', class: '' },
+  { key: 'sessions.length', label: 'Sessions', class: '' },
+  { key: 'actions', label: 'Actions', class: 'text-right' }
+]
+
+const sortableColumns = [
+  { value: 'sspCode', label: 'SSP Code' },
+  { value: 'yearLevel', label: 'Year Level' },
+  { value: 'schoolYear', label: 'School Year' },
+  { value: 'semester', label: 'Semester' },
+  { value: 'hours', label: 'Hours' },
+  { value: 'sessions.length', label: 'Sessions' }
+]
 
 function openAddModal() {
   // Reset form

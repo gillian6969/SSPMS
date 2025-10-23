@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-3 sm:p-6">
     <!-- Main Login Card -->
-    <div class="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden" style="min-height: 400px; max-height: 90vh;">
+    <div class="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden min-h-[400px] max-h-[90vh]">
       <!-- Mobile Layout: Logo on top, form on bottom -->
       <div class="flex flex-col lg:flex-row h-full">
         <!-- Left Section - Branding and Information -->
@@ -25,7 +25,7 @@
         </div>
 
         <!-- Right Section - Login Form -->
-        <div class="w-full lg:w-1/2 bg-green-800 p-4 sm:p-6 lg:p-12 flex items-center justify-center order-2 lg:order-2" style="min-height: 400px;">
+        <div class="w-full lg:w-1/2 bg-green-800 p-4 sm:p-6 lg:p-12 flex items-center justify-center order-2 lg:order-2 min-h-[400px]">
           <div class="w-full max-w-sm">
             <!-- Portal Type Selector -->
             <div class="bg-white bg-opacity-10 rounded-xl p-1 mb-4 sm:mb-6 lg:mb-8">

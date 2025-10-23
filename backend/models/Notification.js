@@ -33,6 +33,11 @@ const NotificationSchema = new Schema({
     type: String,
     trim: true
   },
+  // Optional arbitrary metadata payload (e.g., consultationId, etc.)
+  meta: {
+    type: Object,
+    default: undefined
+  },
   createdAt: {
     type: Date,
     default: Date.now

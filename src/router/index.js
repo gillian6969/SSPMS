@@ -28,6 +28,8 @@ const AdviserDashboard = () => import('../views/adviser/Dashboard.vue')
 const AdviserProfile = () => import('../views/adviser/Profile.vue')
 const AdviserClasses = () => import('../views/adviser/Classes.vue')
 const AdviserConsultations = () => import('../views/adviser/Consultations.vue')
+const AdviserNotifications = () => import('../views/adviser/Notifications.vue')
+const AdviserPendingConsultations = () => import('../views/adviser/PendingConsultations.vue')
 const AdviserMM = () => import('../views/adviser/MM.vue')
 const AdviserOdyssey = () => import('../views/adviser/Odyssey.vue')
 const AdviserMonitoring = () => import('../views/adviser/Monitoring.vue')
@@ -109,6 +111,33 @@ const routes = [
     meta: {
       requiresAuth: false,
       title: 'Reset Password'
+    }
+  },
+  {
+    path: '/verify-student/:token',
+    name: 'VerifyStudentHandler',
+    component: () => import('../views/VerifyStudentHandler.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Verify Student Email'
+    }
+  },
+  {
+    path: '/email-verified',
+    name: 'VerifyStudent',
+    component: () => import('../views/VerifyStudent.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Email Verified'
+    }
+  },
+  {
+    path: '/token-expired',
+    name: 'TokenExpired',
+    component: () => import('../views/TokenExpired.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Verification Expired'
     }
   },
   {
@@ -216,7 +245,7 @@ const routes = [
         path: 'notifications',
         name: 'AdminNotifications',
         component: AdminNotifications,
-        meta: { title: 'Dropping Request' }
+        meta: { title: 'Notifications' }
       },
       // Removed Admin Classes History route per request
     ]
@@ -255,6 +284,18 @@ const routes = [
         name: 'AdviserConsultations',
         component: AdviserConsultations,
         meta: { title: 'Consultations' }
+      },
+      {
+        path: 'notifications',
+        name: 'AdviserNotifications',
+        component: AdviserNotifications,
+        meta: { title: 'Notifications' }
+      },
+      {
+        path: 'pending-consultations',
+        name: 'AdviserPendingConsultations',
+        component: AdviserPendingConsultations,
+        meta: { title: 'Pending Consultations' }
       },
       {
         path: 'mm',

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen p-6" style="background-color: #F6FBF9;">
+  <div class="min-h-screen p-6 bg-[#F6FBF9]">
     <div class="max-w-7xl mx-auto space-y-8">
       <!-- Header -->
       <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6">
@@ -399,19 +399,17 @@ async function loadData() {
   
   // Fetch current semester from backend canonical endpoint for accurate labeling
   try {
-    console.log('Fetching current semester from API...');
+    // Fetching current semester from API
     const semResp = await mmService.getCurrentClassSemester();
-    console.log('Semester API response:', semResp);
-    console.log('Response success:', semResp?.success);
-    console.log('Response semester:', semResp?.semester);
+    // Semester API response received
     
     if (semResp && semResp.success && (semResp.semester === '1st' || semResp.semester === '2nd')) {
       currentSemester.value = semResp.semester;
       currentClassInfo.value = semResp.classInfo || null;
-      console.log('Successfully set currentSemester to:', currentSemester.value);
-      console.log('Successfully set currentClassInfo to:', currentClassInfo.value);
+      // Successfully set current semester
+      // Successfully set current class info
     } else {
-      console.log('Invalid semester response, defaulting to 1st. Response:', semResp);
+      // Invalid semester response, defaulting to 1st
       currentSemester.value = '1st';
       currentClassInfo.value = null;
     }

@@ -4,299 +4,107 @@
       <!-- Header -->
       <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-              <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-              </svg>
-            </div>
-            <div>
-              <h1 class="text-2xl font-normal text-gray-800">Student Archive</h1>
-              <p class="text-gray-500 font-normal">Manage graduated and irregular student records</p>
-            </div>
+          <div>
+            <h1 class="text-2xl font-normal text-gray-800">Student Archive</h1>
+            <p class="text-gray-500 font-normal">Manage graduated and irregular student records</p>
           </div>
-          
-          <div class="flex items-center space-x-4">
-            <div class="text-sm text-gray-500 font-normal">
-              Total: {{ filteredStudents.length }} students
-            </div>
-          </div>
+          <div class="text-sm text-gray-500 font-normal">Total: {{ filteredStudents.length }} students</div>
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Status Filter -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              v-model="filters.status"
-              @change="onStatusChange"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
+      <!-- UnifiedTable -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-0">
+        <UnifiedTable
+          :data="filteredStudents"
+          :columns="tableColumns"
+          :sortable-columns="sortableColumns"
+          :loading="loading"
+          loading-text="Loading archived students..."
+          search-placeholder="Name, ID, or Email"
+          empty-state-title="No archived students found"
+          empty-state-message="No students match the current filters"
+          @search="(q) => { filters.search = q }"
+          @sort="() => {}"
+          @page-change="() => {}"
+        >
+          <template #filters>
+            <select v-model="filters.status" @change="onStatusChange" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
               <option value="">All</option>
               <option value="graduated">Graduated Students</option>
               <option value="dropped">Irregular Students</option>
             </select>
-          </div>
-
-          <!-- Year Level Filter -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
-            <select
-              v-model="filters.yearLevel"
-              @change="applyFilters"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
-            <option value="">All Year Levels</option>
-            <option value="1st">1st Year</option>
-            <option value="2nd">2nd Year</option>
-            <option value="3rd">3rd Year</option>
-            <option value="4th">4th Year</option>
-          </select>
-          </div>
-
-          <!-- Major Filter -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Major</label>
-            <select
-              v-model="filters.major"
-              @change="applyFilters"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
+            <select v-model="filters.yearLevel" @change="applyFilters" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+              <option value="">All Year Levels</option>
+              <option value="1st">1st Year</option>
+              <option value="2nd">2nd Year</option>
+              <option value="3rd">3rd Year</option>
+              <option value="4th">4th Year</option>
+            </select>
+            <select v-model="filters.major" @change="applyFilters" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
               <option value="">All Majors</option>
               <option value="Business Informatics">Business Informatics</option>
               <option value="System Development">System Development</option>
               <option value="Digital Arts">Digital Arts</option>
               <option value="Computer Security">Computer Security</option>
             </select>
-          </div>
+          </template>
 
-          <!-- Search -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
+          <template #row="{ item: student }">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10">
+                  <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span class="text-sm font-medium text-purple-600">{{ getInitials(student) }}</span>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900">{{ getFullName(student) }}</div>
+                  <div class="text-sm text-gray-500">{{ student.user?.idNumber }}</div>
+                  <div class="text-sm text-gray-500">{{ student.user?.email }}</div>
+                </div>
               </div>
-              <input
-                v-model="filters.search"
-                @input="handleSearchInput"
-                type="text"
-                placeholder="Name, ID, Email..."
-                class="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              />
-            </div>
-          </div>
-        </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span :class="getStatusClass(student.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+                {{ getStatusLabel(student.status) }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <div v-if="student.graduationClass">
+                {{ student.graduationClass.yearLevel }} - {{ student.graduationClass.section }}
+                <div class="text-xs text-gray-500">{{ student.graduationClass.major }}</div>
+              </div>
+              <div v-else-if="student.classDetails">
+                {{ student.classDetails.yearLevel }} - {{ student.classDetails.section }}
+                <div class="text-xs text-gray-500">{{ student.classDetails.major }}</div>
+              </div>
+              <div v-else class="text-gray-400">N/A</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <div v-if="student.status === 'graduated'">
+                <div class="font-medium">{{ formatDate(student.graduationDate) }}</div>
+                <div class="text-xs text-gray-500">Graduated</div>
+              </div>
+              <div v-else-if="student.status === 'dropped'">
+                <div class="font-medium">{{ formatDate(student.dropDate) }}</div>
+                <div class="text-xs text-gray-500">Dropped</div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <div v-if="student.status === 'graduated'" class="text-green-600 font-medium">School Year: {{ student.graduationSchoolYear }}</div>
+              <div v-else-if="student.status === 'dropped'" class="text-red-600 font-medium">{{ student.dropReason }}</div>
+              <div v-if="student.dropSemester" class="text-xs text-gray-500">{{ student.dropSemester }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+              <div class="flex items-center justify-center space-x-2">
+                <button @click="viewStudent(student)" class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100">View</button>
+                <button v-if="student.status === 'dropped'" @click="openReactivate(student)" class="px-3 py-1.5 text-xs font-normal text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100">Reactivate</button>
+              </div>
+            </td>
+          </template>
+        </UnifiedTable>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-12">
-        <div class="flex items-center justify-center">
-          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span class="ml-3 text-gray-500">Loading archived students...</span>
-        </div>
-      </div>
-
-      <!-- Students Table -->
-      <div v-else class="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Student
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Class
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Details
-              </th>
-              <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="student in paginatedStudents" :key="student._id" class="hover:bg-gray-50">
-              <!-- Student Info -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                      <span class="text-sm font-medium text-purple-600">
-                        {{ getInitials(student) }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ getFullName(student) }}
-                    </div>
-                    <div class="text-sm text-gray-500">
-                      {{ student.user?.idNumber }}
-                    </div>
-                    <div class="text-sm text-gray-500">
-                      {{ student.user?.email }}
-                    </div>
-                  </div>
-                </div>
-              </td>
-
-              <!-- Status -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span 
-                  :class="getStatusClass(student.status)"
-                  class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                >
-                  {{ getStatusLabel(student.status) }}
-                </span>
-              </td>
-
-              <!-- Last Class -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div v-if="student.graduationClass">
-                  {{ student.graduationClass.yearLevel }} - {{ student.graduationClass.section }}
-                  <div class="text-xs text-gray-500">{{ student.graduationClass.major }}</div>
-                </div>
-                <div v-else-if="student.classDetails">
-                  {{ student.classDetails.yearLevel }} - {{ student.classDetails.section }}
-                  <div class="text-xs text-gray-500">{{ student.classDetails.major }}</div>
-                </div>
-                <div v-else class="text-gray-400">N/A</div>
-              </td>
-
-              <!-- Date -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div v-if="student.status === 'graduated'">
-                  <div class="font-medium">{{ formatDate(student.graduationDate) }}</div>
-                  <div class="text-xs text-gray-500">Graduated</div>
-                </div>
-                <div v-else-if="student.status === 'dropped'">
-                  <div class="font-medium">{{ formatDate(student.dropDate) }}</div>
-                  <div class="text-xs text-gray-500">Dropped</div>
-                </div>
-              </td>
-
-              <!-- Details -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div v-if="student.status === 'graduated'">
-                  <div class="text-green-600 font-medium">
-                    School Year: {{ student.graduationSchoolYear }}
-                  </div>
-                </div>
-                <div v-else-if="student.status === 'dropped'">
-                  <div class="text-red-600 font-medium">
-                    {{ student.dropReason }}
-                  </div>
-                  <div v-if="student.dropSemester" class="text-xs text-gray-500">
-                    {{ student.dropSemester }}
-                  </div>
-                </div>
-              </td>
-
-              <!-- Actions -->
-              <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                <button
-                  @click="viewStudent(student)"
-                  class="text-purple-600 hover:text-purple-900 mr-3"
-                >
-                  View
-                </button>
-                <button
-                  v-if="student.status === 'dropped'"
-                  @click="openReactivate(student)"
-                  class="text-green-600 hover:text-green-900"
-                >
-                  Reactivate
-                </button>
-              </td>
-            </tr>
-          </tbody>
-          </table>
-        </div>
-
-        <!-- Empty State -->
-      <div v-if="filteredStudents.length === 0" class="text-center py-12">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h8a2 2 0 002-2V8m-9 4h4" />
-        </svg>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No archived students found</h3>
-        <p class="text-gray-600">No students match the current filters</p>
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-        <div class="flex-1 flex justify-between sm:hidden">
-          <button
-            @click="changePage(currentPage - 1)"
-            :disabled="currentPage === 1"
-            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            @click="changePage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm text-gray-700">
-              Showing {{ startIndex + 1 }} to {{ endIndex }} of {{ filteredStudents.length }} results
-            </p>
-          </div>
-          <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-              <button
-                @click="changePage(currentPage - 1)"
-                :disabled="currentPage === 1"
-                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-              </button>
-              <button
-                v-for="page in visiblePages"
-                :key="page"
-                @click="changePage(page)"
-                :class="[
-                  'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
-                  page === currentPage
-                    ? 'z-10 bg-primary border-primary text-white'
-                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                ]"
-              >
-                {{ page }}
-              </button>
-              <button
-                @click="changePage(currentPage + 1)"
-                :disabled="currentPage === totalPages"
-                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- View Student Modal -->
@@ -426,12 +234,12 @@
         </div>
       </div>
     </Teleport>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, Teleport } from 'vue';
+import UnifiedTable from '../../components/ui/UnifiedTable.vue'
 import { notificationService } from '../../services/notificationService';
 import api from '../../services/api';
 
@@ -505,6 +313,22 @@ const paginatedStudents = computed(() => {
   const end = start + itemsPerPage.value;
   return filteredStudents.value.slice(start, end);
 });
+
+// UnifiedTable config
+const tableColumns = [
+  { key: 'student', label: 'Student', class: '' },
+  { key: 'status', label: 'Status', class: '' },
+  { key: 'lastClass', label: 'Last Class', class: '' },
+  { key: 'date', label: 'Date', class: '' },
+  { key: 'details', label: 'Details', class: '' },
+  { key: 'actions', label: 'Actions', class: 'text-center' }
+]
+
+const sortableColumns = [
+  { value: 'user.lastName', label: 'Student' },
+  { value: 'status', label: 'Status' },
+  { value: 'graduationClass.yearLevel', label: 'Year Level' }
+]
 
 const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage.value);
 const endIndex = computed(() => Math.min(startIndex.value + itemsPerPage.value, filteredStudents.value.length));

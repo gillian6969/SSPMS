@@ -1,31 +1,31 @@
 <template>
-  <div class="min-h-screen p-2" style="background-color: #F6FBF9;">
+  <div class="min-h-screen p-2 bg-[#F6FBF9]">
     <div class="max-w-7xl mx-auto space-y-8">
       
       <!-- Greeting Header -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+      <div class="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
       <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-normal text-gray-800">{{ getGreeting() }}, Admin</h1>
-            <p class="text-gray-500 mt-1 font-normal">System overview and student reports</p>
+            <h1 class="text-3xl font-light text-gray-800">{{ getGreeting() }}, Admin</h1>
+            <p class="text-gray-500 mt-2 font-light">System overview and student reports</p>
         </div>
-          <div class="grid grid-cols-4 gap-6">
-            <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-              <div class="text-2xl font-semibold text-gray-800">{{ dashboardStats.totalStudents }}</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <UnifiedCard center>
+              <div class="text-3xl font-semibold text-gray-800">{{ Math.floor(animatedStudents) }}</div>
               <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Students</div>
-          </div>
-            <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-              <div class="text-2xl font-semibold text-gray-800">{{ adminReports.length }}</div>
+            </UnifiedCard>
+            <UnifiedCard center>
+              <div class="text-3xl font-semibold text-gray-800">{{ Math.floor(animatedReports) }}</div>
               <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Reports</div>
-          </div>
-            <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-              <div class="text-2xl font-semibold text-gray-800">{{ dashboardStats.totalAdvisers }}</div>
+            </UnifiedCard>
+            <UnifiedCard center>
+              <div class="text-3xl font-semibold text-gray-800">{{ Math.floor(animatedAdvisers) }}</div>
               <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Advisers</div>
-          </div>
-            <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-              <div class="text-2xl font-semibold text-gray-800">{{ dashboardStats.totalConsultations }}</div>
+            </UnifiedCard>
+            <UnifiedCard center>
+              <div class="text-3xl font-semibold text-gray-800">{{ Math.floor(animatedConsultations) }}</div>
               <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Consultations</div>
-          </div>
+            </UnifiedCard>
         </div>
       </div>
     </div>
@@ -37,97 +37,76 @@
 
       <!-- Student Reports Section -->
       <div v-else class="space-y-8 mb-8">
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm" >
         <div class="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-2xl">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h1.372c.516 0 .966.351 1.091.852l1.106 4.423a2.25 2.25 0 01-1.173 1.417l-1.293.97c-.135.101-.164.249-.126.352a11.285 11.285 0 006.697 6.697c.103.038.25.009.352-.126l.97-1.293a2.25 2.25 0 011.417-1.173l4.423-1.106c.5-.125.852-.575.852-1.091V12A2.25 2.25 0 0119.5 9.75h-1.5a2.25 2.25 0 00-2.25 2.25v.75m-7.5 0h7.5m-7.5 0v-1.5a2.25 2.25 0 012.25-2.25h1.5a2.25 2.25 0 012.25 2.25v1.5m-7.5 0h7.5"/>
-                </svg>
-              </div>
+              <Icon icon="material-symbols-light:article-person-outline-sharp" class="w-10 h-10 text-green-800" />
               <h2 class="text-xl font-semibold text-gray-800">
                 Student Reports Today | {{ formatDateWithoutYear(currentViewDate) }}
               </h2>
             </div>
-            <div class="flex items-center space-x-4">
-              <div class="flex space-x-2">
-                <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                  {{ reportsSummary.session_submission.count }} Session Issues
-                </span>
-                <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-700 border border-red-200">
-                  {{ reportsSummary.enrollment_risk.count }} Enrollment Risk
-                </span>
-                <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200">
-                  {{ reportsSummary.consultation_escalation.count }} Escalations
-                </span>
-              </div>
-              <div class="flex items-center space-x-2">
+            <div class="flex items-center gap-3">
+              <div class="hidden md:flex items-center space-x-2">
                 <button 
                   @click="viewPreviousDay"
                   :disabled="isAtToday"
                   :class="isAtToday ? 'p-2 text-gray-300 cursor-not-allowed rounded-lg' : 'p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors'"
                   :title="isAtToday ? 'Previous Day (Already at today)' : 'Previous Day'"
                 >
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                  </svg>
+                  <Icon icon="solar:alt-arrow-left-linear" class="w-6 h-6" />
                 </button>
                 <button 
                   @click="viewNextDay"
                   class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   title="Next Day"
                 >
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
+                  <Icon icon="solar:alt-arrow-right-linear" class="w-6 h-6" />
                 </button>
               </div>
-            </div>
-        </div>
-        
-        <!-- Filters -->
-        <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
-          <div class="flex flex-wrap gap-3">
-            <div class="flex items-center space-x-2">
-              <label class="text-xs font-medium text-gray-700">Year:</label>
-              <select v-model="reportFilters.yearLevel" @change="filterReports" class="px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">All Years</option>
-                <option value="1st">1st Year</option>
-                <option value="2nd">2nd Year</option>
-                <option value="3rd">3rd Year</option>
-                <option value="4th">4th Year</option>
+              <div class="flex flex-wrap gap-2 justify-end">
+                <select v-model="reportFilters.yearLevel" @change="filterReports" class="px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400">
+                  <option value="">Year: All</option>
+                  <option value="1st">Year: 1st</option>
+                  <option value="2nd">Year: 2nd</option>
+                  <option value="3rd">Year: 3rd</option>
+                  <option value="4th">Year: 4th</option>
           </select>
-            </div>
-            <div class="flex items-center space-x-2">
-              <label class="text-xs font-medium text-gray-700">Section:</label>
-              <select v-model="reportFilters.section" @change="filterReports" class="px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">All Sections</option>
+                <select v-model="reportFilters.section" @change="filterReports" class="px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400">
+                  <option value="">Section: All</option>
                 <option v-for="section in availableSections" :key="section" :value="section">{{ section }}</option>
               </select>
-            </div>
-            <div class="flex items-center space-x-2">
-              <label class="text-xs font-medium text-gray-700">Major:</label>
-              <select v-model="reportFilters.major" @change="filterReports" class="px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">All Majors</option>
+                <select v-model="reportFilters.major" @change="filterReports" class="px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400">
+                  <option value="">Major: All</option>
                 <option v-for="major in availableMajors" :key="major" :value="major">{{ major }}</option>
               </select>
-            </div>
-            <div class="flex items-center space-x-2">
-              <label class="text-xs font-medium text-gray-700">Issue:</label>
-              <select v-model="reportFilters.issueType" @change="filterReports" class="px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">All Issues</option>
+                <select v-model="reportFilters.issueType" @change="filterReports" class="px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400">
+                  <option value="">Issue: All</option>
                 <option value="session_submission">Session Issues</option>
                 <option value="enrollment_risk">Enrollment Risk</option>
                 <option value="consultation_escalation">Escalations</option>
               </select>
-            </div>
             <button 
               @click="clearReportFilters"
-              class="px-3 py-1 text-xs font-normal text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
             >
-              Clear Filters
+                  Clear
             </button>
+              </div>
+            </div>
+          </div>
+          <div class="px-0 pt-3">
+            <div class="flex items-center flex-wrap gap-2">
+              <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                {{ reportsSummary.session_submission.count }} Session Issues
+              </span>
+              <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                {{ reportsSummary.enrollment_risk.count }} Enrollment Risk
+              </span>
+              <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200">
+                {{ reportsSummary.consultation_escalation.count }} Escalations
+              </span>
+            </div>
           </div>
         </div>
         <div class="p-6">
@@ -142,19 +121,21 @@
         </div>
 
           <div v-else class="overflow-x-auto">
-            <table class="min-w-full">
-              <thead>
-                <tr class="border-b border-gray-200">
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adviser</th>
-                  <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <table class="min-w-full table-fixed">
+              <thead class="bg-gray-50">
+                <tr class="border-b border-gray-100">
+                  <th class="px-4 py-3 text-left text-[11px] font-medium text-gray-600 uppercase tracking-wide">Student</th>
+                  <th class="px-4 py-3 text-left text-[11px] font-medium text-gray-600 uppercase tracking-wide">Issue</th>
+                  <th class="px-4 py-3 text-left text-[11px] font-medium text-gray-600 uppercase tracking-wide">Details</th>
+                  <th class="px-4 py-3 text-left text-[11px] font-medium text-gray-600 uppercase tracking-wide">Semester</th>
+                  <th class="px-4 py-3 text-left text-[11px] font-medium text-gray-600 uppercase tracking-wide">Period</th>
+                  <th class="px-4 py-3 text-left text-[11px] font-medium text-gray-600 uppercase tracking-wide">Adviser</th>
+                  <th class="px-4 py-3 text-right text-[11px] font-medium text-gray-600 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
-               <tbody class="divide-y divide-gray-200">
-                 <tr v-if="reportsForToday.length === 0">
-                   <td colspan="5" class="px-4 py-12 text-center">
+               <tbody class="divide-y divide-gray-100">
+                 <tr v-if="reportsForToday.length === 0" class="bg-white">
+                   <td colspan="7" class="px-4 py-12 text-center">
                      <div class="flex flex-col items-center">
                        <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3-12h-6m0 0l-2-2m2 2l2-2m0-7V3a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v1.5L6 3a1 1 0 0 0-1 1v1.5H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1" />
@@ -164,7 +145,7 @@
                      </div>
                    </td>
                  </tr>
-                 <tr v-for="report in reportsForToday" :key="report._id" class="hover:bg-gray-50">
+                 <tr v-for="report in reportsForToday" :key="report._id" class="odd:bg-white even:bg-gray-50/60 hover:bg-gray-50">
                   <td class="px-4 py-4">
                     <div class="flex items-center">
                       <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
@@ -182,11 +163,11 @@
                   </td>
                   <td class="px-4 py-4">
                     <span 
-                      class="inline-flex px-2 py-1 text-xs font-normal rounded-md"
+                      class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full border"
                       :class="{
-                        'bg-amber-50 text-amber-700 border border-amber-200': report.issueType === 'session_submission',
-                        'bg-red-50 text-red-700 border border-red-200': report.issueType === 'enrollment_risk',
-                        'bg-gray-50 text-gray-700 border border-gray-200': report.issueType === 'consultation_escalation'
+                        'bg-amber-50 text-amber-800 border-amber-200': report.issueType === 'session_submission',
+                        'bg-red-50 text-red-800 border-red-200': report.issueType === 'enrollment_risk',
+                        'bg-gray-50 text-gray-700 border-gray-200': report.issueType === 'consultation_escalation'
                       }"
                     >
                       {{ getIssueTypeLabel(report.issueType) }}
@@ -194,20 +175,23 @@
                   </td>
                   <td class="px-4 py-4">
                     <div class="text-sm text-gray-800 max-w-xs">{{ report.description }}</div>
-                    <div class="text-xs text-gray-500 mt-1">
-                      <span v-if="report.semester" class="mr-2">
-                        {{ report.semester }} Semester
-                      </span>
-                      <span v-if="report.triggerData.sessionNotificationCount">
+                    <div class="text-xs text-gray-500 mt-1 space-x-2">
+                      <span v-if="report.triggerData.sessionNotificationCount" class="inline-flex items-center">
                         {{ report.triggerData.sessionNotificationCount }} reminders
                       </span>
-                      <span v-if="report.triggerData.mmNotificationCount">
+                      <span v-if="report.triggerData.mmNotificationCount" class="inline-flex items-center">
                         {{ report.triggerData.mmNotificationCount }} {{ report.triggerData.mmType }} reminders
                       </span>
-                      <span v-if="report.triggerData.escalationReason">
+                      <span v-if="report.triggerData.escalationReason" class="inline-flex items-center">
                         Escalated - {{ report.triggerData.concern }}
                       </span>
       </div>
+                  </td>
+                  <td class="px-4 py-4 text-sm text-gray-800">
+                    {{ report.semester || 'N/A' }}
+                  </td>
+                  <td class="px-4 py-4 text-sm text-gray-800">
+                    {{ report.period || 'N/A' }}
                   </td>
                   <td class="px-4 py-4 text-sm text-gray-800">
                     {{ report.adviser?.firstName }} {{ report.adviser?.lastName }}
@@ -246,18 +230,15 @@
         </div>
 
         <!-- Quick Access Section -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm" >
         <div class="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-2xl">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h7.5M8.25 12h7.5m-7.5 5.25h7.5M6 3.75h12A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75z"/>
-                </svg>
+            <div class="flex items-center gap-5">
+              <div class="w-8 h-8 rounded-lg  flex items-center justify-center">
+                <Icon icon="material-symbols-light:quick-reference-all-outline" class="w-40 h-40 text-green-800" />
               </div>
-              <h2 class="text-lg font-medium text-gray-800">Quick Access</h2>
+              <h2 class="text-xl font-medium text-gray-800">Quick Access</h2>
             </div>
-            <div class="text-xs text-gray-500">Calendar View</div>
           </div>
         </div>
         <div class="p-6">
@@ -266,7 +247,10 @@
             <!-- Classes Calendar (mini) -->
             <div class="border border-gray-200 rounded-lg">
               <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                <div class="text-sm font-medium text-gray-800">Classes Schedule</div>
+                <div class="flex items-center gap-2 text-sm font-medium text-gray-800">
+                  <Icon icon="solar:calendar-linear" class="w-5 h-5 text-gray-600" />
+                  Classes Schedule
+                </div>
                 <router-link 
                   to="/admin/classes" 
                   class="px-2 py-1 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
@@ -296,7 +280,7 @@
                     </div>
                   </div>
                   <div class="relative">
-                    <div class="divide-y divide-gray-200" :style="{ height: `${dashboardTimeSlots.length * ROW_HEIGHT_DASHBOARD}px` }">
+                    <div class="divide-y divide-gray-200" :style="{ height: dashboardHeight }">
                       <div v-for="(timeSlot, index) in dashboardTimeSlots" :key="index" class="grid grid-cols-6">
                         <div class="py-1 px-1 text-xs font-normal text-gray-700 bg-gray-50 border-r border-gray-200 flex items-center justify-center min-h-[30px]">
                           <span class="text-center leading-tight text-xs">{{ formatTimeSlot(timeSlot) }}</span>
@@ -336,7 +320,10 @@
             <!-- Consultations Calendar (mini) -->
             <div class="border border-gray-200 rounded-lg">
               <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                <div class="text-sm font-medium text-gray-800">Consultations Schedule</div>
+                <div class="flex items-center gap-2 text-sm font-medium text-gray-800">
+                  <Icon icon="solar:calendar-linear" class="w-5 h-5 text-gray-600" />
+                  Consultations Schedule
+                </div>
                 <router-link 
                   to="/admin/consultations" 
                   class="px-2 py-1 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
@@ -364,7 +351,7 @@
                     </div>
                   </div>
                   <div class="relative">
-                    <div class="divide-y divide-gray-200" :style="{ height: `${dashboardTimeSlots.length * ROW_HEIGHT_DASHBOARD}px` }">
+                    <div class="divide-y divide-gray-200" :style="{ height: dashboardHeight }">
                       <div v-for="(timeSlot, index) in dashboardTimeSlots" :key="index" class="grid grid-cols-6">
                         <div class="py-1 px-1 text-xs font-normal text-gray-700 bg-gray-50 border-r border-gray-200 flex items-center justify-center min-h-[30px]">
                           <span class="text-center leading-tight text-xs">{{ formatTimeSlot(timeSlot) }}</span>
@@ -597,8 +584,6 @@
       </div>
     </div>
         </div>
-      </div>
-
       <!-- Quick Access Only (calendars removed) -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6" v-if="false">
         <!-- Classes Calendar Card (removed) -->
@@ -789,94 +774,74 @@
           </div>
         </div>
     <!-- Class Details Modal -->
-    <div v-if="showClassModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeClassModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Class Details</h3>
-          <button @click="closeClassModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div v-if="selectedClassItem" class="p-6 space-y-4 text-sm">
-          <div class="grid grid-cols-2 gap-4">
+    <UnifiedModal :show="showClassModal" @close="closeClassModal" title="Class Details">
+      <div v-if="selectedClassItem" class="space-y-6">
+        <div class="grid grid-cols-2 gap-6">
             <div>
-              <div class="text-gray-500">Class</div>
-              <div class="text-gray-800">{{ getDashboardClassName(selectedClassItem) }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Class</label>
+            <p class="text-sm text-gray-900">{{ getDashboardClassName(selectedClassItem) }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Major</div>
-              <div class="text-gray-800">{{ selectedClassItem.major || 'N/A' }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Major</label>
+            <p class="text-sm text-gray-900">{{ selectedClassItem.major || 'N/A' }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Subject</div>
-              <div class="text-gray-800">{{ getDashboardClassSubject(selectedClassItem) }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+            <p class="text-sm text-gray-900">{{ getDashboardClassSubject(selectedClassItem) }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Room</div>
-              <div class="text-gray-800">{{ selectedClassItem.room || selectedClassItem.firstSemester?.room || selectedClassItem.firstSem?.room || 'N/A' }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Room</label>
+            <p class="text-sm text-gray-900">{{ selectedClassItem.room || selectedClassItem.firstSemester?.room || selectedClassItem.firstSem?.room || 'N/A' }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Day</div>
-              <div class="text-gray-800">{{ selectedClassItem.daySchedule || selectedClassItem.firstSemester?.daySchedule || selectedClassItem.firstSem?.daySchedule || 'N/A' }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Day</label>
+            <p class="text-sm text-gray-900">{{ selectedClassItem.daySchedule || selectedClassItem.firstSemester?.daySchedule || selectedClassItem.firstSem?.daySchedule || 'N/A' }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Time</div>
-              <div class="text-gray-800">{{ selectedClassItem.timeSchedule || selectedClassItem.firstSemester?.timeSchedule || selectedClassItem.firstSem?.timeSchedule || 'N/A' }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
+            <p class="text-sm text-gray-900">{{ selectedClassItem.timeSchedule || selectedClassItem.firstSemester?.timeSchedule || selectedClassItem.firstSem?.timeSchedule || 'N/A' }}</p>
             </div>
           </div>
         </div>
-        <div class="p-6 border-t border-gray-200 flex justify-end">
+      <template #footer>
           <router-link to="/admin/classes" class="px-4 py-2 text-sm font-normal text-white bg-green-600 rounded-md hover:bg-green-700">Go to Classes</router-link>
-        </div>
-      </div>
-    </div>
+      </template>
+    </UnifiedModal>
 
     <!-- Consultation Details Modal -->
-    <div v-if="showConsultationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeConsultationModal">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-normal text-gray-800">Consultation Details</h3>
-          <button @click="closeConsultationModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div v-if="selectedConsultationItem" class="p-6 space-y-4 text-sm">
-          <div class="grid grid-cols-2 gap-4">
+    <UnifiedModal :show="showConsultationModal" @close="closeConsultationModal" title="Consultation Details">
+      <div v-if="selectedConsultationItem" class="space-y-6">
+        <div class="grid grid-cols-2 gap-6">
             <div>
-              <div class="text-gray-500">Adviser</div>
-              <div class="text-gray-800">{{ (selectedConsultationItem.adviser?.firstName || '') + ' ' + (selectedConsultationItem.adviser?.lastName || '') }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Adviser</label>
+            <p class="text-sm text-gray-900">{{ (selectedConsultationItem.adviser?.firstName || '') + ' ' + (selectedConsultationItem.adviser?.lastName || '') }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Status</div>
-              <div class="text-gray-800">{{ selectedConsultationItem.status || 'N/A' }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <p class="text-sm text-gray-900">{{ selectedConsultationItem.status || 'N/A' }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Day</div>
-              <div class="text-gray-800">{{ getWeekDayName(selectedConsultationItem.dayOfWeek) }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Day</label>
+            <p class="text-sm text-gray-900">{{ getWeekDayName(selectedConsultationItem.dayOfWeek) }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Time</div>
-              <div class="text-gray-800">{{ formatConsultationTime(selectedConsultationItem.startTime, selectedConsultationItem.endTime || (selectedConsultationItem.startTime + (selectedConsultationItem.duration || 1))) }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
+            <p class="text-sm text-gray-900">{{ formatConsultationTime(selectedConsultationItem.startTime, selectedConsultationItem.endTime || (selectedConsultationItem.startTime + (selectedConsultationItem.duration || 1))) }}</p>
             </div>
             <div>
-              <div class="text-gray-500">Slots</div>
-              <div class="text-gray-800">{{ (selectedConsultationItem.bookedStudents || 0) + '/' + (selectedConsultationItem.maxStudents || 0) }}</div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Slots</label>
+            <p class="text-sm text-gray-900">{{ (selectedConsultationItem.bookedStudents || 0) + '/' + (selectedConsultationItem.maxStudents || 0) }}</p>
             </div>
           </div>
-          <div v-if="selectedConsultationItem.notes" class="mt-2">
-            <div class="text-gray-500">Notes</div>
-            <div class="text-gray-800">{{ selectedConsultationItem.notes }}</div>
+        <div v-if="selectedConsultationItem.notes">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+          <p class="text-sm text-gray-900">{{ selectedConsultationItem.notes }}</p>
           </div>
         </div>
-        <div class="p-6 border-t border-gray-200 flex justify-end">
+      <template #footer>
           <router-link to="/admin/consultations" class="px-4 py-2 text-sm font-normal text-white bg-green-600 rounded-md hover:bg-green-700">Go to Consultations</router-link>
-        </div>
-      </div>
-    </div>
+      </template>
+    </UnifiedModal>
 
       <!-- Quick Access: Weekly Schedule (Consultations) -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-200" v-if="false">
@@ -925,27 +890,8 @@
     </div>
 
     <!-- Contact Modal -->
-    <div v-if="showContactModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeContactModal">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-2xl">
-          <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-              </svg>
-            </div>
-            <h3 class="text-xl font-semibold text-gray-800">Student Contact</h3>
-          </div>
-          <button @click="closeContactModal" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div v-if="selectedStudent" class="p-6 space-y-4">
+    <UnifiedModal :show="showContactModal" @close="closeContactModal" title="Student Contact">
+      <div v-if="selectedStudent" class="space-y-6">
           <!-- Student Info -->
           <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
             <div class="flex items-center space-x-4">
@@ -972,9 +918,7 @@
             <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
               <div class="flex items-center space-x-4">
                 <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-green-200">
-                  <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                  </svg>
+                <Icon icon="solar:letter-unread-linear" class="w-6 h-6 text-green-600" />
                 </div>
                 <div class="flex-1">
                   <p class="text-sm font-medium text-gray-600 mb-1">Email Address</p>
@@ -993,9 +937,7 @@
             <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
               <div class="flex items-center space-x-4">
                 <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-blue-200">
-                  <svg class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-                  </svg>
+                <Icon icon="solar:phone-linear" class="w-6 h-6 text-blue-600" />
                 </div>
                 <div class="flex-1">
                   <p class="text-sm font-medium text-gray-600 mb-1">Phone Number</p>
@@ -1014,10 +956,7 @@
             <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
               <div class="flex items-start space-x-4">
                 <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-purple-200 mt-1">
-                  <svg class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                  </svg>
+                <Icon icon="solar:map-point-linear" class="w-6 h-6 text-purple-600" />
                 </div>
                 <div class="flex-1">
                   <p class="text-sm font-medium text-gray-600 mb-1">Address</p>
@@ -1027,38 +966,36 @@
             </div>
           </div>
         </div>
-
-        <!-- Modal Footer -->
-        <div class="p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl">
+      <template #footer>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <button 
-              v-if="selectedStudent.user?.email"
+            v-if="selectedStudent?.user?.email"
               @click="composeEmail(selectedStudent.user.email)"
               class="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
             >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-              </svg>
+            <Icon icon="solar:letter-unread-linear" class="w-4 h-4" />
               <span>Send Email</span>
             </button>
             <button 
-              v-if="selectedStudent.contactNumber || selectedStudent.user?.contactNumber"
+            v-if="selectedStudent?.contactNumber || selectedStudent?.user?.contactNumber"
               @click="callStudent(selectedStudent.contactNumber || selectedStudent.user?.contactNumber)"
               class="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
             >
-              Call Student
+            <Icon icon="solar:phone-linear" class="w-4 h-4" />
+            <span>Call Student</span>
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+      </template>
+    </UnifiedModal>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-// Debug hook to verify the correct component is rendering
-console.log('ADMIN DASHBOARD: Dashboard.vue mounted')
+import { ref, onMounted, computed, watch } from 'vue'
+import { Icon } from '@iconify/vue'
+import UnifiedCard from '../../components/ui/UnifiedCard.vue'
+import UnifiedModal from '../../components/ui/UnifiedModal.vue'
+// Component mounted successfully
 import api from '../../services/api'
 import { notificationService } from '../../services/notificationService'
 
@@ -1070,6 +1007,28 @@ const dashboardStats = ref({
   totalAdvisers: 0,
   totalConsultations: 0
 })
+
+// Animated counters
+const animatedStudents = ref(0)
+const animatedReports = ref(0)
+const animatedAdvisers = ref(0)
+const animatedConsultations = ref(0)
+
+const animateCount = (targetValue, animatedRef, duration = 1200) => {
+  const startValue = animatedRef.value || 0
+  const endValue = Number(targetValue) || 0
+  if (startValue === endValue) return
+  const startTime = performance.now()
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
+  const step = (now) => {
+    const elapsed = now - startTime
+    const progress = Math.min(1, elapsed / duration)
+    const eased = easeOutCubic(progress)
+    animatedRef.value = startValue + (endValue - startValue) * eased
+    if (progress < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
 
 const reportsSummary = ref({
   session_submission: { count: 0, highPriority: 0 },
@@ -1123,6 +1082,9 @@ const recentClasses = ref([])
     '6:00 PM - 7:00 PM'
   ])
   const ROW_HEIGHT_DASHBOARD = 30
+
+// Computed properties for dynamic styles
+const dashboardHeight = computed(() => `${dashboardTimeSlots.value.length * ROW_HEIGHT_DASHBOARD}px`)
 
 // Modal data
 const showReportModal = ref(false)
@@ -1541,6 +1503,10 @@ const loadDashboardData = async () => {
           totalAdvisers: response.data.totalAdvisers || 0,
           totalConsultations: response.data.totalConsultations || 0
         }
+        // Animate counters when stats load
+        animateCount(dashboardStats.value.totalStudents, animatedStudents)
+        animateCount(dashboardStats.value.totalAdvisers, animatedAdvisers)
+        animateCount(dashboardStats.value.totalConsultations, animatedConsultations)
       }
     } catch (error) {
       console.error('Error loading stats:', error)
@@ -1552,6 +1518,8 @@ const loadDashboardData = async () => {
       if (response.data) {
         reportsSummary.value = response.data.summary || reportsSummary.value
         adminReports.value = response.data.reports || []
+        // Animate reports count
+        animateCount(adminReports.value.length, animatedReports)
         
         // Initialize filter options and filtered reports
         updateFilterOptions()
@@ -1972,6 +1940,12 @@ const moveUnresolvedToNextDay = () => {
 onMounted(() => {
   loadDashboardData()
 })
+
+// Re-animate when dashboard stats change significantly
+watch(() => dashboardStats.value.totalStudents, (nv, ov) => animateCount(nv, animatedStudents))
+watch(() => dashboardStats.value.totalAdvisers, (nv, ov) => animateCount(nv, animatedAdvisers))
+watch(() => dashboardStats.value.totalConsultations, (nv, ov) => animateCount(nv, animatedConsultations))
+watch(() => adminReports.value?.length, (nv, ov) => animateCount(nv || 0, animatedReports))
 </script>
 
 <style scoped>

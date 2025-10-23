@@ -28,7 +28,11 @@ export const notificationApiService = {
   async getUnreadCount() {
     try {
       const response = await api.get('/notifications/unread-count');
-      return response.data.count;
+      // Backend may return a raw number or an object { count }
+      const data = response.data;
+      if (typeof data === 'number') return data;
+      if (data && typeof data.count === 'number') return data.count;
+      return 0;
     } catch (error) {
       // Don't log 401 errors as they're expected when not authenticated
       if (error.response?.status !== 401) {
@@ -45,7 +49,8 @@ export const notificationApiService = {
    */
   async markAsRead(id) {
     try {
-      const response = await api.put(`/notifications/${id}/read`);
+      // Backend uses PATCH /notifications/:id/read
+      const response = await api.patch(`/notifications/${id}/read`);
       return response.data;
     } catch (error) {
       console.error('Error marking notification as read:', error);

@@ -5,6 +5,7 @@
 export const adminNavigation = [
   { label: 'Dashboard', path: '/admin', icon: 'HomeIcon' },
   { label: 'Analytics', path: '/admin/analytics', icon: 'ChartBarIcon' },
+  { label: 'Notifications', path: '/admin/notifications', icon: 'BellIcon' },
   {
     label: 'Advisers',
     key: 'advisers',
@@ -37,7 +38,7 @@ export const adminNavigation = [
       { label: 'Announcements', path: '/admin/announcements' },
       { label: 'Resolved Reports', path: '/admin/resolved-reports' },
       { label: 'Consultations', path: '/admin/consultations' },
-      { label: 'Dropping Request', path: '/admin/notifications' },
+      { label: 'Dropping Request', path: '/admin/dropping-requests' },
     ],
   },
   {
@@ -61,8 +62,10 @@ export const adviserNavigation = [
     icon: 'CalendarDaysIcon',
     children: [
       { label: 'My Consultations', path: '/adviser/consultations' },
+      { label: 'Pending Consultation Schedule', path: '/adviser/pending-consultations' },
     ],
   },
+  { label: 'Notifications', path: '/adviser/notifications', icon: 'BellIcon' },
   {
     label: 'Classes',
     key: 'classes',
@@ -97,15 +100,7 @@ export const studentNavigation = [
   { label: 'Profile', path: '/student/profile', icon: 'UserCircleIcon' },
   { label: 'Announcements', path: '/student/announcements', icon: 'MegaphoneIcon' },
   { label: 'Notifications', path: '/student/notifications', icon: 'BellIcon' },
-  {
-    label: 'Consultations',
-    key: 'consultations',
-    icon: 'CalendarDaysIcon',
-    children: [
-      { label: 'Book Consultation', path: '/student/consultations' },
-      { label: 'My Bookings', path: '/student/my-bookings' },
-    ],
-  },
+  { label: 'Consultations', path: '/student/consultations', icon: 'CalendarDaysIcon' },
   {
     label: 'SSP',
     key: 'ssp',
