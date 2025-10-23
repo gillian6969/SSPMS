@@ -211,7 +211,7 @@ const {
 const turnstileConfig = ref({
   siteKey: import.meta.env.DEV 
     ? '1x00000000000000000000AA'  // Development key (always passes)
-    : '0x4AAAAAAB5jtYinCsFj5HFq'  // Production key (real validation)
+    : import.meta.env.VITE_TURNSTILE_PROD_SITE_KEY  // Production key from environment
 })
 
 
