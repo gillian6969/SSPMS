@@ -211,7 +211,14 @@ const {
 const turnstileConfig = ref({
   siteKey: import.meta.env.DEV 
     ? '1x00000000000000000000AA'  // Development key (always passes)
-    : import.meta.env.VITE_TURNSTILE_PROD_SITE_KEY  // Production key from environment
+    : (import.meta.env.VITE_TURNSTILE_PROD_SITE_KEY || '0x4AAAAAAB5jtYinCsFj5HFq')  // Production key from environment with fallback
+})
+
+// Debug logging
+console.log('Environment check:', {
+  isDev: import.meta.env.DEV,
+  prodKey: import.meta.env.VITE_TURNSTILE_PROD_SITE_KEY,
+  selectedKey: turnstileConfig.value.siteKey
 })
 
 
