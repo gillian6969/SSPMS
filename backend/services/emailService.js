@@ -23,7 +23,7 @@ class EmailService {
         
         const msg = {
           to: to,
-          from: 'noreply@sscms-au.com',
+          from: 'spsms.system.au@gmail.com',
           subject: subject,
           html: html
         };
