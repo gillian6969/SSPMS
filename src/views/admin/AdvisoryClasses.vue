@@ -843,7 +843,8 @@ async function fetchAdvisers() {
     
     // Check if the response has data property and use it
     if (response && response.data) {
-      advisers.value = response.data;
+      // Only include active advisers in the dropdown
+      advisers.value = response.data.filter(adviser => adviser.status === 'active');
       console.log(`Loaded ${advisers.value.length} advisers for dropdown selection`);
     } else {
       console.error('Invalid response format from adviserService.getAll:', response);
@@ -1372,7 +1373,7 @@ function closeDetailsModal() {
   showStudents.value = false;
 }
 
-function editAdvisoryClass(advisoryClass) {
+async function editAdvisoryClass(advisoryClass) {
   console.log('Edit advisory class:', advisoryClass);
   
   // Reset errors
@@ -1399,14 +1400,27 @@ function editAdvisoryClass(advisoryClass) {
   // Clear classes array to force a reload
   classes.value = [];
   
-  // Fetch advisers and classes
-  Promise.all([fetchAdvisers(), fetchClasses()]).then(() => {
+  try {
+    // Fetch advisers and available classes
+    await Promise.all([fetchAdvisers(), fetchClasses()]);
+
+    // Ensure the currently assigned class is in the dropdown
+    const currentClassId = advisoryClass.class?._id;
+    if (currentClassId) {
+      const isClassInList = classes.value.some(c => c._id === currentClassId);
+      // If the current class is not in the list of available classes, add it.
+      if (!isClassInList && advisoryClass.class) {
+        classes.value.unshift(advisoryClass.class);
+        console.log(`Added current class ${currentClassId} to the dropdown list.`);
+      }
+    }
+
     // Open the modal after data is loaded
     showEditModal.value = true;
-  }).catch(error => {
+  } catch (error) {
     console.error('Error preparing edit modal:', error);
     notificationService.showError('Failed to prepare edit modal. Please try again.');
-  });
+  }
 }
 
 function closeEditModal() {

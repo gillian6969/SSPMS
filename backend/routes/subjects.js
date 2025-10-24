@@ -46,16 +46,6 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       return res.status(400).json({ message: 'Valid semester (1st Semester or 2nd Semester) is required' });
     }
     
-    // Validate sessions count
-    if (sessions && sessions.length > 18) {
-      return res.status(400).json({ message: 'Maximum 18 sessions allowed per subject' });
-    }
-    
-    // Validate second semester sessions count
-    if (secondSemesterSessions && secondSemesterSessions.length > 18) {
-      return res.status(400).json({ message: 'Maximum 18 sessions allowed for second semester' });
-    }
-    
     // Create subject
     const subject = new Subject({
       sspCode,
@@ -93,75 +83,47 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
 // Update subject
 router.put('/:id', authenticate, authorizeAdmin, async (req, res) => {
   try {
-    const { sspCode, name, yearLevel, sessions, secondSemesterSessions, description, semester, hours, schoolYear } = req.body;
+    // Only allow sspCode and sessions to be updated
+    const { sspCode, sessions } = req.body;
     
     const subject = await Subject.findById(req.params.id);
     
     if (!subject) {
       return res.status(404).json({ message: 'Subject not found' });
     }
-    
-    // Update fields
+
+    // --- Update SSP Code ---
     if (sspCode) {
-      // Check if another subject with this code exists
+      // Check if another subject with this code and semester already exists
       const existingSubject = await Subject.findOne({ 
         sspCode, 
-        semester: semester || subject.semester, 
+        semester: subject.semester, // Use the existing semester from the subject
         _id: { $ne: req.params.id } 
       });
       
       if (existingSubject) {
         return res.status(400).json({ 
-          message: `Another subject with SSP code "${sspCode}" for "${semester || subject.semester}" already exists` 
+          message: `Another subject with SSP code "${sspCode}" for "${subject.semester}" already exists` 
         });
       }
       subject.sspCode = sspCode;
+      // Also update the name to match the sspCode, maintaining consistency
+      subject.name = sspCode;
     }
     
-    if (name) subject.name = name;
-    if (yearLevel) subject.yearLevel = yearLevel;
-    if (description) subject.description = description;
-    
-    // Validate semester if provided
-    if (semester) {
-      if (!['1st Semester', '2nd Semester'].includes(semester)) {
-        return res.status(400).json({ message: 'Semester must be either "1st Semester" or "2nd Semester"' });
-      }
-      
-      // If changing semester, check for duplicates with the new semester
-      if (semester !== subject.semester && sspCode) {
-        const existingSubject = await Subject.findOne({ 
-          sspCode: sspCode || subject.sspCode,
-          semester,
-          _id: { $ne: req.params.id } 
-        });
-        
-        if (existingSubject) {
-          return res.status(400).json({ 
-            message: `Another subject with SSP code "${sspCode || subject.sspCode}" for "${semester}" already exists` 
-          });
-        }
-      }
-      
-      subject.semester = semester;
-    }
-    
-    if (hours) subject.hours = hours;
-    if (schoolYear) subject.schoolYear = schoolYear;
-    
-    if (sessions) {
-      if (sessions.length > 18) {
-        return res.status(400).json({ message: 'Maximum 18 sessions allowed per subject' });
-      }
+    // --- Update Sessions ---
+    // The frontend now sends both arrays, so we can update them directly.
+    // We check for `undefined` to allow clearing sessions by sending an empty array.
+    if (sessions !== undefined) {
+      // The session count is now dynamic, so we remove the hardcoded limit of 18.
+      // The frontend should enforce the limit based on system options.
       subject.sessions = sessions;
     }
     
-    if (secondSemesterSessions) {
-      if (secondSemesterSessions.length > 18) {
-        return res.status(400).json({ message: 'Maximum 18 sessions allowed for second semester' });
-      }
-      subject.secondSemesterSessions = secondSemesterSessions;
-    }
+    // The frontend logic ensures that when editing 1st sem, the original 2nd sem sessions are preserved,
+    // and vice-versa. This backend logic now simply accepts the session arrays as provided.
+    // Other fields like yearLevel, semester, hours, and schoolYear are intentionally not updated
+    // to match the read-only state of the frontend form.
     
     subject.updatedAt = Date.now();
     await subject.save();

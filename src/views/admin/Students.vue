@@ -37,7 +37,20 @@
     </div>
 
       <!-- UnifiedTable for Students -->
-              </div>
+  </div>
+      <!-- Unassigned students indicator message -->
+      <div v-if="hasUnassignedStudents" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-yellow-700">Students highlighted in yellow are not yet assigned to a class. You can select them and use the "Assign Selected" button to place them in their appropriate classes.</p>
+          </div>
+        </div>
+      </div>
       <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mt-4">
         <UnifiedTable
           :data="studentsForUnifiedTable"
@@ -79,10 +92,10 @@
           </template>
 
           <template #row="{ item: student }">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               <input type="checkbox" v-model="selectedStudents" :value="student._id" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               <div class="flex items-center">
                 <div class="h-10 w-10 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center">
                   <span class="text-sm font-medium text-indigo-600">{{ getInitials(student) }}</span>
@@ -95,19 +108,26 @@
                 </div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <span class="font-mono">{{ student.user?.idNumber || 'N/A' }}</span>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
+              <div class="flex items-center">
+                <span class="font-mono">{{ student.user?.idNumber || 'N/A' }}</span>
+                <span v-if="failedAssignmentStudentIds.includes(student._id)" title="Assignment failed for this student" class="ml-2 text-red-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 10-2 0 1 1 0 002 0zm1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               {{ student.yearLevel || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               {{ student.section || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               {{ student.major || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               <div class="flex items-center justify-end space-x-2">
                 <button @click="viewStudent(student)" class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100">View</button>
                 <button @click="editStudent(student)" class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100">Edit</button>
@@ -934,6 +954,7 @@ const students = ref([]);
 const allStudents = ref([]);
 const classes = ref([]);
 const loading = ref(false);
+const unassignedStudentCount = ref(0);
 const showImportModal = ref(false);
 const importFile = ref(null);
 const importProgress = ref({
@@ -968,6 +989,7 @@ const availableMajors = ref([]);
 
 // Add to the script section
 const assigningClasses = ref(false)
+const failedAssignmentStudentIds = ref([])
 
 // Add these state variables for modals
 const showViewModal = ref(false);
@@ -1205,6 +1227,10 @@ const customAddress = reactive({
   province: false,
   municipality: false,
   barangay: false
+});
+
+const hasUnassignedStudents = computed(() => {
+  return allStudents.value.some(student => !student.class || student.class === "" || student.class === null);
 });
 
 onMounted(async () => {
@@ -1684,6 +1710,8 @@ function onYearLevelChange() {
 
 // Combined function to handle student assignment
 async function assignStudentsToClasses() {
+  failedAssignmentStudentIds.value = []; // Clear previous failures
+
   if (selectedStudents.value.length === 0) {
     notificationService.showWarning('Please select at least one student to assign');
     return;
@@ -1697,8 +1725,31 @@ async function assignStudentsToClasses() {
     const response = await studentService.assignSelectedStudentsToClasses(selectedStudents.value);
     
     if (response && response.success) {
-      notificationService.showSuccess(`Successfully assigned ${response.assignedCount || selectedStudents.value.length} students to classes`);
+      const assigned = response.assignedCount || 0;
+      const totalSelected = selectedStudents.value.length;
       
+      if (assigned === totalSelected) {
+        notificationService.showSuccess(`Successfully assigned all ${totalSelected} selected students.`);
+      } else if (assigned > 0) {
+        notificationService.showWarning(`Assigned ${assigned} out of ${totalSelected} selected students. Some assignments failed.`);
+        if (response.errors) {
+            console.error('Assignment errors:', response.errors);
+            failedAssignmentStudentIds.value = response.errors.map(error => {
+              const match = String(error).match(/student ([a-f0-9]{24})/);
+              return match ? match[1] : null;
+            }).filter(id => id !== null);
+        }
+      } else {
+        notificationService.showError(`Failed to assign any of the ${totalSelected} selected students.`);
+        if(response.errors) {
+          console.error('Assignment errors:', response.errors);
+          failedAssignmentStudentIds.value = response.errors.map(error => {
+            const match = String(error).match(/student ([a-f0-9]{24})/);
+            return match ? match[1] : null;
+          }).filter(id => id !== null);
+        }
+      }
+
       // Refresh the student list
       await fetchStudents();
       
@@ -1959,4 +2010,4 @@ function formatDate(dateString) {
 .text-primary {
   color: #3B82F6;
 }
-</style> 
+</style>

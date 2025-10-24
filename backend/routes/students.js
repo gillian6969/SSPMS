@@ -1242,8 +1242,11 @@ router.put('/:id', authenticate, authorizeAdmin, async (req, res) => {
       student.gender = gender;
     }
     
-    if (major) {
+    if (major !== undefined) {
       student.major = major;
+      if (student.classDetails) {
+        student.classDetails.major = major;
+      }
     }
 
     // If class is changing, handle class assignments

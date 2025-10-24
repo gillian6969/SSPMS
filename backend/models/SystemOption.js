@@ -42,6 +42,18 @@ const SystemOptionSchema = new mongoose.Schema({
       type: [String],
       default: ['1st', '2nd', '3rd', '4th']
     },
+    sspCodePerYearLevel: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    sessionsPerYearLevel: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    defaultSessionsPerYearLevel: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
     schoolYear: {
       type: String,
       default: '2025 - 2026'

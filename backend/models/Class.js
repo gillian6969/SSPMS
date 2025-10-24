@@ -29,7 +29,8 @@ const SemesterDetailsSchema = new mongoose.Schema({
 const ClassSchema = new mongoose.Schema({
   yearLevel: {
     type: String,
-    required: true
+    required: true,
+    enum: []
   },
   section: {
     type: String,

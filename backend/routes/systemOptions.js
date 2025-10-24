@@ -48,8 +48,8 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       // Update validation for year levels in Class model
       if (updatedOptions.class.yearLevels && updatedOptions.class.yearLevels.length > 0) {
         try {
-          // Update Class schema to match new year levels
-          Class.schema.path('yearLevel').enum(updatedOptions.class.yearLevels);
+          // Directly set the enum values on the schema path
+          Class.schema.path('yearLevel').enumValues = updatedOptions.class.yearLevels;
           console.log('Updated Class schema yearLevel enum with:', updatedOptions.class.yearLevels);
         } catch (err) {
           console.error('Error updating Class schema yearLevel enum:', err);
@@ -80,7 +80,8 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
           
           // Update Class schema to match all possible majors
           if (uniqueMajors.length > 0) {
-            Class.schema.path('major').enum(uniqueMajors);
+            // Directly set the enum values on the schema path
+            Class.schema.path('major').enumValues = uniqueMajors;
             console.log('Updated Class schema major enum with:', uniqueMajors);
           }
         } catch (err) {
@@ -93,8 +94,8 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       // Update validation for subject year levels separately
       if (updatedOptions.subject.yearLevels && updatedOptions.subject.yearLevels.length > 0) {
         try {
-          // Update Subject schema to match new year levels
-          Subject.schema.path('yearLevel').enum(updatedOptions.subject.yearLevels);
+          // Directly set the enum values on the schema path
+          Subject.schema.path('yearLevel').enumValues = updatedOptions.subject.yearLevels;
           console.log('Updated Subject schema yearLevel enum with:', updatedOptions.subject.yearLevels);
         } catch (err) {
           console.error('Error updating Subject schema yearLevel enum:', err);
@@ -104,8 +105,8 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       // Update validation for hours in Subject model
       if (updatedOptions.subject.hoursOptions && updatedOptions.subject.hoursOptions.length > 0) {
         try {
-          // Update subject hours options
-          Subject.schema.path('hours').enum(updatedOptions.subject.hoursOptions);
+          // Directly set the enum values on the schema path
+          Subject.schema.path('hours').enumValues = updatedOptions.subject.hoursOptions;
           console.log('Updated Subject schema hours enum with:', updatedOptions.subject.hoursOptions);
         } catch (err) {
           console.error('Error updating Subject schema hours enum:', err);
@@ -145,15 +146,15 @@ router.post('/reset', authenticate, authorizeAdmin, async (req, res) => {
     // Reset Class model schema validation to defaults
     try {
       // Reset year levels to default
-      Class.schema.path('yearLevel').enum(['2nd', '3rd', '4th']);
+      Class.schema.path('yearLevel').enumValues = ['2nd', '3rd', '4th'];
       console.log('Reset Class schema yearLevel enum to defaults');
       
       // Reset majors to default
-      Class.schema.path('major').enum(defaultMajors);
+      Class.schema.path('major').enumValues = defaultMajors;
       console.log('Reset Class schema major enum to defaults');
       
       // Reset Subject year levels to default
-      Subject.schema.path('yearLevel').enum(['1st', '2nd', '3rd', '4th']);
+      Subject.schema.path('yearLevel').enumValues = ['1st', '2nd', '3rd', '4th'];
       console.log('Reset Subject schema yearLevel enum to defaults');
     } catch (err) {
       console.error('Error resetting schema enum values:', err);
