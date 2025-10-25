@@ -25,6 +25,13 @@ const defaultOptions = {
     defaultZeroDayTitle: 'INTRODUCTION',
     hoursOptions: [1, 2, 3],
     yearLevels: ['1st', '2nd', '3rd', '4th']
+  },
+  consultation: {
+    defaultDuration: 3,
+    businessHours: {
+      start: 7,
+      end: 18
+    }
   }
 }
 
@@ -32,6 +39,9 @@ const defaultOptions = {
  * Service for managing system options
  */
 export const systemOptionsService = {
+  // Cache for system options
+  _cachedOptions: null,
+  
   /**
    * Get all system options
    * @returns {Promise<Object>} System options
@@ -39,11 +49,28 @@ export const systemOptionsService = {
   async getAll() {
     try {
       const response = await api.get('/system-options')
+      this._cachedOptions = response.data
       return response.data
     } catch (error) {
       console.error('Error fetching system options:', error)
       throw error
     }
+  },
+
+  /**
+   * Get cached system options
+   * @returns {Object|null} Cached system options
+   */
+  getCachedOptions() {
+    return this._cachedOptions
+  },
+
+  /**
+   * Set cached system options
+   * @param {Object} options System options to cache
+   */
+  setCachedOptions(options) {
+    this._cachedOptions = options
   },
 
   /**

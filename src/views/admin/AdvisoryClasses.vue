@@ -125,13 +125,14 @@
                 Details
               </button>
               <button 
-                @click="editAdvisoryClass(advisoryClass)" 
-                      class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
+                v-if="!advisoryClass.adviser || advisoryClass._id?.startsWith('temp_')"
+                @click="assignAdviser(advisoryClass)"
+                class="px-3 py-1.5 text-xs font-normal text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100"
               >
-                Edit
+                Assign
               </button>
               <button
-                v-if="advisoryClass.adviser && advisoryClass._id && !advisoryClass._id.startsWith('temp_')"
+                v-else
                 @click="unassignAdviser(advisoryClass)"
                 class="px-3 py-1.5 text-xs font-normal text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100"
               >
@@ -489,8 +490,8 @@
       </template>
     </UnifiedModal>
 
-    <!-- Edit Advisory Class Modal -->
-    <UnifiedModal v-model="showEditModal" title="Edit Advisory Class" @close="closeEditModal">
+    <!-- Assign Advisory Class Modal -->
+    <UnifiedModal v-model="showEditModal" title="Assign Adviser to Class" @close="closeEditModal">
       <template #default>
         <div class="space-y-4">
           <div>
@@ -509,19 +510,12 @@
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Class *</label>
-            <select
-              v-model="editedAdvisoryClass.classId"
-              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.classId }"
-            >
-              <option value="">Select Class</option>
-              <option v-for="classItem in classes" :key="classItem._id" :value="classItem._id">
-                {{ classItem.yearLevel }} Year - {{ classItem.section }} ({{ classItem.major }})
-              </option>
-            </select>
-            <p v-if="errors.classId" class="mt-1 text-sm text-red-600">{{ errors.classId }}</p>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Class</label>
+            <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm text-gray-600">
+              {{ selectedAdvisoryClass.class?.yearLevel }} Year - {{ selectedAdvisoryClass.class?.section }} ({{ selectedAdvisoryClass.class?.major }})
           </div>
+            <p class="text-xs text-gray-500 mt-1">Class cannot be changed</p>
+        </div>
         </div>
       </template>
       <template #footer>
@@ -532,18 +526,18 @@
             Cancel
           </button>
           <button
-            @click="updateAdvisoryClass"
+            @click="assignAdviserToClass"
           class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
           >
-            Update
+            Assign Adviser
           </button>
-      </template>
+        </template>
     </UnifiedModal>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { adviserService } from '../../services/adviserService';
 import { classService } from '../../services/classService';
 import { notificationService } from '../../services/notificationService';
@@ -1372,8 +1366,8 @@ function closeDetailsModal() {
   showStudents.value = false;
 }
 
-function editAdvisoryClass(advisoryClass) {
-  console.log('Edit advisory class:', advisoryClass);
+function assignAdviser(advisoryClass) {
+  console.log('Assign adviser to class:', advisoryClass);
   
   // Reset errors
   errors.adviserId = '';
@@ -1388,29 +1382,39 @@ function editAdvisoryClass(advisoryClass) {
   
   // Set edited advisory class fields
   editedAdvisoryClass._id = isTemp ? '' : (advisoryClass._id || '');
-  editedAdvisoryClass.adviserId = advisoryClass.adviser?._id || '';
+  editedAdvisoryClass.adviserId = '';
   editedAdvisoryClass.classId = isTemp ? 
     advisoryClass.class?._id : 
     advisoryClass.class?._id || '';
   editedAdvisoryClass.status = advisoryClass.status || 'active';
   
-  console.log('Populated edit form with:', editedAdvisoryClass);
+  console.log('Populated assign form with:', editedAdvisoryClass);
+  console.log('Current classId:', editedAdvisoryClass.classId);
+  console.log('Available classes:', classes.value);
   
-  // Clear classes array to force a reload
-  classes.value = [];
-  
-  // Fetch advisers and classes
+  // Fetch advisers and classes first, then set the classId
   Promise.all([fetchAdvisers(), fetchClasses()]).then(() => {
+    // Ensure the classId is set after classes are loaded
+    if (advisoryClass.class?._id) {
+      editedAdvisoryClass.classId = advisoryClass.class._id;
+      console.log('Set classId after loading classes:', editedAdvisoryClass.classId);
+      console.log('Available classes after loading:', classes.value.map(c => ({ id: c._id, name: `${c.yearLevel} Year - ${c.section} (${c.major})` })));
+    }
     // Open the modal after data is loaded
     showEditModal.value = true;
   }).catch(error => {
-    console.error('Error preparing edit modal:', error);
-    notificationService.showError('Failed to prepare edit modal. Please try again.');
+    console.error('Error preparing assign modal:', error);
+    notificationService.showError('Failed to prepare assign modal. Please try again.');
   });
 }
 
 function closeEditModal() {
   showEditModal.value = false;
+}
+
+async function assignAdviserToClass() {
+  // Use the existing updateAdvisoryClass function
+  await updateAdvisoryClass();
 }
 
 function validateEditForm() {
@@ -1906,4 +1910,27 @@ watch([yearFilter, sectionFilter, majorFilter], () => {
   }
   filterAdvisoryClasses();
 });
+
+// Watch for classes loading to ensure classId is set properly
+watch(() => classes.value, (newClasses) => {
+  if (newClasses.length > 0 && showEditModal.value) {
+    console.log('Classes loaded, ensuring classId is set:', editedAdvisoryClass.classId);
+    console.log('Available classes in watcher:', newClasses.map(c => ({ id: c._id, name: `${c.yearLevel} Year - ${c.section} (${c.major})` })));
+    
+    // Check if the current classId exists in the loaded classes
+    const classExists = newClasses.some(c => c._id === editedAdvisoryClass.classId);
+    if (classExists) {
+      console.log('Class exists in loaded classes, forcing reactivity update');
+      // Force reactivity update
+      const classId = editedAdvisoryClass.classId;
+      editedAdvisoryClass.classId = '';
+      nextTick(() => {
+        editedAdvisoryClass.classId = classId;
+        console.log('ClassId restored after nextTick:', editedAdvisoryClass.classId);
+      });
+    } else {
+      console.log('Class not found in loaded classes, classId:', editedAdvisoryClass.classId);
+    }
+  }
+}, { deep: true });
 </script> 

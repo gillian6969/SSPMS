@@ -276,49 +276,48 @@
               @mouseenter="onConsultationMouseEnter(consultationBlock.consultation)"
               @mouseleave="onConsultationMouseLeave"
             >
-              <!-- Header with adviser name and action icons -->
+              <!-- Header with adviser name, status, and action icons -->
               <div class="flex items-center justify-between p-2">
                 <div class="font-normal text-xs truncate flex-1" @click="viewConsultation(consultationBlock.consultation)">
                 {{ consultationBlock.consultation.adviser.firstName }} {{ consultationBlock.consultation.adviser.lastName }}
               </div>
-                <!-- Action icons - only show on hover -->
-                <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <button
-                    @click.stop="editConsultation(consultationBlock.consultation)"
-                    class="p-1 rounded hover:bg-white hover:bg-opacity-30 transition-colors"
-                    title="Edit consultation"
-                  >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    @click.stop="confirmDeleteConsultation(consultationBlock.consultation)"
-                    class="p-1 rounded hover:bg-white hover:bg-opacity-30 transition-colors"
-                    title="Delete consultation"
-                  >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                <!-- Status badge in upper right -->
+                <div class="flex items-center space-x-1">
+                  <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium" :class="getStatusColor(consultationBlock.consultation.status)">
+                    {{ formatStatus(consultationBlock.consultation.status) }}
+                  </span>
+                  <!-- Action icons - only show on hover -->
+                  <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      @click.stop="editConsultation(consultationBlock.consultation)"
+                      class="p-1 rounded hover:bg-white hover:bg-opacity-30 transition-colors"
+                      title="Edit consultation"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      @click.stop="confirmDeleteConsultation(consultationBlock.consultation)"
+                      class="p-1 rounded hover:bg-white hover:bg-opacity-30 transition-colors"
+                      title="Delete consultation"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
               
               <!-- Content -->
               <div class="text-xs flex flex-col justify-between px-2 pb-2 flex-grow" @click="viewConsultation(consultationBlock.consultation)">
-                <span class="truncate font-normal">{{ consultationBlock.consultation.notes || 'Consultation' }}</span>
-                <div class="mt-1 flex flex-col">
-                  <span class="text-[10px] text-gray-700">
-                    {{ formatConsultationDate(consultationBlock.consultation) }}
-                  </span>
-                  <span class="rounded-full px-2 py-0.5 bg-white bg-opacity-40 text-xs mt-1 inline-block w-max">
-                    {{ consultationBlock.consultation.maxStudents }} slots
-                  </span>
-                  <span class="text-xs mt-1">
+                <div class="flex flex-col space-y-1">
+                  <span class="text-xs">
                     {{ formatTimeRange(consultationBlock.consultation.startTime, consultationBlock.consultation.endTime) }}
                   </span>
-                  <span class="text-xs mt-1 font-medium" :class="getStatusColor(consultationBlock.consultation.status)">
-                    {{ formatStatus(consultationBlock.consultation.status) }}
+                  <span class="rounded-full px-2 py-0.5 bg-white bg-opacity-40 text-xs inline-block w-max">
+                    {{ consultationBlock.consultation.maxStudents }} slots
                   </span>
                 </div>
               </div>
@@ -835,15 +834,21 @@
             </select>
           </div>
           
-          <!-- Duration (Fixed at 3 hours) -->
+          <!-- Duration (Editable) -->
           <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-              Duration
+              Duration (hours)
             </label>
-              <div class="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600">
-              3 hours (Fixed)
+              <input
+                type="number"
+                v-model.number="consultationForm.duration"
+                min="1"
+                max="8"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                :placeholder="systemOptions?.consultation?.defaultDuration"
+              />
+              <p class="text-sm text-gray-500 mt-1">Default: {{ systemOptions?.consultation?.defaultDuration }} hours</p>
             </div>
-          </div>
           
           <!-- Max Students -->
           <div>
@@ -862,19 +867,6 @@
             </div>
           </div>
           
-          <!-- Notes -->
-          <div>
-            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-              Notes (Optional)
-            </label>
-            <textarea
-              id="notes"
-              v-model="consultationForm.notes"
-              rows="4"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-              placeholder="Any additional notes..."
-            ></textarea>
-          </div>
           
           <!-- Form Actions -->
             <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
@@ -1497,7 +1489,7 @@
                 </span>
                 <span v-else>Delete Consultation</span>
               </button>
-            </div>
+        </div>
       </div>
     </div>
       </div>
@@ -1509,6 +1501,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, Teleport } from 'vue'
 import { notificationService } from '../../services/notificationService'
+import { systemOptionsService } from '../../services/systemOptionsService'
 import api from '../../services/api'
 import UnifiedTable from '../../components/ui/UnifiedTable.vue'
 import * as XLSX from 'xlsx'
@@ -1522,6 +1515,7 @@ const currentView = ref('calendar')
 const consultations = ref([])
 const allConsultations = ref([])
 const advisers = ref([])
+const systemOptions = ref(null)
 const showAddModal = ref(false)
 const showViewModal = ref(false)
 const editingConsultation = ref(null)
@@ -1630,12 +1624,19 @@ const timeSlots = [
   '4:00 PM - 5:00 PM'
 ]
 
-// Available time slots for 3-hour consultations (7 AM to 3 PM start times)
+// Available time slots based on system options and form duration
 const availableTimeSlots = computed(() => {
   const slots = []
-  for (let hour = 7; hour <= 15; hour++) { // 7 AM to 3 PM (3 PM + 3 hours = 6 PM)
+  if (!systemOptions.value?.consultation) return []
+  
+  const { businessHours, defaultDuration } = systemOptions.value.consultation
+  const currentDuration = consultationForm.value.duration || defaultDuration
+  const startHour = businessHours.start
+  const endHour = businessHours.end - currentDuration
+  
+  for (let hour = startHour; hour <= endHour; hour++) {
     const startTime = formatTime(hour)
-    const endTime = formatTime(hour + 3)
+    const endTime = formatTime(hour + currentDuration)
     slots.push({
       value: hour,
       label: `${startTime} - ${endTime}`
@@ -1649,9 +1650,28 @@ const consultationForm = ref({
   adviserId: '',
   dayOfWeek: '',
   startTime: '',
-  duration: 3,
+  duration: null, // Will be set by system options
   maxStudents: 5,
   notes: ''
+})
+
+// Watch system options to update form defaults
+watch(systemOptions, (newOptions) => {
+  if (newOptions?.consultation?.defaultDuration) {
+    consultationForm.value.duration = newOptions.consultation.defaultDuration
+  }
+}, { immediate: true })
+
+// Initialize duration when component mounts
+onMounted(() => {
+  if (systemOptions.value?.consultation?.defaultDuration) {
+    consultationForm.value.duration = systemOptions.value.consultation.defaultDuration
+  }
+})
+
+// Computed property for duration that always uses system setting
+const consultationDuration = computed(() => {
+  return systemOptions.value?.consultation?.defaultDuration
 })
 
 // Methods
@@ -2050,10 +2070,18 @@ const saveConsultation = async () => {
     const weekStart = getWeekStart(currentWeek.value)
     const weekEnd = getWeekEnd(currentWeek.value)
     
+    // Format dates in local timezone to avoid UTC conversion issues
+    const formatDateLocal = (date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+    
     const consultationData = {
       adviserId: consultationForm.value.adviserId,
-      weekStart: weekStart.toISOString().split('T')[0],
-      weekEnd: weekEnd.toISOString().split('T')[0],
+      weekStart: formatDateLocal(weekStart),
+      weekEnd: formatDateLocal(weekEnd),
       dayOfWeek: parseInt(consultationForm.value.dayOfWeek),
       startTime: parseInt(consultationForm.value.startTime),
       duration: parseInt(consultationForm.value.duration),
@@ -2392,11 +2420,22 @@ const loadConsultationsForWeek = async () => {
     const weekStart = getWeekStart(currentWeek.value)
     const weekEnd = getWeekEnd(currentWeek.value)
     
-    console.log('Loading consultations for week:', weekStart.toISOString().split('T')[0], 'to', weekEnd.toISOString().split('T')[0])
+    // Format dates in local timezone to avoid UTC conversion issues
+    const formatDateLocal = (date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+    
+    const weekStartStr = formatDateLocal(weekStart)
+    const weekEndStr = formatDateLocal(weekEnd)
+    
+    console.log('Loading consultations for week:', weekStartStr, 'to', weekEndStr)
     
     // Try to load weekly consultations
     try {
-      const response = await api.get(`/consultations/week/${weekStart.toISOString().split('T')[0]}/${weekEnd.toISOString().split('T')[0]}`)
+      const response = await api.get(`/consultations/week/${weekStartStr}/${weekEndStr}`)
       consultations.value = response.data || []
       console.log('Loaded consultations for week:', consultations.value.length, 'consultations')
     } catch (weeklyError) {
@@ -2439,8 +2478,19 @@ const loadConsultationsForWeek = async () => {
   }
 }
 
+// Load system options
+const loadSystemOptions = async () => {
+  try {
+    const options = await systemOptionsService.getAll()
+    systemOptions.value = options
+  } catch (error) {
+    console.error('Error loading system options:', error)
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
+  await loadSystemOptions()
   await loadConsultations()
   await loadAdvisers()
   await loadConsultationsForWeek()

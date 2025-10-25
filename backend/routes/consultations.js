@@ -148,6 +148,8 @@ router.get('/my-bookings', authenticate, async (req, res) => {
             allocatedEndTime: booking.allocatedEndTime, // Add allocated time
             feedback: booking.feedback,
             feedbackAt: booking.feedbackAt,
+            completionNotes: booking.completionNotes, // Add completion notes
+            completedAt: booking.completedAt, // Add completion timestamp
             bookedAt: booking.bookedAt,
             updatedAt: booking.updatedAt
           });
@@ -238,6 +240,8 @@ router.get('/my-bookings-alt', authenticate, async (req, res) => {
           allocatedEndTime: '$bookings.allocatedEndTime', // Add allocated time
           feedback: '$bookings.feedback',
           feedbackAt: '$bookings.feedbackAt',
+          completionNotes: '$bookings.completionNotes', // Add completion notes
+          completedAt: '$bookings.completedAt', // Add completion timestamp
           bookedAt: '$bookings.bookedAt',
           updatedAt: '$bookings.updatedAt'
         }
@@ -541,12 +545,12 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
     // Get system options for consultation settings
     const SystemOption = require('../models/SystemOption');
     const systemOptions = await SystemOption.findOne();
-    const consultationSettings = systemOptions?.consultation || { fixedDuration: 3, businessHours: { start: 7, end: 18 } };
+    const consultationSettings = systemOptions?.consultation || { defaultDuration: 3, businessHours: { start: 7, end: 18 } };
     
-    // Validate duration matches system setting
-    if (duration !== consultationSettings.fixedDuration) {
+    // Validate duration is within reasonable range (1-8 hours)
+    if (duration < 1 || duration > 8) {
       return res.status(400).json({ 
-        message: `Consultation duration must be ${consultationSettings.fixedDuration} hours as configured in system options` 
+        message: 'Consultation duration must be between 1 and 8 hours' 
       });
     }
     
@@ -764,12 +768,12 @@ router.put('/:id', authenticate, authorizeAdmin, async (req, res) => {
       // Get system options for consultation settings
       const SystemOption = require('../models/SystemOption');
       const systemOptions = await SystemOption.findOne();
-      const consultationSettings = systemOptions?.consultation || { fixedDuration: 3, businessHours: { start: 7, end: 18 } };
+      const consultationSettings = systemOptions?.consultation || { defaultDuration: 3, businessHours: { start: 7, end: 18 } };
       
       // Validate duration matches system setting
-      if (duration !== consultationSettings.fixedDuration) {
+      if (duration !== consultationSettings.defaultDuration) {
         return res.status(400).json({ 
-          message: `Consultation duration must be ${consultationSettings.fixedDuration} hours as configured in system options` 
+          message: `Consultation duration must be ${consultationSettings.defaultDuration} hours as configured in system options` 
         });
       }
       consultation.duration = duration;
@@ -932,29 +936,29 @@ router.post('/:id/book', authenticate, async (req, res) => {
       console.log('Checking for same week bookings for student:', student._id);
       
       const sameWeekBookings = await Consultation.find({
-        'bookings.student': student._id,
+      'bookings.student': student._id,
         weekStart: { $lte: consultationWeekEnd },
         weekEnd: { $gte: consultationWeekStart }
-      }).populate('adviser', 'firstName lastName');
-      
+    }).populate('adviser', 'firstName lastName');
+    
       console.log('Same week bookings found:', sameWeekBookings.length);
       
       if (sameWeekBookings.length > 0) {
         const existingAdviser = sameWeekBookings[0].adviser || { firstName: 'an adviser', lastName: '' };
-        const adviserName = [existingAdviser.firstName, existingAdviser.lastName].filter(Boolean).join(' ').trim() || 'your adviser';
+    const adviserName = [existingAdviser.firstName, existingAdviser.lastName].filter(Boolean).join(' ').trim() || 'your adviser';
         console.log('BLOCKING same week booking due to existing booking with:', adviserName);
-        return res.status(400).json({ 
+    return res.status(400).json({ 
           message: `You already have a consultation for this week with ${adviserName}. Students can only have one consultation per week.`,
-          existingBooking: {
-            adviser: adviserName,
+      existingBooking: {
+        adviser: adviserName,
             consultationId: sameWeekBookings[0]._id,
             week: `${consultationWeekStart.toDateString()} - ${consultationWeekEnd.toDateString()}`
-          }
-        });
+      }
+    });
       } else {
         console.log('No same week bookings found, allowing current week booking');
       }
-    }
+  }
     
     // Check if student already has a booking for this specific consultation
     const existingBooking = consultation.bookings.find(booking => 
@@ -2226,8 +2230,8 @@ router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, re
 
     if (format === 'pdf') {
       // For PDF export, we'll return JSON data that frontend can convert to PDF
-      res.json({
-        success: true,
+    res.json({
+      success: true,
         data: exportData,
         format: 'pdf'
       });
@@ -2242,6 +2246,154 @@ router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, re
   } catch (error) {
     console.error('❌ Error exporting consultation history:', error);
     res.status(500).json({ message: 'Failed to export consultation history' });
+  }
+});
+
+// Get adviser's consultation history (completed consultations) - MUST be before /:id route
+router.get('/adviser-history', authenticate, authorizeAdviser, async (req, res) => {
+  try {
+    console.log('📊 Fetching adviser consultation history for user:', req.user._id);
+    
+    // Find all consultations created by this adviser
+    const consultations = await Consultation.find({
+      adviser: req.user._id,
+      status: { $in: ['Active', 'Inactive'] }
+    })
+    .populate({
+      path: 'bookings.student',
+      populate: [
+        {
+          path: 'user',
+          select: 'firstName lastName email idNumber'
+        },
+        {
+          path: 'class',
+          select: 'className section yearLevel major'
+        }
+      ]
+    })
+    .sort({ weekStart: -1, dayOfWeek: 1, startTime: 1 });
+    
+    console.log(`Found ${consultations.length} consultations for adviser`);
+    
+    // Extract only completed bookings
+    const completedConsultations = [];
+    
+    consultations.forEach(consultation => {
+      if (consultation.bookings && consultation.bookings.length > 0) {
+        consultation.bookings.forEach(booking => {
+          if (booking.status === 'Completed') {
+            completedConsultations.push({
+              _id: booking._id,
+              student: booking.student,
+              dayOfWeek: consultation.dayOfWeek,
+              startTime: consultation.startTime,
+              endTime: consultation.endTime,
+              duration: consultation.duration,
+              weekStart: consultation.weekStart,
+              concern: booking.concern,
+              notes: booking.notes,
+              consultationType: booking.consultationType,
+              completionNotes: booking.completionNotes,
+              completedAt: booking.completedAt,
+              bookedAt: booking.bookedAt
+            });
+          }
+        });
+      }
+    });
+    
+    console.log(`✅ Found ${completedConsultations.length} completed consultations`);
+    
+    res.json(completedConsultations);
+  } catch (error) {
+    console.error('❌ Get adviser consultation history error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
+// Get student's consultation history (completed consultations) - MUST be before /:id route
+router.get('/student-history', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ message: 'Only students can access this endpoint' });
+    }
+
+    console.log('📊 Fetching student consultation history for user:', req.user._id);
+    
+    // Find the student record
+    const student = await Student.findOne({ user: req.user._id });
+    console.log('Found student:', student ? student._id : 'not found');
+    
+    if (!student) {
+      return res.status(404).json({ message: 'Student record not found' });
+    }
+    
+    // Find all consultations where this student has bookings
+    const consultations = await Consultation.find({
+      'bookings.student': student._id
+    })
+    .populate('adviser', 'firstName lastName salutation')
+    .sort({ weekStart: -1, dayOfWeek: 1, startTime: 1 });
+    
+    console.log(`Found ${consultations.length} consultations with student bookings`);
+    
+    // Debug: Log consultation details
+    consultations.forEach((consultation, index) => {
+      console.log(`Consultation ${index + 1}:`, {
+        id: consultation._id,
+        bookingsCount: consultation.bookings?.length || 0,
+        bookings: consultation.bookings?.map(booking => ({
+          student: booking.student,
+          status: booking.status,
+          concern: booking.concern
+        }))
+      });
+    });
+    
+    // Extract only completed bookings for this student
+    const completedConsultations = [];
+    
+    consultations.forEach(consultation => {
+      if (consultation.bookings && consultation.bookings.length > 0) {
+        consultation.bookings.forEach(booking => {
+          console.log(`Checking booking: student=${booking.student}, status=${booking.status}, studentId=${student._id}`);
+          if (booking.student.toString() === student._id.toString() && booking.status === 'Completed') {
+            console.log(`✅ Found completed booking for student`);
+            completedConsultations.push({
+              _id: booking._id,
+              adviser: consultation.adviser,
+              dayOfWeek: consultation.dayOfWeek,
+              startTime: consultation.startTime,
+              endTime: consultation.endTime,
+              duration: consultation.duration,
+              weekStart: consultation.weekStart,
+              concern: booking.concern,
+              notes: booking.notes,
+              consultationType: booking.consultationType,
+              completionNotes: booking.completionNotes,
+              completedAt: booking.completedAt,
+              bookedAt: booking.bookedAt
+            });
+          }
+        });
+      }
+    });
+    
+    console.log(`✅ Found ${completedConsultations.length} completed consultations for student`);
+    
+    res.json(completedConsultations);
+  } catch (error) {
+    console.error('❌ Get student consultation history error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
@@ -3091,81 +3243,6 @@ router.get('/bookings/:bookingId/status', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Get booking status error:', error);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Get adviser's consultation history (completed consultations)
-router.get('/adviser-history', authenticate, async (req, res) => {
-  try {
-    console.log('Adviser-history endpoint called by user:', req.user._id, 'role:', req.user.role);
-    
-    // Only advisers can access this endpoint
-    if (req.user.role !== 'adviser') {
-      return res.status(403).json({ message: 'Only advisers can access this endpoint' });
-    }
-    
-    console.log('Searching for consultations with adviser ID:', req.user._id);
-    
-    // Find all consultations created by this adviser that have completed bookings
-    const consultations = await Consultation.find({
-      adviser: req.user._id
-    })
-    .populate({
-      path: 'bookings.student',
-      populate: [
-        {
-          path: 'user',
-          select: 'firstName lastName email idNumber'
-        },
-        {
-          path: 'class',
-          select: 'className section yearLevel major'
-        }
-      ],
-      select: 'user classDetails major gender contactNumber class yearLevel section'
-    })
-    .sort({ weekStart: -1, dayOfWeek: 1, startTime: 1 });
-    
-    console.log('Found consultations:', consultations.length);
-    
-    // Extract and flatten the completed bookings
-    const completedConsultations = [];
-    
-    consultations.forEach(consultation => {
-      if (consultation.bookings && consultation.bookings.length > 0) {
-        consultation.bookings.forEach(booking => {
-          if (booking.status === 'Completed') {
-            completedConsultations.push({
-              _id: booking._id,
-              student: booking.student,
-              dayOfWeek: consultation.dayOfWeek,
-              startTime: consultation.startTime,
-              endTime: consultation.endTime,
-              duration: consultation.duration,
-              weekStart: consultation.weekStart,
-              concern: booking.concern,
-              notes: booking.notes,
-              consultationType: booking.consultationType,
-              completionNotes: booking.completionNotes,
-              completedAt: booking.completedAt,
-              bookedAt: booking.bookedAt
-            });
-          }
-        });
-      }
-    });
-    
-    console.log('Total completed consultations found:', completedConsultations.length);
-    
-    res.json(completedConsultations);
-  } catch (error) {
-    console.error('Get adviser consultation history error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
-      message: 'Server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
   }
 });
 

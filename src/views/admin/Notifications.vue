@@ -82,9 +82,9 @@
                 />
           </div>
         </div>
-          </div>
-          
-          <!-- Notifications List -->
+      </div>
+
+      <!-- Notifications List -->
           <div v-if="notifications.length" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div 
               v-for="notification in notifications" 
@@ -137,14 +137,14 @@
                   <p class="text-sm text-gray-700 mb-1">{{ notification.message }}</p>
                   <div v-if="notification.link" class="mt-1">
                     <span class="text-primary text-sm hover:underline">View details →</span>
-            </div>
-        </div>
+                </div>
+              </div>
             </div>
 
               <!-- Unread indicator dot -->
               <div v-if="!notification.read" class="absolute top-4 right-4 h-2 w-2 rounded-full bg-primary"></div>
           </div>
-          </div>
+        </div>
           
           <!-- Empty State -->
           <div v-else class="text-center py-12 bg-white border border-gray-200 rounded-lg">
@@ -157,7 +157,7 @@
             <p class="text-gray-500 max-w-md mx-auto">You don't have any notifications at the moment. Check back later for updates.</p>
           </div>
 
-          <!-- Pagination -->
+        <!-- Pagination -->
           <div v-if="pagination.totalPages > 1" class="flex items-center justify-between mt-6 px-4 py-3 bg-gray-50 border-t border-gray-200">
             <div class="flex items-center text-sm text-gray-700">
               <span>

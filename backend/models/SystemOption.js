@@ -64,10 +64,55 @@ const SystemOptionSchema = new mongoose.Schema({
         { name: 'Midterm Exam', day: 10 },
         { name: 'Final Exam', day: 15 }
       ]
+    },
+    sspTemplates: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {
+        '1st': {
+          '1st Semester': {
+            sspCode: '',
+            sessions: []
+          },
+          '2nd Semester': {
+            sspCode: '',
+            sessions: []
+          }
+        },
+        '2nd': {
+          '1st Semester': {
+            sspCode: '',
+            sessions: []
+          },
+          '2nd Semester': {
+            sspCode: '',
+            sessions: []
+          }
+        },
+        '3rd': {
+          '1st Semester': {
+            sspCode: '',
+            sessions: []
+          },
+          '2nd Semester': {
+            sspCode: '',
+            sessions: []
+          }
+        },
+        '4th': {
+          '1st Semester': {
+            sspCode: '',
+            sessions: []
+          },
+          '2nd Semester': {
+            sspCode: '',
+            sessions: []
+          }
+        }
+      }
     }
   },
   consultation: {
-    fixedDuration: {
+    defaultDuration: {
       type: Number,
       default: 3,
       min: 1,
@@ -77,14 +122,14 @@ const SystemOptionSchema = new mongoose.Schema({
       start: {
         type: Number,
         default: 7,
-        min: 6,
+        min: 7,
         max: 12
       },
       end: {
         type: Number,
         default: 18,
-        min: 17,
-        max: 22
+        min: 13,
+        max: 18
       }
     }
   },

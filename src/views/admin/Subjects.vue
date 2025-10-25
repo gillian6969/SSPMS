@@ -138,7 +138,10 @@
                     type="text"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm"
                     :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.sspCode }"
+                    :placeholder="getTemplateSSPCode()"
+                    readonly
                   />
+                  <p class="text-xs text-gray-500 mt-1">Auto-populated from System Options template</p>
                   <p v-if="errors.sspCode" class="mt-1 text-sm text-red-600">{{ errors.sspCode }}</p>
                 </div>
                 
@@ -224,10 +227,13 @@
                         <input 
                           type="text" 
                           v-model="sessionTitles[day]" 
-                          class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm"
                           :class="{ 'bg-amber-50 border-amber-300': isExamSession(day) }"
+                          readonly
+                          :placeholder="getTemplateSessionTitle(day-1)"
                         />
                         <span v-if="isExamSession(day)" class="text-xs text-amber-600 mt-1 block">Periodical Exam Session</span>
+                        <span class="text-xs text-gray-500 mt-1 block">Auto-populated from System Options template</span>
                       </td>
                     </tr>
                   </tbody>
@@ -244,28 +250,51 @@
     </UnifiedModal>
     
     <!-- View Sessions Modal -->
-    <div v-if="showSessionsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showSessionsModal = false">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+    <UnifiedModal v-model="showSessionsModal" title="View Sessions" @close="showSessionsModal = false">
+      <template #default>
+        <div class="space-y-6">
+          <!-- Basic Information -->
           <div>
-            <h3 class="text-lg font-normal text-gray-800">Subject: {{ selectedSubject?.sspCode }}</h3>
-            <div class="grid grid-cols-2 gap-4 mt-2 text-sm text-gray-600">
-              <div>Year Level: <span class="font-medium text-gray-800">{{ selectedSubject?.yearLevel }} Year</span></div>
-              <div>School Year: <span class="font-medium text-gray-800">{{ selectedSubject?.schoolYear || '2024 - 2025' }}</span></div>
-              <div>Semester: <span class="font-medium text-gray-800">{{ selectedSubject?.semester }}</span></div>
-              <div>Hours: <span class="font-medium text-gray-800">{{ selectedSubject?.hours }} {{ selectedSubject?.hours === 1 ? 'Hour' : 'Hours' }}</span></div>
+            <h4 class="text-sm font-medium text-gray-800 mb-4">Subject Information</h4>
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">SSP Code</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
+                    {{ selectedSubject?.sspCode }}
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
+                    {{ selectedSubject?.yearLevel }} Year
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Hours</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
+                    {{ selectedSubject?.hours }} {{ selectedSubject?.hours === 1 ? 'Hour' : 'Hours' }}
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Semester</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
+                    {{ selectedSubject?.semester }}
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">School Year</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
+                    {{ selectedSubject?.schoolYear || '2024 - 2025' }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <button @click="showSessionsModal = false" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6 space-y-6">
           <!-- Sessions Count -->
           <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
             <div class="flex items-center justify-between">
@@ -275,42 +304,38 @@
           </div>
 
           <!-- Sessions Table -->
-          <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div class="max-h-96 overflow-y-auto">
-              <table class="min-w-full">
-                <thead class="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Day</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ selectedSubject?.semester }} Title</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr v-for="session in sortedSessions" :key="session.day" :class="{ 'bg-amber-50': isSessionAnExam(session) }">
-                    <td class="px-4 py-3 text-sm font-medium text-gray-800 text-center">{{ session.day }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">
-                      {{ session.title }}
-                      <span v-if="isSessionAnExam(session)" class="ml-2 inline-flex px-2 py-1 text-xs font-normal rounded-md bg-amber-100 text-amber-700 border border-amber-200">
-                        Exam
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <div>
+            <h4 class="text-sm font-medium text-gray-800 mb-4">{{ selectedSubject?.semester }} Sessions</h4>
+            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div class="max-h-96 overflow-y-auto">
+                <table class="min-w-full">
+                  <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Day</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session Title</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <tr v-for="session in sortedSessions" :key="session.day" :class="{ 'bg-amber-50': isSessionAnExam(session) }">
+                      <td class="px-4 py-3 text-sm font-medium text-gray-800 text-center">{{ session.day }}</td>
+                      <td class="px-4 py-3 text-sm text-gray-800">
+                        {{ session.title }}
+                        <span v-if="isSessionAnExam(session)" class="ml-2 inline-flex px-2 py-1 text-xs font-normal rounded-md bg-amber-100 text-amber-700 border border-amber-200">
+                          Exam
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
-        
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-end p-6 border-t border-gray-200">
-          <button
-            @click="showSessionsModal = false"
-            class="px-4 py-2 text-sm font-normal text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button @click="showSessionsModal = false" class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">Close</button>
+      </template>
+    </UnifiedModal>
     
     <!-- Edit Subject Modal -->
     <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showEditModal = false">
@@ -534,6 +559,9 @@ onMounted(async () => {
   try {
     // First fetch system options
     const systemOptions = await systemOptionsService.getAll()
+    
+    // Cache the system options for template access
+    systemOptionsService.setCachedOptions(systemOptions)
     
     // Update school year
     if (systemOptions?.subject?.schoolYear) {
@@ -1067,4 +1095,48 @@ function isSessionAnExam(session) {
     (session.title === exam.name || examSessionDays.value.some(e => session.title === e.name))
   );
 }
+
+// Template methods for SSP subject flow
+function getTemplateSSPCode() {
+  if (!newSubject.yearLevel || !newSubject.semester) return 'Select year level and semester first'
+  
+  const systemOptions = systemOptionsService.getCachedOptions()
+  if (!systemOptions?.subject?.sspTemplates) return 'No template configured'
+  
+  const template = systemOptions.subject.sspTemplates[newSubject.yearLevel]?.[newSubject.semester]
+  return template?.sspCode || 'No template configured'
+}
+
+function getTemplateSessionTitle(dayIndex) {
+  if (!newSubject.yearLevel || !newSubject.semester) return 'Select year level and semester first'
+  
+  const systemOptions = systemOptionsService.getCachedOptions()
+  if (!systemOptions?.subject?.sspTemplates) return 'No template configured'
+  
+  const template = systemOptions.subject.sspTemplates[newSubject.yearLevel]?.[newSubject.semester]
+  return template?.sessions?.[dayIndex] || `Day ${dayIndex + 1} title`
+}
+
+// Watch for year level and semester changes to auto-populate from templates
+watch(() => [newSubject.yearLevel, newSubject.semester], ([yearLevel, semester]) => {
+  if (yearLevel && semester) {
+    const systemOptions = systemOptionsService.getCachedOptions()
+    if (systemOptions?.subject?.sspTemplates) {
+      const template = systemOptions.subject.sspTemplates[yearLevel]?.[semester]
+      if (template) {
+        // Auto-populate SSP code
+        newSubject.sspCode = template.sspCode || ''
+        
+        // Auto-populate session titles
+        if (template.sessions && template.sessions.length > 0) {
+          template.sessions.forEach((title, index) => {
+            if (title && index < 17) {
+              sessionTitles.value[index + 1] = title
+            }
+          })
+        }
+      }
+    }
+  }
+}, { immediate: true })
 </script>

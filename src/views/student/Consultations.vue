@@ -483,108 +483,118 @@
         
     <!-- History View -->
     <div v-else-if="currentView === 'history'" class="bg-white rounded-2xl shadow-lg border border-gray-100">
-      <!-- History Header -->
-      <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-        <div class="flex items-center justify-between">
+      <!-- Filter Options Panel -->
+      <div v-if="showStudentHistoryFilters" class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <!-- Adviser Filter -->
           <div>
-            <h2 class="text-lg font-semibold text-gray-900">Consultation History</h2>
-          </div>
-          
-          <!-- History Filters -->
-          <div class="flex items-center space-x-3">
-            <select v-model="historyFilters.adviser" class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Adviser</label>
+            <select
+              v-model="historyFilters.adviser"
+              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
               <option value="">All Advisers</option>
               <option v-for="adviser in availableAdvisers" :key="adviser._id" :value="adviser._id">
                 {{ adviser.salutation }} {{ adviser.firstName }} {{ adviser.lastName }}
               </option>
             </select>
-            <input 
-              type="date" 
+          </div>
+
+          <!-- Meeting Type Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Meeting Type</label>
+            <select
+              v-model="historyFilters.meetingType"
+              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Meeting Types</option>
+              <option value="In-Person">In-Person</option>
+              <option value="Virtual">Virtual</option>
+            </select>
+          </div>
+
+          <!-- Date From -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+            <input
+              type="date"
               v-model="historyFilters.dateFrom"
-              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="From date"
-            >
-            <input 
-              type="date" 
+              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+
+          <!-- Date To -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+            <input
+              type="date"
               v-model="historyFilters.dateTo"
-              class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="To date"
-            >
-            <button 
+              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="flex items-center justify-between mt-4">
+          <div class="text-sm text-gray-600">
+            Showing {{ filteredHistory.length }} of {{ consultationHistory.length }} records
+          </div>
+          <div class="flex items-center space-x-3">
+            <button
               @click="clearHistoryFilters"
-              class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md hover:bg-gray-50"
+              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md hover:bg-gray-50"
             >
-              Clear
+              Clear All Filters
+            </button>
+            <button
+              @click="toggleStudentHistoryFilters"
+              class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-md hover:bg-blue-50"
+            >
+              Apply Filters
             </button>
           </div>
         </div>
       </div>
-      
-      <!-- History Content -->
-      <div class="p-6">
-        <div v-if="loadingHistory" class="text-center py-12">
-          <div class="inline-flex items-center">
-            <svg class="animate-spin h-5 w-5 text-blue-600 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-            Loading consultation history...
-      </div>
-    </div>
-    
-        <div v-else-if="filteredHistory.length === 0" class="text-center py-12">
-          <div class="text-gray-400 mb-4">
-            <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No consultation history</h3>
-          <p class="text-gray-500">You haven't completed any consultations yet.</p>
-        </div>
-        
-        <div v-else class="space-y-4">
-          <div v-for="consultation in filteredHistory" :key="consultation._id" class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <div class="flex items-center space-x-3 mb-2">
-                  <h3 class="text-sm font-medium text-gray-900">
-                    {{ consultation.adviser.salutation }} {{ consultation.adviser.firstName }} {{ consultation.adviser.lastName }}
-                  </h3>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Completed
-                  </span>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span class="font-medium text-gray-700">Date:</span>
-                    <p class="text-gray-600">{{ formatConsultationDate(consultation) }}</p>
-                  </div>
-                  <div>
-                    <span class="font-medium text-gray-700">Time:</span>
-                    <p class="text-gray-600">{{ formatTimeRange(consultation.startTime, consultation.endTime) }}</p>
-                  </div>
-                  <div>
-                    <span class="font-medium text-gray-700">Type:</span>
-                    <p class="text-gray-600">{{ consultation.consultationType === 'chat' ? 'Virtual' : 'In-Person' }}</p>
-                  </div>
-                  <div>
-                    <span class="font-medium text-gray-700">Concern:</span>
-                    <p class="text-gray-600">{{ consultation.concern }}</p>
-                  </div>
-                  <div v-if="consultation.completionNotes">
-                    <span class="font-medium text-gray-700">Adviser Notes:</span>
-                    <p class="text-gray-600">{{ consultation.completionNotes }}</p>
-                  </div>
-                  <div>
-                    <span class="font-medium text-gray-700">Completed:</span>
-                    <p class="text-gray-600">{{ formatDate(consultation.completedAt) }}</p>
-                  </div>
-                </div>
-              </div>
+
+      <!-- History Table using UnifiedTable -->
+      <div class="mt-4">
+        <UnifiedTable
+          :data="studentHistoryForUnifiedTable"
+          :columns="studentHistoryTableColumns"
+          :sortable-columns="studentHistorySortableColumns"
+          :loading="loadingHistory"
+          loading-text="Loading consultation history..."
+          search-placeholder="Search by adviser name or concern..."
+          empty-state-title="No consultation history"
+          empty-state-message="No completed consultations found with the current filters."
+          @search="handleStudentHistorySearch"
+          @sort="handleStudentHistorySort"
+          @page-change="handleStudentHistoryPageChange"
+        >
+          <template #filters>
+            <div class="flex items-center space-x-3">
+              <button
+                @click="toggleStudentHistoryFilters"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                :class="showStudentHistoryFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : ''"
+                title="Filter Options"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+              </button>
             </div>
-          </div>
-        </div>
+          </template>
+
+          <template #row="{ item }">
+            <td class="px-4 py-3 text-sm text-gray-900">{{ item.adviserName }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">{{ item.concern }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">{{ item.meetingType }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">{{ item.date }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">{{ item.time }}</td>
+          </template>
+        </UnifiedTable>
       </div>
     </div>
     
@@ -1118,15 +1128,24 @@
               
                 <!-- COMPLETED Status: Show completion message -->
                 <div v-if="selectedBooking.status === 'Completed'" class="mt-4 p-3 rounded-lg bg-green-50 border border-green-200">
-                  <h5 class="font-medium text-sm mb-1 text-green-800">
-                    Consultation Completed
+                  <h5 class="font-medium text-sm mb-2 text-green-800">
+                    Consultation Completed Successfully
                   </h5>
-                  <p class="text-sm text-green-700">
+                  <p class="text-sm text-green-700 mb-3">
                     Your consultation has been completed successfully. Thank you for participating!
                   </p>
+                  
+                  <!-- Adviser Notes Section -->
                   <div v-if="selectedBooking.completionNotes" class="mt-3 p-2 bg-white rounded border border-green-300">
-                    <h6 class="font-medium text-xs text-green-800 mb-1">Adviser Notes:</h6>
+                    <h6 class="font-medium text-xs text-green-800 mb-1">Adviser Note:</h6>
                     <p class="text-sm text-green-700">{{ selectedBooking.completionNotes }}</p>
+                  </div>
+                  
+                  <!-- No Notes Message -->
+                  <div v-else class="mt-3 p-2 bg-white rounded border border-green-300">
+                    <p class="text-xs text-green-600 italic">
+                      No additional notes were provided by your adviser.
+                    </p>
                   </div>
                 </div>
               
@@ -1169,6 +1188,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted, Teleport } from
 import { notificationService } from '../../services/notificationService'
 import { useAuthStore } from '../../stores/authStore'
 import api from '../../services/api'
+import UnifiedTable from '../../components/ui/UnifiedTable.vue'
 
 const authStore = useAuthStore()
 
@@ -1192,8 +1212,28 @@ const availableAdvisers = ref([])
 const historyFilters = reactive({
   adviser: '',
   dateFrom: '',
-  dateTo: ''
+  dateTo: '',
+  meetingType: ''
 })
+
+// UnifiedTable data for student history
+const showStudentHistoryFilters = ref(false)
+const historySearchQuery = ref('')
+
+const studentHistoryTableColumns = [
+  { key: 'adviserName', label: 'Adviser Name', class: '' },
+  { key: 'concern', label: 'Concern', class: '' },
+  { key: 'meetingType', label: 'Meeting Type', class: '' },
+  { key: 'date', label: 'Date', class: '' },
+  { key: 'time', label: 'Time', class: '' }
+]
+
+const studentHistorySortableColumns = [
+  { value: 'adviserName', label: 'Adviser Name' },
+  { value: 'date', label: 'Date' },
+  { value: 'time', label: 'Time' },
+  { value: 'meetingType', label: 'Meeting Type' }
+]
 
 // Week days (Monday to Friday)
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -1555,10 +1595,29 @@ const consultationsForWeek = computed(() => {
 const filteredHistory = computed(() => {
   let filtered = consultationHistory.value
 
+  // Search functionality
+  if (historySearchQuery.value) {
+    const query = historySearchQuery.value.toLowerCase()
+    filtered = filtered.filter(consultation => {
+      const adviserName = `${consultation.adviser?.firstName || ''} ${consultation.adviser?.lastName || ''}`.toLowerCase()
+      const concern = consultation.concern?.toLowerCase() || ''
+      
+      return adviserName.includes(query) || 
+             concern.includes(query)
+    })
+  }
+
   if (historyFilters.adviser) {
     filtered = filtered.filter(consultation => 
       consultation.adviser._id === historyFilters.adviser
     )
+  }
+
+  if (historyFilters.meetingType) {
+    filtered = filtered.filter(consultation => {
+      const meetingType = consultation.consultationType === 'chat' ? 'Virtual' : 'In-Person'
+      return meetingType === historyFilters.meetingType
+    })
   }
 
   if (historyFilters.dateFrom || historyFilters.dateTo) {
@@ -1586,11 +1645,24 @@ const filteredHistory = computed(() => {
   return filtered.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
 })
 
+// Data for Student History UnifiedTable
+const studentHistoryForUnifiedTable = computed(() => {
+  return filteredHistory.value.map(consultation => {
+    return {
+      adviserName: `${consultation.adviser?.salutation || ''} ${consultation.adviser?.firstName || ''} ${consultation.adviser?.lastName || ''}`.trim(),
+      concern: consultation.concern || 'No concern specified',
+      meetingType: consultation.consultationType === 'chat' ? 'Virtual' : 'In-Person',
+      date: formatConsultationDate(consultation),
+      time: formatTimeRange(consultation.startTime, consultation.endTime)
+    }
+  })
+})
+
 // History functions
 const loadConsultationHistory = async () => {
   try {
     loadingHistory.value = true
-    const response = await api.get('/consultations/my-history')
+    const response = await api.get('/consultations/student-history')
     consultationHistory.value = response.data || []
     
     // Extract unique advisers for filter
@@ -1610,9 +1682,61 @@ const loadConsultationHistory = async () => {
 }
 
 const clearHistoryFilters = () => {
+  historySearchQuery.value = ''
   historyFilters.adviser = ''
   historyFilters.dateFrom = ''
   historyFilters.dateTo = ''
+  historyFilters.meetingType = ''
+}
+
+// UnifiedTable event handlers for student history
+const handleStudentHistorySearch = (searchTerm) => {
+  historySearchQuery.value = searchTerm
+}
+
+const handleStudentHistorySort = (column, direction) => {
+  // Sort the filtered data based on column and direction
+  const sorted = [...filteredHistory.value].sort((a, b) => {
+    let aValue, bValue
+    
+    switch (column) {
+      case 'adviserName':
+        aValue = `${a.adviser?.firstName || ''} ${a.adviser?.lastName || ''}`.toLowerCase()
+        bValue = `${b.adviser?.firstName || ''} ${b.adviser?.lastName || ''}`.toLowerCase()
+        break
+      case 'date':
+        aValue = new Date(a.weekStart)
+        bValue = new Date(b.weekStart)
+        break
+      case 'time':
+        aValue = a.startTime
+        bValue = b.startTime
+        break
+      case 'meetingType':
+        aValue = a.consultationType === 'chat' ? 'Virtual' : 'In-Person'
+        bValue = b.consultationType === 'chat' ? 'Virtual' : 'In-Person'
+        break
+      default:
+        return 0
+    }
+    
+    if (direction === 'asc') {
+      return aValue > bValue ? 1 : -1
+    } else {
+      return aValue < bValue ? 1 : -1
+    }
+  })
+  
+  // Update the consultation history with sorted data
+  consultationHistory.value = sorted
+}
+
+const handleStudentHistoryPageChange = (page) => {
+  // Pagination is handled by UnifiedTable component
+}
+
+const toggleStudentHistoryFilters = () => {
+  showStudentHistoryFilters.value = !showStudentHistoryFilters.value
 }
 
 const formatDate = (dateString) => {

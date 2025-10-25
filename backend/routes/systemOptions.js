@@ -38,6 +38,7 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       // Update the options
       if (updatedOptions.class) options.class = updatedOptions.class;
       if (updatedOptions.subject) options.subject = updatedOptions.subject;
+      if (updatedOptions.consultation) options.consultation = updatedOptions.consultation;
       options.updatedAt = Date.now();
     }
     

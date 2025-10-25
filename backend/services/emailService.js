@@ -64,7 +64,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -135,7 +135,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -199,7 +199,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -268,7 +268,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -331,7 +331,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -400,7 +400,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -463,7 +463,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -532,7 +532,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -605,7 +605,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -690,7 +690,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
@@ -889,7 +889,7 @@ class EmailService {
       month: 'long', 
       day: 'numeric' 
     });
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][consultation.dayOfWeek];
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">

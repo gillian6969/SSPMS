@@ -107,7 +107,7 @@
             Add Year Level
           </button>
         </div>
-        
+
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">Sections by Year Level</h3>
           <div class="space-y-6">
@@ -142,7 +142,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">Majors by Year Level</h3>
           
@@ -170,49 +170,49 @@
               <div v-for="yearLevel in options.class.yearLevels" :key="yearLevel" v-show="activeMajorTab === yearLevel">
                 <div class="space-y-2 mb-4">
                   <div v-for="(major, index) in getMajorsForYearLevel(yearLevel)" :key="index" class="flex items-center">
-                    <input 
-                      type="text" 
+                  <input 
+                    type="text" 
                       v-model="getMajorsForYearLevel(yearLevel)[index]" 
-                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                    />
-                    <button 
+                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                  />
+                  <button 
                       @click="removeMajorForYearLevel(yearLevel, index)" 
-                      class="ml-2 text-red-500 hover:text-red-700"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
+                    class="ml-2 text-red-500 hover:text-red-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
                 </div>
-                <button 
+              </div>
+              <button 
                   @click="addMajorForYearLevel(yearLevel)" 
                   class="text-primary hover:text-primary-dark flex items-center"
-                >
+              >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                  </svg>
+                  <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
                   Add Major for {{ yearLevel }} Year
-                </button>
+              </button>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">Room Configuration</h3>
           <div class="border border-gray-200 rounded-lg p-4">
             <h4 class="font-medium mb-2">Available Rooms</h4>
             <div class="space-y-2 mb-4">
               <div v-for="(room, index) in options.class.rooms" :key="index" class="flex items-center">
-                <input 
-                  type="text" 
-                  v-model="options.class.rooms[index]" 
+                <input
+                  type="text"
+                  v-model="options.class.rooms[index]"
                   class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                   placeholder="e.g. 301"
                 />
-                <button 
-                  @click="removeRoom(index)" 
+                <button
+                  @click="removeRoom(index)"
                   class="ml-2 text-red-500 hover:text-red-700"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -221,8 +221,8 @@
                 </button>
               </div>
             </div>
-            <button 
-              @click="addRoom" 
+            <button
+              @click="addRoom"
               class="text-primary hover:text-primary-dark flex items-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -235,19 +235,19 @@
             </p>
           </div>
         </div>
-        
+
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">Default Sessions</h3>
           <p class="text-sm text-gray-500 mb-4">These sessions will be automatically added to new classes</p>
           <div class="space-y-2 mb-4">
             <div v-for="(session, index) in options.class.defaultSessions" :key="index" class="flex items-center">
-              <input 
-                type="text" 
-                v-model="options.class.defaultSessions[index].title" 
+              <input
+                type="text"
+                v-model="options.class.defaultSessions[index].title"
                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
               />
-              <button 
-                @click="removeDefaultSession(index)" 
+              <button
+                @click="removeDefaultSession(index)"
                 class="ml-2 text-red-500 hover:text-red-700"
                 :disabled="index === 0"
                 :class="{'opacity-50 cursor-not-allowed': index === 0}"
@@ -258,8 +258,8 @@
               </button>
             </div>
           </div>
-          <button 
-            @click="addDefaultSession" 
+          <button
+            @click="addDefaultSession"
             class="text-primary hover:text-primary-dark flex items-center"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -269,31 +269,31 @@
           </button>
         </div>
       </div>
-      
+
       <!-- Subject Settings Tab -->
       <div v-if="activeTab === 'subject'" class="p-6">
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">Subject Year Levels</h3>
           <div class="space-y-2 mb-4">
             <div v-for="(yearLevel, index) in options.subject.yearLevels" :key="index" class="flex items-center">
-              <input 
-                type="text" 
+                <input 
+                  type="text" 
                 v-model="options.subject.yearLevels[index]" 
-                class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
               />
               <button 
                 @click="removeSubjectYearLevel(index)" 
                 class="ml-2 text-red-500 hover:text-red-700"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                </svg>
-              </button>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                </button>
             </div>
           </div>
-          <button 
+          <button
             @click="addSubjectYearLevel" 
-            class="text-primary hover:text-primary-dark flex items-center"
+            class="text-primary hover:text-primary-dark flex items-center"     
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
@@ -302,7 +302,7 @@
           </button>
           <p class="mt-2 text-sm text-gray-500">These are the year levels available for subjects. Different from class year levels.</p>
         </div>
-        
+
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">School Year</h3>
           <div class="space-y-2 mb-4">
@@ -326,7 +326,7 @@
             <p class="text-sm text-gray-500">This is the title for day zero session (automatically added to all subjects)</p>
           </div>
         </div>
-        
+
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">Hours Options</h3>
           <div class="space-y-2 mb-4">
@@ -346,9 +346,9 @@
               </button>
             </div>
           </div>
-          <button 
+          <button
             @click="addHoursOption" 
-            class="text-primary hover:text-primary-dark flex items-center"
+            class="text-primary hover:text-primary-dark flex items-center"     
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
@@ -357,26 +357,131 @@
           </button>
         </div>
 
+        <!-- SSP Subject Setup -->
+        <div class="mb-6">
+          <h3 class="text-lg font-medium mb-3">SSP Subject Setup</h3>
+          <p class="text-sm text-gray-500 mb-4">Configure SSP codes and session titles for specific year level and semester combinations</p>
+          
+          <!-- Template Selection -->
+          <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-2">Select Year Level</label>
+                <select 
+                  v-model="selectedTemplate.yearLevel" 
+                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                >
+                  <option value="">Choose Year Level</option>
+                  <option v-for="yearLevel in options.subject.yearLevels" :key="yearLevel" :value="yearLevel">
+                    {{ yearLevel }} Year
+                  </option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-2">Select Semester</label>
+                <select 
+                  v-model="selectedTemplate.semester" 
+                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                  :disabled="!selectedTemplate.yearLevel"
+                >
+                  <option value="">Choose Semester</option>
+                  <option value="1st Semester">1st Semester</option>
+                  <option value="2nd Semester">2nd Semester</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Template Editor -->
+          <div v-if="selectedTemplate.yearLevel && selectedTemplate.semester" class="border border-gray-200 rounded-lg p-6">
+            <div class="mb-6">
+              <h4 class="text-lg font-medium text-gray-800">
+                {{ selectedTemplate.yearLevel }} Year - {{ selectedTemplate.semester }}
+              </h4>
+            </div>
+            
+            <!-- SSP Code -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-600 mb-2">SSP Code</label>
+              <input 
+                type="text" 
+                v-model="currentTemplate.sspCode" 
+                class="w-full p-3 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                placeholder="e.g., SSP-2A-1"
+              />
+            </div>
+            
+            <!-- Session Titles -->
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-3">Session Titles (Day 0-17)</label>
+              <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="grid grid-cols-1 gap-3">
+                  <!-- Day 0 - Introduction (read-only) -->
+                  <div class="flex items-center space-x-3 bg-blue-50 p-3 rounded-md">
+                    <span class="w-12 text-sm font-medium text-blue-700 text-center">Day 0</span>
+                    <input 
+                      type="text" 
+                      v-model="currentTemplate.dayZeroTitle" 
+                      class="flex-1 p-2 border border-blue-200 rounded-md bg-blue-50 text-sm"
+                      readonly
+                      placeholder="Auto-populated introduction session"
+                    />
+                    <span class="text-xs text-blue-600">Auto-added</span>
+                  </div>
+                  
+                  <!-- Days 1-17 -->
+                  <div v-for="day in 17" :key="day" class="flex items-center space-x-3" :class="{ 'bg-yellow-50': isExamSessionDay(day) }">
+                    <span class="w-12 text-sm font-medium text-gray-600 text-center">Day {{ day }}</span>
+                    <input 
+                      type="text" 
+                      v-model="currentTemplate.sessions[day-1]" 
+                      class="flex-1 p-2 border border-gray-200 rounded-md focus:ring-1 focus:ring-primary focus:border-primary text-sm"
+                      :class="{ 
+                        'bg-yellow-50 border-yellow-300 cursor-not-allowed': isExamSessionDay(day),
+                        'bg-white': !isExamSessionDay(day)
+                      }"
+                      :readonly="isExamSessionDay(day)"
+                      :placeholder="isExamSessionDay(day) ? 'Auto-populated from exam sessions' : `Enter session title for day ${day}`"
+                    />
+                    <span v-if="isExamSessionDay(day)" class="text-xs text-yellow-600 font-medium">Auto-filled</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- No Selection State -->
+          <div v-else class="text-center py-12 text-gray-500">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h4 class="text-lg font-medium text-gray-600 mb-2">No Template Selected</h4>
+            <p class="text-sm">Please select a year level and semester to configure the SSP template.</p>
+          </div>
+        </div>
+
         <!-- Periodical Examination Sessions -->
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">Periodical Examination Sessions</h3>
           <p class="text-sm text-gray-500 mb-4">Define which session days will be used for periodical examinations</p>
           
           <div class="border border-gray-200 rounded-lg p-4">
-            <div v-if="!options.subject.examSessionDays" class="mb-4 text-gray-500 text-sm">
+            
+            <div v-if="!options.subject.examSessionDays || options.subject.examSessionDays.length === 0" class="mb-4 text-gray-500 text-sm">
               No exam sessions configured. Add sessions below.
             </div>
             
             <div v-else class="space-y-4 mb-4">
               <div v-for="(sessionInfo, index) in options.subject.examSessionDays" :key="index" 
-                   class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                   class="border border-gray-200 rounded-lg p-3 bg-yellow-50">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Exam Name</label>
                     <input 
                       type="text" 
                       v-model="sessionInfo.name" 
-                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary bg-white"
                       placeholder="e.g. Periodical Exam 1"
                     />
                   </div>
@@ -384,7 +489,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Session Day Number</label>
                     <select
                       v-model="sessionInfo.day"
-                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary bg-white"
                     >
                       <option v-for="day in 17" :key="day" :value="day">Day {{ day }}</option>
                     </select>
@@ -418,60 +523,66 @@
               </svg>
               Add Exam Session
             </button>
-            <p class="text-sm text-gray-500 mt-2">
-              Define up to 3 periodical exam sessions. The system will automatically set these days as exam sessions when creating subjects.
-            </p>
+     
           </div>
         </div>
       </div>
-      
+
       <!-- Consultation Settings Tab -->
       <div v-if="activeTab === 'consultation'" class="p-6">
         <div class="mb-6">
-          <h3 class="text-lg font-medium mb-3">Fixed Consultation Duration</h3>
+          <h3 class="text-lg font-medium mb-3">Consultation Duration</h3>
           <div class="space-y-2 mb-4">
-            <input 
-              type="number" 
-              v-model.number="options.consultation.fixedDuration" 
+            <input
+              type="number"
+              v-model.number="options.consultation.defaultDuration" 
               min="1"
               max="8"
               class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
             />
-            <p class="text-sm text-gray-500">Fixed duration in hours for all consultation sessions. This cannot be changed when creating consultations.</p>
+            <p class="text-sm text-gray-500">Default duration in hours for consultation sessions. This can be changed when creating consultations.</p>
           </div>
         </div>
-        
+
         <div class="mb-6">
-          <h3 class="text-lg font-medium mb-3">Business Hours</h3>
+          <h3 class="text-lg font-medium mb-3">Consultation Hours</h3>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Start Time (AM)</label>
-              <input 
-                type="number" 
-                v-model.number="options.consultation.businessHours.start" 
-                min="6"
-                max="12"
+              <label class="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+              <select 
+                v-model="options.consultation.businessHours.start"      
                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-              />
-              <p class="text-sm text-gray-500 mt-1">Business hours start time (6-12 AM)</p>
+              >
+                <option value="7">7:00 AM</option>
+                <option value="8">8:00 AM</option>
+                <option value="9">9:00 AM</option>
+                <option value="10">10:00 AM</option>
+                <option value="11">11:00 AM</option>
+                <option value="12">12:00 PM</option>
+              </select>
+              <p class="text-sm text-gray-500 mt-1">Consultation hours start time</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">End Time (PM)</label>
-              <input 
-                type="number" 
-                v-model.number="options.consultation.businessHours.end" 
-                min="17"
-                max="22"
+              <label class="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+              <select 
+                v-model="options.consultation.businessHours.end"        
                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-              />
-              <p class="text-sm text-gray-500 mt-1">Business hours end time (5-10 PM)</p>
+              >
+                <option value="13">1:00 PM</option>
+                <option value="14">2:00 PM</option>
+                <option value="15">3:00 PM</option>
+                <option value="16">4:00 PM</option>
+                <option value="17">5:00 PM</option>
+                <option value="18">6:00 PM</option>
+              </select>
+              <p class="text-sm text-gray-500 mt-1">Consultation hours end time</p>
             </div>
           </div>
-          <p class="text-sm text-gray-500 mt-2">These settings control when consultations can be scheduled and how long they can run.</p>
+          <p class="text-sm text-gray-500 mt-2">These settings control when consultations can be scheduled and the available time range.</p>
         </div>
       </div>
     </div>
-    
+
     <!-- Status Message -->
     <div v-if="statusMessage" class="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 max-w-md">
       <div class="flex items-center">
@@ -498,6 +609,18 @@ const activeTab = ref('class')
 const statusMessage = ref('')
 const statusType = ref('')
 const activeMajorTab = ref('') // Active tab for majors section
+
+// Template selection and editing
+const selectedTemplate = reactive({
+  yearLevel: '',
+  semester: ''
+})
+
+const currentTemplate = reactive({
+  sspCode: '',
+  dayZeroTitle: 'INTRODUCTION',
+  sessions: Array(17).fill('')
+})
 
 const options = reactive({
   class: {
@@ -530,7 +653,7 @@ const options = reactive({
     ]
   },
   consultation: {
-    fixedDuration: 3,
+    defaultDuration: 3,
     businessHours: {
       start: 7,
       end: 18
@@ -570,7 +693,7 @@ const defaultOptions = {
     ]
   },
   consultation: {
-    fixedDuration: 3,
+    defaultDuration: 3,
     businessHours: {
       start: 7,
       end: 18
@@ -588,11 +711,11 @@ watch(() => options.class.yearLevels, (newYearLevels, oldYearLevels) => {
   }
   
   for (const yearLevel in options.class.majors) {
-    if (!newYearLevels.includes(yearLevel)) {
-      delete options.class.majors[yearLevel];
-    }
+      if (!newYearLevels.includes(yearLevel)) {
+        delete options.class.majors[yearLevel];
+      }
   }
-  
+
   // Handle added year levels
   newYearLevels.forEach(yearLevel => {
     if (!options.class.sections[yearLevel]) {
@@ -604,6 +727,13 @@ watch(() => options.class.yearLevels, (newYearLevels, oldYearLevels) => {
     }
   });
 }, { deep: true });
+
+// Watch for defaultZeroDayTitle changes to update current template
+watch(() => options.subject.defaultZeroDayTitle, (newTitle) => {
+  if (currentTemplate.dayZeroTitle !== newTitle) {
+    currentTemplate.dayZeroTitle = newTitle
+  }
+})
 
 onMounted(async () => {
   await fetchOptions()
@@ -635,10 +765,18 @@ async function fetchOptions() {
       if (data.class && !data.class.rooms) {
         data.class.rooms = defaultOptions.class.rooms;
       }
-      
+
+      // Ensure examSessionDays exists
+      if (!data.subject || !data.subject.examSessionDays) {
+        data.subject = { ...data.subject, examSessionDays: defaultOptions.subject.examSessionDays };
+      }
+
       // Merge with defaults to ensure we have all properties
       options.class = { ...options.class, ...data.class }
       options.subject = { ...options.subject, ...data.subject }
+      options.consultation = { ...options.consultation, ...data.consultation }
+
+      
       showStatus('Settings loaded successfully', 'success')
     }
   } catch (error) {
@@ -658,7 +796,7 @@ async function saveOptions() {
     if (!token) {
       notificationService.showError('You must be logged in as an admin to save options');
       showStatus('Authentication required', 'error');
-      return;
+          return;
     }
     
     await systemOptionsService.update(options)
@@ -711,12 +849,12 @@ async function resetToDefaults() {
         } else {
           notificationService.showError('Failed to reset options: ' + (error.response.data?.message || 'Server error'));
         }
-      } else {
-        // Fallback to local reset
+    } else {
+      // Fallback to local reset
         options.class = JSON.parse(JSON.stringify(defaultOptions.class));
         options.subject = JSON.parse(JSON.stringify(defaultOptions.subject));
-        notificationService.showWarning('Reset applied locally. Server reset failed.');
-      }
+      notificationService.showWarning('Reset applied locally. Server reset failed.');                                                                            
+    }
       
       showStatus('Reset applied locally only', 'warning');
     }
@@ -827,4 +965,79 @@ function addExamSessionDay() {
 function removeExamSessionDay(index) {
   options.subject.examSessionDays.splice(index, 1)
 }
-</script> 
+
+// Template management - auto-load when selection changes
+watch(() => [selectedTemplate.yearLevel, selectedTemplate.semester], ([yearLevel, semester]) => {
+  if (yearLevel && semester) {
+    
+    // Initialize sspTemplates if it doesn't exist
+    if (!options.subject.sspTemplates) {
+      options.subject.sspTemplates = {}
+    }
+    
+    if (!options.subject.sspTemplates[yearLevel]) {
+      options.subject.sspTemplates[yearLevel] = {}
+    }
+    
+    if (!options.subject.sspTemplates[yearLevel][semester]) {
+      options.subject.sspTemplates[yearLevel][semester] = {
+        sspCode: '',
+        sessions: Array(17).fill('')
+      }
+    }
+    
+    // Load existing template data
+    const template = options.subject.sspTemplates[yearLevel][semester]
+    currentTemplate.sspCode = template.sspCode || ''
+    currentTemplate.dayZeroTitle = options.subject.defaultZeroDayTitle || 'INTRODUCTION'
+    currentTemplate.sessions = [...(template.sessions || Array(17).fill(''))]
+    
+    // Apply exam session titles to the sessions array
+    if (options.subject.examSessionDays && options.subject.examSessionDays.length > 0) {
+      options.subject.examSessionDays.forEach(exam => {
+        if (exam.day > 0 && exam.day < 18 && exam.name) {
+          currentTemplate.sessions[exam.day - 1] = exam.name
+        }
+      })
+    }
+    
+  }
+}, { immediate: true })
+
+// Auto-save template changes
+watch(() => [currentTemplate.sspCode, currentTemplate.sessions], () => {
+  if (selectedTemplate.yearLevel && selectedTemplate.semester) {
+    // Ensure sspTemplates structure exists
+    if (!options.subject.sspTemplates) {
+      options.subject.sspTemplates = {}
+    }
+    
+    if (!options.subject.sspTemplates[selectedTemplate.yearLevel]) {
+      options.subject.sspTemplates[selectedTemplate.yearLevel] = {}
+    }
+    
+    // Save the template data automatically
+    options.subject.sspTemplates[selectedTemplate.yearLevel][selectedTemplate.semester] = {
+      sspCode: currentTemplate.sspCode,
+      sessions: [...currentTemplate.sessions]
+    }
+  }
+}, { deep: true })
+
+// Watch for exam session changes and update template sessions
+watch(() => options.subject.examSessionDays, () => {
+  if (selectedTemplate.yearLevel && selectedTemplate.semester && options.subject.examSessionDays) {
+    // Apply exam session titles to the sessions array
+    options.subject.examSessionDays.forEach(exam => {
+      if (exam.day > 0 && exam.day < 18 && exam.name) {
+        currentTemplate.sessions[exam.day - 1] = exam.name
+      }
+    })
+  }
+}, { deep: true })
+
+// Check if a day is an exam session day
+function isExamSessionDay(day) {
+  return options.subject.examSessionDays && options.subject.examSessionDays.some(exam => exam.day === day)
+}
+</script>

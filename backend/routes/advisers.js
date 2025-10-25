@@ -16,7 +16,10 @@ const sgMail = require('@sendgrid/mail');
 // Get all advisers
 router.get('/', authenticate, authorizeAdmin, async (req, res) => {
   try {
-    const advisers = await User.find({ role: 'adviser' }).select('-password');
+    const advisers = await User.find({ 
+      role: 'adviser',
+      status: { $in: ['active', 'pending'] } // Only show active and pending advisers
+    }).select('-password');
     res.json(advisers);
   } catch (error) {
     console.error('Get advisers error:', error);
