@@ -8,10 +8,10 @@
             <h1 class="text-2xl font-normal text-gray-800">SSP Subjects</h1>
             <p class="text-gray-500 mt-1 font-normal">Manage Student Success Program subjects and sessions</p>
           </div>
-            <button 
-              @click="openAddModal" 
+          <button 
+            @click="openAddModal" 
               class="px-4 py-2 bg-green-800 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 transition-colors"
-            >
+          >
             <span class="flex items-center">
               <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -39,8 +39,8 @@
         >
           <template #filters>
             <!-- Year Level Filter from system options -->
-            <select 
-              v-model="filters.yearLevel" 
+            <select
+              v-model="filters.yearLevel"
               class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             >
               <option value="">All Years</option>
@@ -68,55 +68,55 @@
           </template>
 
           <template #row="{ item: subject }">
-            <td class="px-6 py-4">
-              <div class="flex items-center">
-                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span class="text-sm font-normal text-blue-600">
-                    {{ subject.sspCode?.charAt(0) || 'S' }}
+                <td class="px-6 py-4">
+                  <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <span class="text-sm font-normal text-blue-600">
+                        {{ subject.sspCode?.charAt(0) || 'S' }}
+                      </span>
+                    </div>
+                    <div>
+                      <div class="text-sm font-normal text-gray-800">{{ subject.sspCode || 'No Code' }}</div>
+                      <div class="text-xs text-gray-500">Subject Code</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-800">
+                  {{ subject.yearLevel }} Year
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-800">
+                  {{ subject.schoolYear || '2024 - 2025' }}
+                </td>
+                <td class="px-6 py-4">
+                  <span 
+                    class="inline-flex px-2 py-1 text-xs font-normal rounded-md"
+                    :class="subject.semester === '1st Semester' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                  >
+                    {{ subject.semester }}
                   </span>
-                </div>
-                <div>
-                  <div class="text-sm font-normal text-gray-800">{{ subject.sspCode || 'No Code' }}</div>
-                  <div class="text-xs text-gray-500">Subject Code</div>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-800">
-              {{ subject.yearLevel }} Year
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-800">
-              {{ subject.schoolYear || '2024 - 2025' }}
-            </td>
-            <td class="px-6 py-4">
-              <span 
-                class="inline-flex px-2 py-1 text-xs font-normal rounded-md"
-                :class="subject.semester === '1st Semester' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
-              >
-                {{ subject.semester }}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-800">
-              {{ subject.hours || '1' }} {{ subject.hours === 1 ? 'Hour' : 'Hours' }}
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-800">
-              {{ subject.sessions ? subject.sessions.length : 0 }} / 18
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end space-x-2">
-                <button 
-                  @click="viewSessions(subject)" 
-                  class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
-                >
-                  View Sessions
-                </button>
-                <button 
-                  @click="editSubject(subject)" 
-                  class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
-                >
-                  Edit
-                </button>
-              </div>
-            </td>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-800">
+                  {{ subject.hours || '1' }} {{ subject.hours === 1 ? 'Hour' : 'Hours' }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-800">
+                  {{ subject.sessions ? subject.sessions.length : 0 }} / 18
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex items-center justify-end space-x-2">
+                    <button 
+                      @click="viewSessions(subject)" 
+                      class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
+                    >
+                      View Sessions
+                    </button>
+                    <button 
+                      @click="editSubject(subject)" 
+                      class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </td>
           </template>
         </UnifiedTable>
       </div>

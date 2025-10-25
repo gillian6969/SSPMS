@@ -53,13 +53,80 @@ router.post('/send-congratulation', authenticate, async (req, res) => {
   }
 });
 
-// Get notifications for current user
+// Get notifications for current user with pagination and date filtering
 router.get('/', authenticate, async (req, res) => {
   try {
-    const list = await Notification.find({ recipient: req.user._id })
+    const { page = 1, limit = 10, dateFilter = 'all', startDate, endDate } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build date filter
+    let dateQuery = {};
+    const now = new Date();
+    
+    switch (dateFilter) {
+      case 'today':
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+        dateQuery = { createdAt: { $gte: todayStart, $lt: todayEnd } };
+        break;
+      case 'thisWeek':
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
+        weekStart.setHours(0, 0, 0, 0);
+        dateQuery = { createdAt: { $gte: weekStart } };
+        break;
+      case 'lastWeek':
+        const lastWeekStart = new Date(now);
+        lastWeekStart.setDate(now.getDate() - now.getDay() - 6); // Previous Monday
+        lastWeekStart.setHours(0, 0, 0, 0);
+        const lastWeekEnd = new Date(lastWeekStart);
+        lastWeekEnd.setDate(lastWeekStart.getDate() + 7);
+        dateQuery = { createdAt: { $gte: lastWeekStart, $lt: lastWeekEnd } };
+        break;
+      case 'custom':
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999); // End of day
+          dateQuery = { createdAt: { $gte: start, $lte: end } };
+        }
+        break;
+      default:
+        // 'all' - no date filter
+        break;
+    }
+
+    // Build query
+    const query = { recipient: req.user._id, ...dateQuery };
+
+    // Get total count for pagination
+    const totalCount = await Notification.countDocuments(query);
+
+    // Get paginated results
+    const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
       .lean();
-    res.json(list || []);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limitNum);
+    const hasNextPage = pageNum < totalPages;
+    const hasPrevPage = pageNum > 1;
+
+    res.json({
+      data: notifications || [],
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalCount,
+        hasNextPage,
+        hasPrevPage,
+        limit: limitNum
+      }
+    });
   } catch (error) {
     console.error('Error fetching notifications:', error);
     res.status(500).json({ message: 'Failed to fetch notifications' });

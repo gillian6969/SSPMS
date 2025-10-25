@@ -72,7 +72,7 @@ const ConsultationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Active', 'Inactive', 'Full', 'Pending_Adviser_Acceptance', 'Not_Available', 'Reschedule_Requested', 'Not_Available_Requested'],
+    enum: ['Active', 'Inactive', 'Full', 'Pending_Adviser_Acceptance', 'Not_Available', 'Reschedule_Requested', 'Not_Available_Requested', 'Cancelled'],
     default: 'Pending_Adviser_Acceptance'
   },
   notes: {
@@ -124,6 +124,18 @@ const ConsultationSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     }
+  },
+  // Cancellation fields
+  cancellationReason: {
+    type: String,
+    trim: true
+  },
+  cancelledAt: {
+    type: Date
+  },
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
   // Array of student bookings
   bookings: [{
@@ -220,6 +232,14 @@ const ConsultationSchema = new mongoose.Schema({
     },
     completedAt: {
       type: Date
+    },
+    // Cancellation fields for individual bookings
+    cancelledAt: {
+      type: Date
+    },
+    cancellationReason: {
+      type: String,
+      trim: true
     }
   }]
 }, {

@@ -8,17 +8,11 @@ class EmailService {
 
   async sendEmail(to, subject, html) {
     try {
-      if (this.isProduction) {
+      // Check if we have a valid SendGrid API key
+      const hasSendGridKey = process.env.EMAIL_PASSWORD && process.env.EMAIL_PASSWORD.startsWith('SG.');
+      
+      if (this.isProduction && hasSendGridKey) {
         // Production: Use SendGrid
-        if (!process.env.EMAIL_PASSWORD) {
-          throw new Error('EMAIL_PASSWORD environment variable is required for SendGrid in production');
-        }
-        
-        // Validate SendGrid API key format
-        if (!process.env.EMAIL_PASSWORD.startsWith('SG.')) {
-          throw new Error('Invalid SendGrid API key format. API key must start with "SG."');
-        }
-        
         sgMail.setApiKey(process.env.EMAIL_PASSWORD);
         
         const msg = {
@@ -31,7 +25,7 @@ class EmailService {
         await sgMail.send(msg);
         console.log('Email sent successfully via SendGrid to:', to);
       } else {
-        // Development: Use Gmail/Nodemailer
+        // Development or fallback: Use Gmail/Nodemailer
         const transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
@@ -701,9 +695,9 @@ class EmailService {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
         <!-- Header -->
-        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center;">
+        <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">PHINMA SSCMS</h1>
-          <p style="color: #fef3c7; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
+          <p style="color: #dcfce7; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
         </div>
         
         <!-- Content -->
@@ -719,7 +713,7 @@ class EmailService {
           </p>
           
           <!-- Consultation Details -->
-          <div style="background-color: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <div style="background-color: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Upcoming Consultation</h3>
             <div style="color: #374151; font-size: 14px; line-height: 1.8;">
               <p style="margin: 5px 0;"><strong>Adviser:</strong> ${consultation.adviser.salutation} ${consultation.adviser.firstName} ${consultation.adviser.lastName}</p>
@@ -748,7 +742,212 @@ class EmailService {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/student/consultations" style="display: inline-block; background-color: #f59e0b; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/student/consultations" style="display: inline-block; background-color: #22c55e; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View My Consultations
+            </a>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Helper function to format time from number to readable format
+  formatTimeForEmail(timeNumber) {
+    if (typeof timeNumber !== 'number') return timeNumber;
+    
+    const hour = Math.floor(timeNumber);
+    const minute = (timeNumber % 1) * 60;
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const displayMinute = minute === 0 ? '00' : minute.toString().padStart(2, '0');
+    
+    return `${displayHour}:${displayMinute} ${period}`;
+  }
+
+  // Generate consultation cancellation email for students
+  generateConsultationCancellationEmail(studentName, adviserFirstName, adviserLastName, dayOfWeek, startTime, endTime, reason) {
+    return `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f9fafb;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">Consultation Cancelled</h1>
+          <p style="color: #fef2f2; margin: 10px 0 0 0; font-size: 16px;">Your consultation has been cancelled</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="background: white; padding: 40px 30px;">
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Dear ${studentName},</p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            We regret to inform you that your consultation with <strong>${adviserFirstName} ${adviserLastName}</strong> has been cancelled.
+          </p>
+          
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #dc2626; margin: 0 0 15px 0; font-size: 18px;">Consultation Details</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.6;">
+              <p style="margin: 5px 0;"><strong>Adviser:</strong> ${adviserFirstName} ${adviserLastName}</p>
+              <p style="margin: 5px 0;"><strong>Day:</strong> ${dayOfWeek}</p>
+              <p style="margin: 5px 0;"><strong>Time:</strong> ${this.formatTimeForEmail(startTime)} - ${this.formatTimeForEmail(endTime)}</p>
+              <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #dc2626; font-weight: bold;">Cancelled</span></p>
+              ${reason ? `<p style="margin: 5px 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+            </div>
+          </div>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+            You can book a new consultation with other available advisers through the system.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/student/consultations" style="display: inline-block; background-color: #dc2626; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Book New Consultation
+            </a>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Generate admin consultation cancellation email
+  generateAdminConsultationCancellationEmail(adminName, adviserFirstName, adviserLastName, dayOfWeek, startTime, endTime, cancelledBookingsCount, reason) {
+    return `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f9fafb;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">Consultation Cancelled</h1>
+          <p style="color: #fef2f2; margin: 10px 0 0 0; font-size: 16px;">Adviser has cancelled their consultation</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="background: white; padding: 40px 30px;">
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Dear ${adminName},</p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            <strong>${adviserFirstName} ${adviserLastName}</strong> has cancelled their consultation schedule.
+          </p>
+          
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #dc2626; margin: 0 0 15px 0; font-size: 18px;">Cancelled Consultation Details</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.6;">
+              <p style="margin: 5px 0;"><strong>Adviser:</strong> ${adviserFirstName} ${adviserLastName}</p>
+              <p style="margin: 5px 0;"><strong>Day:</strong> ${dayOfWeek}</p>
+              <p style="margin: 5px 0;"><strong>Time:</strong> ${this.formatTimeForEmail(startTime)} - ${this.formatTimeForEmail(endTime)}</p>
+              <p style="margin: 5px 0;"><strong>Affected Students:</strong> ${cancelledBookingsCount} booking(s) cancelled</p>
+              <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #dc2626; font-weight: bold;">Cancelled</span></p>
+              ${reason ? `<p style="margin: 5px 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+            </div>
+          </div>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+            All affected students have been notified and can rebook with other available consultations.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/admin/consultations" style="display: inline-block; background-color: #dc2626; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View Consultations
+            </a>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Send consultation cancellation email to student
+  async sendConsultationCancellationEmail(studentEmail, studentName, adviserFirstName, adviserLastName, dayOfWeek, startTime, endTime, reason) {
+    const emailHtml = this.generateConsultationCancellationEmail(studentName, adviserFirstName, adviserLastName, dayOfWeek, startTime, endTime, reason);
+    await this.sendEmail(studentEmail, 'PHINMA SSCMS - Consultation Cancelled', emailHtml);
+  }
+
+  // Send admin consultation cancellation email
+  async sendAdminConsultationCancellationEmail(adminEmail, adminName, adviserFirstName, adviserLastName, dayOfWeek, startTime, endTime, cancelledBookingsCount, reason) {
+    const emailHtml = this.generateAdminConsultationCancellationEmail(adminName, adviserFirstName, adviserLastName, dayOfWeek, startTime, endTime, cancelledBookingsCount, reason);
+    await this.sendEmail(adminEmail, 'PHINMA SSCMS - Consultation Cancelled by Adviser', emailHtml);
+  }
+
+  // Generate adviser consultation reminder email
+  generateAdviserConsultationReminderEmail(adviser, consultation, bookedStudents) {
+    const weekStart = new Date(consultation.weekStart).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][consultation.dayOfWeek];
+    
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">PHINMA SSCMS</h1>
+          <p style="color: #dcfce7; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">Consultation Reminder - Starting Soon</h2>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Hello <strong>${adviser.salutation} ${adviser.firstName} ${adviser.lastName}</strong>,
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            This is a friendly reminder that your consultation session is starting in <strong>1 hour</strong>. You have <strong>${bookedStudents.length} student(s)</strong> booked for this session.
+          </p>
+          
+          <!-- Consultation Details -->
+          <div style="background-color: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Upcoming Consultation</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.8;">
+              <p style="margin: 5px 0;"><strong>Date:</strong> ${dayName}, ${weekStart}</p>
+              <p style="margin: 5px 0;"><strong>Time:</strong> ${consultation.startTime} - ${consultation.endTime}</p>
+              <p style="margin: 5px 0;"><strong>Duration:</strong> ${consultation.duration} hour(s)</p>
+              <p style="margin: 5px 0;"><strong>Booked Students:</strong> ${bookedStudents.length} student(s)</p>
+              <p style="margin: 5px 0;"><strong>Max Students:</strong> ${consultation.maxStudents}</p>
+            </div>
+          </div>
+          
+          <!-- Student List -->
+          ${bookedStudents.length > 0 ? `
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Booked Students</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.6;">
+              ${bookedStudents.map(student => `
+                <p style="margin: 5px 0;">• ${student.student?.user?.firstName || 'Student'} ${student.student?.user?.lastName || ''} ${student.concern ? `- ${student.concern}` : ''}</p>
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
+          
+          <!-- Preparation Instructions -->
+          <div style="background-color: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Preparation Instructions</h3>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 10px 0;">
+              <strong>For Virtual Meetings:</strong> Please start the meeting at the scheduled time and share the meeting link with students.
+            </p>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0;">
+              <strong>For In-Person Meetings:</strong> Please be available at the faculty room at the scheduled time.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/adviser/consultations" style="display: inline-block; background-color: #22c55e; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
               View My Consultations
             </a>
           </div>

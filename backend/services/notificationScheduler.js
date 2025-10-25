@@ -85,7 +85,7 @@ class NotificationScheduler {
       const consultations = await Consultation.find({
         dayOfWeek: systemDayOfWeek,
         status: 'Active',
-        'bookings.status': 'Pending' // Only send reminders for pending consultations
+        'bookings.status': 'Booked' // Only send reminders for booked consultations
       })
       .populate('adviser', 'firstName lastName email salutation')
       .populate({
@@ -100,12 +100,13 @@ class NotificationScheduler {
       console.log(`Found ${consultations.length} active consultations for today`);
 
       for (const consultation of consultations) {
-        // Parse consultation start time
-        const [startHour, startMinute] = consultation.startTime.split(':').map(Number);
+        // Parse consultation start time (stored as number like 10.5 for 10:30 AM)
+        const startHour = Math.floor(consultation.startTime);
+        const startMinute = Math.round((consultation.startTime - startHour) * 60);
         
         // Create consultation start time for today
         const consultationStartTime = new Date(now);
-        consultationStartTime.setHours(startHour, startMinute || 0, 0, 0);
+        consultationStartTime.setHours(startHour, startMinute, 0, 0);
         
         // Check if consultation is starting in approximately 1 hour (±15 minutes window)
         const timeDiff = consultationStartTime.getTime() - now.getTime();
@@ -114,12 +115,15 @@ class NotificationScheduler {
         if (isWithinReminderWindow) {
           console.log(`📅 Consultation ${consultation._id} starts at ${consultation.startTime} - sending reminders`);
           
-          // Send reminders to all pending students
-          const pendingBookings = consultation.bookings.filter(booking => booking.status === 'Pending');
+          // Send reminders to all booked students
+          const bookedStudents = consultation.bookings.filter(booking => booking.status === 'Booked');
           
-          for (const booking of pendingBookings) {
+          for (const booking of bookedStudents) {
             await this.sendConsultationReminder(consultation, booking);
           }
+          
+          // Send reminder to adviser
+          await this.sendAdviserConsultationReminder(consultation);
         }
       }
       
@@ -200,16 +204,86 @@ class NotificationScheduler {
   }
 
   /**
+   * Send consultation reminder to adviser
+   */
+  async sendAdviserConsultationReminder(consultation) {
+    try {
+      const adviser = consultation.adviser;
+      const adviserUserId = adviser._id;
+      
+      // Check if reminder was already sent for this consultation today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const existingReminder = await Notification.findOne({
+        recipient: adviserUserId,
+        'meta.consultationId': consultation._id,
+        'meta.reminderType': 'adviser_consultation_reminder',
+        createdAt: { $gte: today }
+      });
+      
+      if (existingReminder) {
+        console.log(`⏭️  Adviser reminder already sent today for consultation ${consultation._id}`);
+        return;
+      }
+      
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[consultation.dayOfWeek];
+      
+      // Count booked students
+      const bookedStudents = consultation.bookings.filter(booking => booking.status === 'Booked');
+      
+      // Send system notification to adviser
+      const notification = new Notification({
+        recipient: adviserUserId,
+        title: 'Consultation Reminder - Starting in 1 Hour',
+        message: `Your consultation is starting in 1 hour. You have ${bookedStudents.length} student(s) booked.`,
+        details: `Day: ${dayName}, Time: ${consultation.startTime} - ${consultation.endTime}. Please prepare for your consultation session.`,
+        type: 'info',
+        meta: {
+          consultationId: consultation._id,
+          reminderType: 'adviser_consultation_reminder'
+        }
+      });
+      
+      await notification.save();
+      console.log(`📢 System reminder sent to adviser ${adviser.firstName} ${adviser.lastName}`);
+      
+      // Send email reminder to adviser
+      try {
+        const emailHtml = emailService.generateAdviserConsultationReminderEmail(
+          adviser,
+          consultation,
+          bookedStudents
+        );
+        
+        await emailService.sendEmail(
+          adviser.email,
+          'PHINMA SSCMS - Consultation Reminder (Starting in 1 Hour)',
+          emailHtml
+        );
+        console.log(`📧 Email reminder sent to adviser: ${adviser.email}`);
+        
+      } catch (emailError) {
+        console.error('Failed to send adviser reminder email:', emailError);
+      }
+      
+    } catch (error) {
+      console.error('Error sending adviser consultation reminder:', error);
+    }
+  }
+
+  /**
    * Send a test reminder (for development/testing)
    */
   async sendTestReminder() {
     try {
       console.log('🧪 Sending test reminder...');
       
-      // Find any active consultation with pending bookings
+      // Find any active consultation with booked students
       const consultation = await Consultation.findOne({
         status: 'Active',
-        'bookings.status': 'Pending'
+        'bookings.status': 'Booked'
       })
       .populate('adviser', 'firstName lastName email salutation')
       .populate({
@@ -222,12 +296,12 @@ class NotificationScheduler {
       });
       
       if (consultation) {
-        const pendingBooking = consultation.bookings.find(b => b.status === 'Pending');
-        if (pendingBooking) {
-          await this.sendConsultationReminder(consultation, pendingBooking);
+        const bookedStudent = consultation.bookings.find(b => b.status === 'Booked');
+        if (bookedStudent) {
+          await this.sendConsultationReminder(consultation, bookedStudent);
           console.log('✅ Test reminder sent successfully');
         } else {
-          console.log('❌ No pending bookings found for test');
+          console.log('❌ No booked students found for test');
         }
       } else {
         console.log('❌ No active consultations found for test');

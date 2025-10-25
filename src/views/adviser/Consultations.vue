@@ -806,28 +806,28 @@
                             <!-- Virtual Meeting Buttons -->
                             <div v-if="booking.consultationType === 'chat'">
                               <!-- If meeting not started yet -->
-                              <button
+                            <button
                                 v-if="!booking.meetingStarted"
                                 @click="startMeeting(booking)"
                                 class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                              >
+                            >
                                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                   <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
                                 </svg>
                                 Start Meeting
-                              </button>
+                            </button>
                               
                               <!-- If meeting already started -->
-                              <button
+                            <button
                                 v-else
                                 @click="joinMeeting(booking)"
                                 class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                              >
+                            >
                                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                   <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
                                 </svg>
                                 Join Meeting (Active)
-                              </button>
+                            </button>
                             </div>
                             
                             <!-- Complete Button -->
@@ -957,6 +957,36 @@
                 </table>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          <!-- Modal Footer with Actions -->
+          <div v-if="selectedConsultation && selectedConsultation.status !== 'Cancelled'" class="mt-6 pt-6 border-t border-gray-200">
+            <div class="flex justify-end space-x-3">
+              <button
+                @click="closeDetailsModal"
+                class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                @click="openCancellationModal"
+                class="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              >
+                Cancel Consultation
+              </button>
+            </div>
+          </div>
+          
+          <!-- Modal Footer for Cancelled Consultations -->
+          <div v-else-if="selectedConsultation && selectedConsultation.status === 'Cancelled'" class="mt-6 pt-6 border-t border-gray-200">
+            <div class="flex justify-end space-x-3">
+              <button
+                @click="closeDetailsModal"
+                class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -1188,6 +1218,82 @@
         </div>
       </div>
     </Teleport>
+    
+    <!-- Cancellation Modal -->
+    <Teleport to="body">
+      <div v-if="showCancellationModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center" style="z-index: 999999;" @click.self="closeCancellationModal">
+        <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm border border-gray-200 border-opacity-60 rounded-2xl shadow-xl w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto scrollbar-hide transition-all duration-300" style="z-index: 1000000;">
+          <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+            <h2 class="text-2xl font-semibold text-gray-900">Cancel Consultation</h2>
+            <button @click="closeCancellationModal" class="text-gray-500 hover:text-gray-700 transition-colors duration-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Warning Message -->
+          <div class="mb-6 bg-red-50 p-4 rounded-lg border border-red-200">
+            <div class="flex">
+              <svg class="w-5 h-5 text-red-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div class="text-sm text-red-700">
+                <strong>Warning:</strong> This will cancel all student bookings for this consultation. Students will be notified and can rebook with other available consultations.
+              </div>
+            </div>
+          </div>
+          
+          <!-- Consultation Details -->
+          <div v-if="selectedConsultation" class="mb-6 bg-gray-50 p-4 rounded-lg border">
+            <h3 class="text-sm font-medium text-gray-800 mb-2">Consultation Details</h3>
+            <div class="text-sm text-gray-600">
+              <p><strong>Day:</strong> {{ weekDays[selectedConsultation.dayOfWeek] }}</p>
+              <p><strong>Time:</strong> {{ formatTimeRange(selectedConsultation.startTime, selectedConsultation.endTime) }}</p>
+              <p><strong>Affected Students:</strong> {{ (selectedConsultation.bookedStudents || 0) }} booking(s)</p>
+            </div>
+          </div>
+          
+          <!-- Cancellation Form -->
+          <form @submit.prevent="submitCancellation">
+            <div class="mb-6">
+              <label for="cancellationReason" class="block text-sm font-medium text-gray-700 mb-2">
+                Reason for Cancellation <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                id="cancellationReason"
+                v-model="cancellationForm.reason"
+                rows="4"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors resize-none"
+                placeholder="Please provide a reason for cancelling this consultation..."
+                required
+              ></textarea>
+              <p class="mt-1 text-xs text-gray-500">
+                This reason will be included in notifications sent to students and administrators.
+              </p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+              <button
+                type="button"
+                @click="closeCancellationModal"
+                class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="submittingCancellation || !cancellationForm.reason.trim()"
+                class="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <span v-if="submittingCancellation">Cancelling...</span>
+                <span v-else>Cancel Consultation</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
   </div>
 </template>
@@ -1243,6 +1349,13 @@ const showResolutionModal = ref(false)
 const submittingResolution = ref(false)
 const resolutionForm = ref({
   text: ''
+})
+
+// Cancellation modal data
+const showCancellationModal = ref(false)
+const submittingCancellation = ref(false)
+const cancellationForm = ref({
+  reason: ''
 })
 
 // Feedback modal mode ('normal' or 'escalation')
@@ -2101,6 +2214,48 @@ const formatDate = (dateString) => {
     })
   } catch (error) {
     return 'Invalid Date'
+  }
+}
+
+// Cancellation modal functions
+const openCancellationModal = () => {
+  cancellationForm.value.reason = ''
+  showCancellationModal.value = true
+}
+
+const closeCancellationModal = () => {
+  showCancellationModal.value = false
+  cancellationForm.value.reason = ''
+  submittingCancellation.value = false
+}
+
+const submitCancellation = async () => {
+  if (!selectedConsultation.value || !cancellationForm.value.reason.trim()) {
+    return
+  }
+  
+  try {
+    submittingCancellation.value = true
+    
+    const response = await api.post(`/consultations/${selectedConsultation.value._id}/cancel`, {
+      reason: cancellationForm.value.reason.trim()
+    })
+    
+    notificationService.showSuccess(response.data.message || 'Consultation cancelled successfully')
+    
+    // Close modals and refresh data
+    closeCancellationModal()
+    closeDetailsModal()
+    
+    // Reload consultations to reflect the cancellation
+    await loadConsultations()
+    
+  } catch (error) {
+    console.error('Error cancelling consultation:', error)
+    const message = error.response?.data?.message || 'Failed to cancel consultation'
+    notificationService.showError(message)
+  } finally {
+    submittingCancellation.value = false
   }
 }
 

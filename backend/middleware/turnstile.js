@@ -12,8 +12,16 @@ const validateTurnstile = async (req, res, next) => {
     }
     
     // Skip validation for dummy/placeholder tokens in development
-    if (turnstileToken.includes('DUMMY') || turnstileToken.includes('XXXX') || turnstileToken === 'test-token') {
+    if (turnstileToken.includes('DUMMY') || 
+        turnstileToken.includes('XXXX') || 
+        turnstileToken === 'test-token') {
       console.log('Dummy Turnstile token detected, skipping validation for development');
+      return next();
+    }
+    
+    // Only skip the Cloudflare dummy key in development mode
+    if (process.env.NODE_ENV === 'development' && turnstileToken.includes('1x00000000000000000000AA')) {
+      console.log('Development dummy Turnstile token detected, skipping validation');
       return next();
     }
     

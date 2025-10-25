@@ -27,35 +27,67 @@
         <div v-if="loading" class="flex items-center justify-center py-12">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
           <span class="text-sm text-gray-600">Loading notifications...</span>
+        </div>
+        
+        <!-- Filter Options - Always Show -->
+        <div v-else class="space-y-4">
+          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
+            <!-- Type Filter -->
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-700">Filter:</span>
+              <button @click="activeFilter = 'all'" class="px-3 py-1 rounded-full text-sm" :class="activeFilter === 'all' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">All</button>
+              <button @click="activeFilter = 'consultation'" class="px-3 py-1 rounded-full text-sm" :class="activeFilter === 'consultation' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">Consultation</button>
+              <button @click="activeFilter = 'system'" class="px-3 py-1 rounded-full text-sm" :class="activeFilter === 'system' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">System</button>
+          </div>
+            
+            <!-- Date Filter -->
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-700">Date:</span>
+              <select v-model="dateFilter" @change="applyFilters" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="thisWeek">This Week</option>
+                <option value="lastWeek">Last Week</option>
+                <option value="custom">Custom Range</option>
+            </select>
+          </div>
           </div>
           
-        <!-- Empty State -->
-        <div v-else-if="!notifications.length" class="text-center py-12">
-          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
-            <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-medium text-gray-800 mb-2">No Notifications</h3>
-          <p class="text-gray-500 max-w-md mx-auto">You don't have any notifications at the moment. Check back later for updates.</p>
-        </div>
-
-        <div v-else class="space-y-4">
-          <!-- Filter Options -->
-          <div class="flex justify-between items-center mb-4 text-sm">
+          <!-- Custom Date Range (shown when custom is selected) -->
+          <div v-if="dateFilter === 'custom'" class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
             <div class="flex items-center space-x-2">
-              <span>Filter:</span>
-              <button @click="activeFilter = 'all'" class="px-3 py-1 rounded-full" :class="activeFilter === 'all' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">All</button>
-              <button @click="activeFilter = 'consultation'" class="px-3 py-1 rounded-full" :class="activeFilter === 'consultation' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">Consultation</button>
-              <button @click="activeFilter = 'reschedule'" class="px-3 py-1 rounded-full" :class="activeFilter === 'reschedule' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">Reschedule</button>
-              <button @click="activeFilter = 'system'" class="px-3 py-1 rounded-full" :class="activeFilter === 'system' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">System</button>
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              <span class="text-sm font-medium text-blue-800">Custom Date Range</span>
             </div>
+            
+            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">From:</label>
+                <input 
+                  v-model="startDate" 
+                  type="date" 
+                  @change="autoApplyFilters"
+                  class="px-3 py-2 border border-blue-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200 hover:border-blue-400" 
+                />
+              </div>
+              <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">To:</label>
+              <input
+                  v-model="endDate" 
+                  type="date" 
+                  @change="autoApplyFilters"
+                  class="px-3 py-2 border border-blue-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200 hover:border-blue-400" 
+                />
+          </div>
+        </div>
           </div>
           
           <!-- Notifications List -->
-          <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div v-if="notifications.length" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div 
-              v-for="notification in filteredNotifications" 
+              v-for="notification in notifications" 
               :key="notification._id"
               :class="[
                 'p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors relative cursor-pointer',
@@ -93,28 +125,94 @@
                     </svg>
                   </div>
                 </div>
-
+                
                 <!-- Notification Content -->
                 <div class="flex-1">
                   <div class="flex justify-between items-start mb-1">
                     <h3 class="font-medium text-gray-900">{{ notification.title }}</h3>
-                    <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2">
                       <span class="text-xs text-gray-500">{{ formatDate(notification.createdAt) }}</span>
+                </div>
               </div>
-            </div>
                   <p class="text-sm text-gray-700 mb-1">{{ notification.message }}</p>
                   <div v-if="notification.link" class="mt-1">
                     <span class="text-primary text-sm hover:underline">View details →</span>
-          </div>
+            </div>
         </div>
             </div>
 
               <!-- Unread indicator dot -->
               <div v-if="!notification.read" class="absolute top-4 right-4 h-2 w-2 rounded-full bg-primary"></div>
+          </div>
+          </div>
+          
+          <!-- Empty State -->
+          <div v-else class="text-center py-12 bg-white border border-gray-200 rounded-lg">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+              <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
             </div>
+            <h3 class="text-lg font-medium text-gray-800 mb-2">No Notifications</h3>
+            <p class="text-gray-500 max-w-md mx-auto">You don't have any notifications at the moment. Check back later for updates.</p>
           </div>
 
-          <!-- Pagination (optional placeholder) -->
+          <!-- Pagination -->
+          <div v-if="pagination.totalPages > 1" class="flex items-center justify-between mt-6 px-4 py-3 bg-gray-50 border-t border-gray-200">
+            <div class="flex items-center text-sm text-gray-700">
+              <span>
+                Showing {{ (pagination.currentPage - 1) * pagination.limit + 1 }} to {{ Math.min(pagination.currentPage * pagination.limit, pagination.totalCount) }} of {{ pagination.totalCount }} notifications
+              </span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <button 
+                @click="goToPage(1)"
+                :disabled="pagination.currentPage === 1"
+                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="First Page"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                @click="goToPage(pagination.currentPage - 1)"
+                :disabled="!pagination.hasPrevPage"
+                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Previous Page"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <span class="px-3 py-2 text-sm text-gray-700">
+                Page {{ pagination.currentPage }} of {{ pagination.totalPages }}
+              </span>
+              
+              <button
+                @click="goToPage(pagination.currentPage + 1)"
+                :disabled="!pagination.hasNextPage"
+                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Next Page"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              <button 
+                @click="goToPage(pagination.totalPages)"
+                :disabled="pagination.currentPage === pagination.totalPages"
+                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Last Page"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -129,18 +227,24 @@ import { useRouter } from 'vue-router'
 
 const loading = ref(true)
 const notifications = ref([])
-const activeFilter = ref('all') // 'all' | 'consultation' | 'reschedule' | 'system'
+const activeFilter = ref('all') // 'all' | 'consultation' | 'system'
+const dateFilter = ref('all')
+const startDate = ref('')
+const endDate = ref('')
+const pagination = ref({
+  currentPage: 1,
+  totalPages: 1,
+  totalCount: 0,
+  hasNextPage: false,
+  hasPrevPage: false,
+  limit: 10
+})
 
 const filteredNotifications = computed(() => {
   if (activeFilter.value === 'consultation') {
     return notifications.value.filter(n =>
       (n.title || '').toLowerCase().includes('consultation') ||
       (n.message || '').toLowerCase().includes('consultation')
-    )
-  } else if (activeFilter.value === 'reschedule') {
-    return notifications.value.filter(n =>
-      (n.title || '').toLowerCase().includes('reschedule') ||
-      (n.message || '').toLowerCase().includes('reschedule')
     )
   } else if (activeFilter.value === 'system') {
     return notifications.value.filter(n =>
@@ -159,8 +263,20 @@ const formatDate = (d) => {
 const fetchNotifications = async () => {
   try {
     loading.value = true
-    const res = await api.get('/notifications')
-    notifications.value = res.data?.data || res.data || []
+    const params = new URLSearchParams({
+      page: pagination.value.currentPage,
+      limit: pagination.value.limit,
+      dateFilter: dateFilter.value
+    })
+    
+    if (dateFilter.value === 'custom' && startDate.value && endDate.value) {
+      params.append('startDate', startDate.value)
+      params.append('endDate', endDate.value)
+    }
+    
+    const res = await api.get(`/notifications?${params}`)
+    notifications.value = res.data?.data || []
+    pagination.value = res.data?.pagination || pagination.value
   } catch (e) {
     notifications.value = []
   } finally {
@@ -169,6 +285,23 @@ const fetchNotifications = async () => {
 }
 
 const refreshNotifications = async () => {
+    pagination.value.currentPage = 1
+  await fetchNotifications()
+}
+
+const applyFilters = async () => {
+  pagination.value.currentPage = 1
+  await fetchNotifications()
+}
+
+const autoApplyFilters = async () => {
+  // Auto-apply when date is selected
+  pagination.value.currentPage = 1
+  await fetchNotifications()
+}
+
+const goToPage = async (page) => {
+  pagination.value.currentPage = page
   await fetchNotifications()
 }
 

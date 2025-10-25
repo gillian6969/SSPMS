@@ -3,6 +3,8 @@ const router = express.Router();
 const Consultation = require('../models/Consultation');
 const User = require('../models/User');
 const Student = require('../models/Student');
+const Class = require('../models/Class');
+const AdvisoryClass = require('../models/AdvisoryClass');
 const { authenticate, authorizeAdmin, authorizeAdviser } = require('../middleware/auth');
 const emailService = require('../services/emailService');
 
@@ -900,23 +902,59 @@ router.post('/:id/book', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Student record not found' });
     }
     
-    // Check if student already has ANY active booking with ANY adviser (NEW RESTRICTION)
-    const existingActiveBookings = await Consultation.find({
-      'bookings.student': student._id,
-      'bookings.status': { $in: ['Booked', 'Pending'] }
-    }).populate('adviser', 'firstName lastName');
+    // Get the week dates for the consultation being booked
+    const consultationWeekStart = new Date(consultation.weekStart);
+    const consultationWeekEnd = new Date(consultation.weekEnd);
     
-  if (existingActiveBookings.length > 0) {
-    const existingAdviser = existingActiveBookings[0].adviser || { firstName: 'an adviser', lastName: '' };
-    const adviserName = [existingAdviser.firstName, existingAdviser.lastName].filter(Boolean).join(' ').trim() || 'your adviser';
-    return res.status(400).json({ 
-      message: `You already have an active consultation booking with ${adviserName}. Please complete or cancel your current booking before booking with another adviser.`,
-      existingBooking: {
-        adviser: adviserName,
-        consultationId: existingActiveBookings[0]._id
+    // Calculate current week dates
+    const currentDate = new Date();
+    const currentWeekStart = new Date(currentDate);
+    currentWeekStart.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Monday
+    currentWeekStart.setHours(0, 0, 0, 0);
+    
+    const currentWeekEnd = new Date(currentWeekStart);
+    currentWeekEnd.setDate(currentWeekStart.getDate() + 6); // Sunday
+    currentWeekEnd.setHours(23, 59, 59, 999);
+    
+    // Debug logging
+    console.log('Current week:', currentWeekStart.toDateString(), 'to', currentWeekEnd.toDateString());
+    console.log('Consultation week:', consultationWeekStart.toDateString(), 'to', consultationWeekEnd.toDateString());
+    
+    // Check if this is a future week booking
+    const isBookingFutureWeek = consultationWeekStart > currentWeekEnd;
+    console.log('Is booking future week:', isBookingFutureWeek);
+    
+    if (isBookingFutureWeek) {
+      // Allow future week bookings even if student has current week bookings
+      console.log('Allowing future week booking - no restrictions');
+    } else {
+      // If booking current week, check for same week bookings
+      console.log('Checking for same week bookings for student:', student._id);
+      
+      const sameWeekBookings = await Consultation.find({
+        'bookings.student': student._id,
+        weekStart: { $lte: consultationWeekEnd },
+        weekEnd: { $gte: consultationWeekStart }
+      }).populate('adviser', 'firstName lastName');
+      
+      console.log('Same week bookings found:', sameWeekBookings.length);
+      
+      if (sameWeekBookings.length > 0) {
+        const existingAdviser = sameWeekBookings[0].adviser || { firstName: 'an adviser', lastName: '' };
+        const adviserName = [existingAdviser.firstName, existingAdviser.lastName].filter(Boolean).join(' ').trim() || 'your adviser';
+        console.log('BLOCKING same week booking due to existing booking with:', adviserName);
+        return res.status(400).json({ 
+          message: `You already have a consultation for this week with ${adviserName}. Students can only have one consultation per week.`,
+          existingBooking: {
+            adviser: adviserName,
+            consultationId: sameWeekBookings[0]._id,
+            week: `${consultationWeekStart.toDateString()} - ${consultationWeekEnd.toDateString()}`
+          }
+        });
+      } else {
+        console.log('No same week bookings found, allowing current week booking');
       }
-    });
-  }
+    }
     
     // Check if student already has a booking for this specific consultation
     const existingBooking = consultation.bookings.find(booking => 
@@ -928,41 +966,7 @@ router.post('/:id/book', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'You already have a booking for this consultation' });
     }
     
-    // Check for time conflicts with other student bookings (keep existing logic for safety)
-    const conflictingConsultations = await Consultation.find({
-      dayOfWeek: consultation.dayOfWeek,
-      'bookings.student': student._id,
-      'bookings.status': { $in: ['Booked', 'Pending'] },
-      $or: [
-        {
-          // New consultation starts during existing consultation
-          startTime: { $lte: consultation.startTime },
-          endTime: { $gt: consultation.startTime }
-        },
-        {
-          // New consultation ends during existing consultation
-          startTime: { $lt: consultation.endTime },
-          endTime: { $gte: consultation.endTime }
-        },
-        {
-          // New consultation completely overlaps existing consultation
-          startTime: { $gte: consultation.startTime },
-          endTime: { $lte: consultation.endTime }
-        }
-      ]
-    }).populate('adviser', 'firstName lastName');
-    
-  if (conflictingConsultations.length > 0) {
-    const conflictAdviser = conflictingConsultations[0].adviser || { firstName: 'an adviser', lastName: '' };
-    const adviserName = [conflictAdviser.firstName, conflictAdviser.lastName].filter(Boolean).join(' ').trim() || 'your adviser';
-    return res.status(400).json({ 
-      message: `You have a conflicting consultation with ${adviserName} at the same time slot`,
-      conflictWith: {
-        adviser: adviserName,
-        time: `${conflictingConsultations[0].startTime}:00 - ${conflictingConsultations[0].endTime}:00`
-      }
-    });
-  }
+    // Note: Time conflict checking is now handled by week-based booking rules above
     
     // Check if consultation is full
     if (consultation.bookedStudents >= consultation.maxStudents) {
@@ -1971,6 +1975,276 @@ router.get('/week-accessible/:weekStart/:weekEnd', authenticate, authorizeAdvise
   }
 });
 
+// Get admin consultation history (Admin only) - MUST be before /:id route
+router.get('/admin-history', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    console.log('📊 Fetching admin consultation history...');
+    
+    // Get all consultations with completed or cancelled bookings
+    const consultations = await Consultation.find({
+      status: { $in: ['Active', 'Inactive'] }
+    })
+    .populate('adviser', 'firstName lastName email salutation')
+    .populate({
+      path: 'bookings.student',
+      populate: [
+        {
+          path: 'user',
+          select: 'firstName lastName email idNumber'
+        },
+        {
+          path: 'class',
+          select: 'className section yearLevel major'
+        }
+      ]
+    })
+    .sort({ weekStart: -1, dayOfWeek: 1, startTime: 1 });
+
+    console.log(`Found ${consultations.length} consultations`);
+
+    // Extract only completed or cancelled bookings
+    const historyRecords = [];
+    
+    consultations.forEach(consultation => {
+      if (consultation.bookings && consultation.bookings.length > 0) {
+        consultation.bookings.forEach(booking => {
+          if (booking.status === 'Completed' || booking.status === 'Cancelled') {
+            historyRecords.push({
+              _id: booking._id,
+              student: {
+                _id: booking.student._id,
+                user: booking.student.user,
+                classDetails: booking.student.class
+              },
+              consultation: {
+                _id: consultation._id,
+                adviser: consultation.adviser,
+                weekStart: consultation.weekStart,
+                dayOfWeek: consultation.dayOfWeek,
+                startTime: consultation.startTime,
+                endTime: consultation.endTime,
+                status: consultation.status
+              },
+              concern: booking.concern,
+              notes: booking.notes,
+              consultationType: booking.consultationType,
+              status: booking.status,
+              completedAt: booking.completedAt,
+              completionNotes: booking.completionNotes,
+              cancelledAt: booking.cancelledAt,
+              cancellationReason: booking.cancellationReason
+            });
+          }
+        });
+      }
+    });
+
+    console.log(`Generated ${historyRecords.length} history records`);
+    res.json(historyRecords);
+    
+  } catch (error) {
+    console.error('❌ Admin consultation history error:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
+// Export consultation history (PDF/Excel)
+router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    const { 
+      format = 'excel', // 'pdf' or 'excel'
+      startDate, 
+      endDate, 
+      yearLevel, 
+      section, 
+      major, 
+      adviserId, 
+      meetingType 
+    } = req.query;
+
+    console.log('📊 Exporting consultation history...', { format, startDate, endDate, yearLevel, section, major, adviserId, meetingType });
+
+    // Build date filter
+    let dateQuery = {};
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999); // End of day
+      dateQuery = { weekStart: { $gte: start, $lte: end } };
+    }
+
+    // Build other filters
+    let consultationQuery = {};
+    if (adviserId) {
+      consultationQuery.adviser = adviserId;
+    }
+
+    // Find consultations with filters
+    const consultations = await Consultation.find({
+      status: { $in: ['Active', 'Inactive'] },
+      ...dateQuery,
+      ...consultationQuery
+    })
+    .populate('adviser', 'firstName lastName email salutation')
+    .populate({
+      path: 'bookings.student',
+      populate: [
+        {
+          path: 'user',
+          select: 'firstName lastName email idNumber'
+        },
+        {
+          path: 'class',
+          select: 'className section yearLevel major'
+        }
+      ]
+    })
+    .sort({ weekStart: -1, dayOfWeek: 1, startTime: 1 });
+
+    // Flatten bookings and apply filters - ONLY COMPLETED CONSULTATIONS
+    let allBookings = [];
+    consultations.forEach(consultation => {
+      consultation.bookings.forEach(booking => {
+        if (booking.student && booking.student.user && booking.status === 'Completed') {
+          const student = booking.student;
+          const user = student.user;
+          const classInfo = student.class || {};
+          
+          // Apply student filters
+          let includeBooking = true;
+          
+          if (yearLevel && classInfo.yearLevel !== yearLevel) {
+            includeBooking = false;
+          }
+          if (section && classInfo.section !== section) {
+            includeBooking = false;
+          }
+          if (major && classInfo.major !== major) {
+            includeBooking = false;
+          }
+          if (meetingType && booking.consultationType !== meetingType) {
+            includeBooking = false;
+          }
+          
+          if (includeBooking) {
+            allBookings.push({
+              _id: booking._id,
+              student: student,
+              consultation: consultation,
+              concern: booking.concern,
+              consultationType: booking.consultationType,
+              status: booking.status,
+              bookedAt: booking.bookedAt,
+              completionNotes: booking.completionNotes,
+              completedAt: booking.completedAt
+            });
+          }
+        }
+      });
+    });
+
+    // Get SSP advisers for all students
+    const studentClassIds = [...new Set(allBookings.map(booking => booking.student.class?._id).filter(Boolean))];
+    const advisoryClasses = await AdvisoryClass.find({
+      class: { $in: studentClassIds },
+      status: 'active'
+    }).populate('adviser', 'firstName middleName lastName nameExtension salutation');
+    
+    const classToAdviserMap = {};
+    advisoryClasses.forEach(ac => {
+      if (ac.adviser) {
+        const adviserName = `${ac.adviser.salutation || ''} ${ac.adviser.firstName || ''} ${ac.adviser.middleName || ''} ${ac.adviser.lastName || ''} ${ac.adviser.nameExtension || ''}`.trim();
+        classToAdviserMap[ac.class.toString()] = adviserName;
+      }
+    });
+
+    // Create student summary
+    const studentSummary = {};
+    allBookings.forEach(booking => {
+      const studentId = booking.student.user.idNumber;
+      if (!studentSummary[studentId]) {
+        const classId = booking.student.class?._id?.toString();
+        const sspAdviser = classToAdviserMap[classId] || 'N/A';
+        
+        studentSummary[studentId] = {
+          studentId: studentId,
+          studentName: `${booking.student.user.firstName} ${booking.student.user.lastName}`,
+          yearLevel: booking.student.class?.yearLevel || 'N/A',
+          section: booking.student.class?.section || 'N/A',
+          major: booking.student.class?.major || 'N/A',
+          sspAdviser: sspAdviser,
+          totalConsultations: 0,
+          concerns: [],
+          concernCounts: {} // Track concern frequency
+        };
+      }
+      
+      studentSummary[studentId].totalConsultations++;
+      
+      // Track concern frequency
+      if (!studentSummary[studentId].concernCounts[booking.concern]) {
+        studentSummary[studentId].concernCounts[booking.concern] = 0;
+      }
+      studentSummary[studentId].concernCounts[booking.concern]++;
+      
+      if (!studentSummary[studentId].concerns.includes(booking.concern)) {
+        studentSummary[studentId].concerns.push(booking.concern);
+      }
+    });
+
+    // Add repeating concerns (concerns that appear 2+ times)
+    Object.values(studentSummary).forEach(student => {
+      student.repeatingConcerns = [];
+      Object.entries(student.concernCounts).forEach(([concern, count]) => {
+        if (count >= 2) {
+          student.repeatingConcerns.push(`${concern} (${count} times)`);
+        }
+      });
+    });
+
+    const exportData = {
+      rawData: allBookings,
+      studentSummary: Object.values(studentSummary),
+      filters: {
+        startDate,
+        endDate,
+        yearLevel,
+        section,
+        major,
+        adviserId,
+        meetingType
+      },
+      generatedAt: new Date().toISOString(),
+      totalRecords: allBookings.length,
+      totalStudents: Object.keys(studentSummary).length
+    };
+
+    console.log(`📊 Export data prepared: ${allBookings.length} records, ${Object.keys(studentSummary).length} students`);
+
+    if (format === 'pdf') {
+      // For PDF export, we'll return JSON data that frontend can convert to PDF
+      res.json({
+        success: true,
+        data: exportData,
+        format: 'pdf'
+      });
+    } else {
+      // For Excel export, we'll return JSON data that frontend can convert to Excel
+      res.json({
+        success: true,
+        data: exportData,
+        format: 'excel'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error exporting consultation history:', error);
+    res.status(500).json({ message: 'Failed to export consultation history' });
+  }
+});
+
 // Get consultation by ID (moved to the very end to prevent conflicts with other routes)
 router.get('/:id', authenticate, async (req, res) => {
   try {
@@ -2114,6 +2388,138 @@ router.post('/:id/reject-removal', authenticate, authorizeAdmin, async (req, res
     res.json({ message: 'Removal request rejected successfully', consultation });
   } catch (error) {
     console.error('Error rejecting removal request:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Cancel consultation (Adviser only)
+router.post('/:id/cancel', authenticate, authorizeAdviser, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const consultation = await Consultation.findById(req.params.id)
+      .populate('adviser', 'firstName lastName email')
+      .populate({
+        path: 'bookings.student',
+        populate: {
+          path: 'user',
+          select: 'firstName lastName email'
+        }
+      });
+
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found' });
+    }
+
+    // Check if consultation belongs to the adviser
+    if (consultation.adviser._id.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only cancel your own consultations' });
+    }
+
+    // Check if consultation can be cancelled
+    if (consultation.status === 'Cancelled') {
+      return res.status(400).json({ message: 'Consultation is already cancelled' });
+    }
+
+    if (consultation.status === 'Inactive') {
+      return res.status(400).json({ message: 'Cannot cancel inactive consultation' });
+    }
+
+    // Update consultation status to Cancelled
+    consultation.status = 'Cancelled';
+    consultation.cancellationReason = reason;
+    consultation.cancelledAt = new Date();
+    consultation.cancelledBy = req.user.id;
+
+    // Cancel all student bookings
+    const cancelledBookings = [];
+    consultation.bookings.forEach(booking => {
+      if (booking.status === 'Booked' || booking.status === 'Pending') {
+        booking.status = 'Cancelled';
+        booking.cancelledAt = new Date();
+        booking.cancellationReason = reason;
+        cancelledBookings.push(booking);
+      }
+    });
+
+    await consultation.save();
+
+    // Send notifications to students
+    const Notification = require('../models/Notification');
+    const notifications = [];
+
+    for (const booking of cancelledBookings) {
+      if (booking.student && booking.student.user) {
+        // System notification
+        const notification = new Notification({
+          recipient: booking.student.user._id,
+          type: 'warning',
+          title: 'Consultation Cancelled',
+          message: `Your consultation with ${consultation.adviser.firstName} ${consultation.adviser.lastName} has been cancelled. ${reason ? `Reason: ${reason}` : ''}`,
+          relatedId: consultation._id,
+          relatedType: 'consultation'
+        });
+        notifications.push(notification);
+
+        // Email notification
+        try {
+          await emailService.sendConsultationCancellationEmail(
+            booking.student.user.email,
+            booking.student.user.firstName,
+            consultation.adviser.firstName,
+            consultation.adviser.lastName,
+            consultation.dayOfWeek,
+            consultation.startTime,
+            consultation.endTime,
+            reason
+          );
+        } catch (emailError) {
+          console.error('Failed to send cancellation email:', emailError);
+        }
+      }
+    }
+
+    // Send notification to admin
+    const adminUsers = await User.find({ role: 'admin' });
+    for (const admin of adminUsers) {
+      const adminNotification = new Notification({
+        recipient: admin._id,
+        type: 'info',
+        title: 'Consultation Cancelled',
+        message: `${consultation.adviser.firstName} ${consultation.adviser.lastName} has cancelled their consultation. ${reason ? `Reason: ${reason}` : ''}`,
+        relatedId: consultation._id,
+        relatedType: 'consultation'
+      });
+      notifications.push(adminNotification);
+
+      // Email notification to admin
+      try {
+        await emailService.sendAdminConsultationCancellationEmail(
+          admin.email,
+          admin.firstName,
+          consultation.adviser.firstName,
+          consultation.adviser.lastName,
+          consultation.dayOfWeek,
+          consultation.startTime,
+          consultation.endTime,
+          cancelledBookings.length,
+          reason
+        );
+      } catch (emailError) {
+        console.error('Failed to send admin cancellation email:', emailError);
+      }
+    }
+
+    // Save all notifications
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+    }
+
+    res.json({ 
+      message: 'Consultation cancelled successfully',
+      cancelledBookings: cancelledBookings.length
+    });
+  } catch (error) {
+    console.error('Error cancelling consultation:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -2458,7 +2864,7 @@ router.post('/bookings/:bookingId/create-meeting', authenticate, async (req, res
     if (populatedBooking.meetingLink && populatedBooking.meetingStarted) {
       console.log('Meeting already exists, returning existing URL:', populatedBooking.meetingLink);
       return res.json({ 
-        success: true,
+      success: true,
         meetingUrl: populatedBooking.meetingLink,
         eventId: populatedBooking.googleEventId,
         message: 'Meeting already exists',

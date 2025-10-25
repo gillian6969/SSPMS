@@ -704,7 +704,7 @@
                             Virtual Meeting
                           </p>
                           <p class="text-xs" :class="bookingForm.meetingType === 'virtual' ? 'text-green-700' : 'text-gray-500'">
-                            Google Meet video call
+                            Virtual Meeting
                           </p>
                         </div>
                       </div>
@@ -1422,7 +1422,10 @@ const bookConsultation = async () => {
     await loadConsultations()
   } catch (error) {
     console.error('Booking error:', error)
-    notificationService.showError('Failed to book consultation')
+    
+    // Show specific error message from backend as warning (yellow) instead of error (red)
+    const errorMessage = error.response?.data?.message || 'Failed to book consultation'
+    notificationService.showWarning(errorMessage)
   } finally {
     booking.value = false
   }
