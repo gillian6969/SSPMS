@@ -490,7 +490,7 @@ router.get('/user/:userId', authenticate, async (req, res) => {
 router.put('/user/:userId/profile', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { firstName, lastName, email, contactNumber, address } = req.body;
+    const { firstName, middleName, lastName, nameExtension, email, contactNumber, address } = req.body;
     
     // Find student with this user ID
     const student = await Student.findOne({ user: userId });
@@ -535,13 +535,15 @@ router.put('/user/:userId/profile', authenticate, async (req, res) => {
     await student.save();
     
     // Update user information
-    if (firstName || lastName || email) {
+    if (firstName || middleName !== undefined || lastName || nameExtension !== undefined || email) {
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ message: 'User record not found' });
       }
       
       if (firstName) user.firstName = firstName;
+      if (middleName !== undefined) user.middleName = middleName || '';
+      if (nameExtension !== undefined) user.nameExtension = nameExtension || '';
       if (lastName) user.lastName = lastName;
       if (email) user.email = email;
       
@@ -557,6 +559,8 @@ router.put('/user/:userId/profile', authenticate, async (req, res) => {
           address: student.address,
           user: {
             firstName: firstName || (student.user && student.user.firstName),
+            middleName: middleName !== undefined ? middleName : (student.user && student.user.middleName),
+            nameExtension: nameExtension !== undefined ? nameExtension : (student.user && student.user.nameExtension),
             lastName: lastName || (student.user && student.user.lastName),
             email: email || (student.user && student.user.email)
           }
@@ -1771,84 +1775,6 @@ router.put('/:id/fix-yearLevel', authenticate, authorizeAdmin, async (req, res) 
       message: 'Error fixing year level format', 
       error: error.message 
     });
-  }
-});
-
-// Update student profile information
-router.put('/:id/profile', authenticate, async (req, res) => {
-  try {
-    const studentId = req.params.id;
-    const { firstName, lastName, email, contactNumber, address } = req.body;
-    
-    // Find the student record
-    const student = await Student.findById(studentId);
-    if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
-    }
-    
-    // Verify that the logged-in user owns this student record
-    if (student.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'You do not have permission to update this profile' });
-    }
-    
-    // Update contact information on student record
-    if (contactNumber) {
-      student.contactNumber = contactNumber;
-    }
-    
-    // Handle address as a structured object with components
-    if (address !== undefined) {
-      // Ensure each address component is updated if provided
-      if (typeof address === 'object') {
-        student.address = {
-          block: address.block !== undefined ? address.block : (student.address?.block || ''),
-          street: address.street !== undefined ? address.street : (student.address?.street || ''),
-          barangay: address.barangay !== undefined ? address.barangay : (student.address?.barangay || ''),
-          municipality: address.municipality !== undefined ? address.municipality : (student.address?.municipality || ''),
-          province: address.province !== undefined ? address.province : (student.address?.province || '')
-        };
-      } else {
-        // If address is not an object, set empty structure
-        student.address = {
-          block: '',
-          street: '',
-          barangay: '',
-          municipality: '',
-          province: ''
-        };
-      }
-    }
-    
-    await student.save();
-    
-    // Update user information
-    if (firstName || lastName || email) {
-      const user = await User.findById(student.user);
-      if (!user) {
-        return res.status(404).json({ message: 'User record not found' });
-      }
-      
-      if (firstName) user.firstName = firstName;
-      if (lastName) user.lastName = lastName;
-      if (email) user.email = email;
-      
-      await user.save();
-    }
-    
-    res.json({ 
-      message: 'Profile updated successfully',
-      student: {
-        ...student.toObject(),
-        user: {
-          firstName: firstName || student.user.firstName,
-          lastName: lastName || student.user.lastName,
-          email: email || student.user.email
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Update student profile error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

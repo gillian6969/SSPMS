@@ -86,7 +86,7 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
     // Create adviser user
     const adviser = new User({
       firstName,
-      middleName,
+      middleName: middleName || '',
       lastName,
       nameExtension: nameExtension || 'N/A',
       idNumber,
@@ -403,14 +403,14 @@ router.put('/:id', authenticate, authorizeAdmin, async (req, res) => {
     }
     
     // Update fields
-    if (firstName) adviser.firstName = firstName;
-    if (middleName) adviser.middleName = middleName;
-    if (lastName) adviser.lastName = lastName;
-    if (nameExtension) adviser.nameExtension = nameExtension;
-    if (idNumber) adviser.idNumber = idNumber;
-    if (salutation) adviser.salutation = salutation;
-    if (contactNumber) adviser.contactNumber = contactNumber;
-    if (email) {
+    if (req.body.hasOwnProperty('firstName')) adviser.firstName = firstName;
+    if (req.body.hasOwnProperty('middleName')) adviser.middleName = middleName;
+    if (req.body.hasOwnProperty('lastName')) adviser.lastName = lastName;
+    if (req.body.hasOwnProperty('nameExtension')) adviser.nameExtension = nameExtension;
+    if (req.body.hasOwnProperty('idNumber')) adviser.idNumber = idNumber;
+    if (req.body.hasOwnProperty('salutation')) adviser.salutation = salutation;
+    if (req.body.hasOwnProperty('contactNumber')) adviser.contactNumber = contactNumber;
+    if (req.body.hasOwnProperty('email')) {
       // Validate email format (allow any valid domain)
       const emailRegex = /^\S+@\S+\.\S+$/;
       if (!emailRegex.test(email)) {

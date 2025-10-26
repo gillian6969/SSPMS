@@ -303,7 +303,7 @@ router.post('/register-student', async (req, res) => {
     const student = new Student({
       pendingRegistration: {
         firstName,
-        middleName: middleName || '',
+        middleName,
         lastName,
         nameExtension: nameExtension || 'N/A',
         idNumber,

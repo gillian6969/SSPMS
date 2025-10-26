@@ -12,7 +12,7 @@
             <div class="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-primary-light text-primary text-2xl sm:text-4xl flex items-center justify-center mb-3 sm:mb-4">
               {{ userInitials }}
             </div>
-            <h2 class="text-lg sm:text-xl font-bold">{{ studentData.firstName }} {{ studentData.lastName }}</h2>
+            <h2 class="text-lg sm:text-xl font-bold">{{ studentData.firstName }} {{ studentData.middleName }} {{ studentData.lastName }}</h2>
             <p class="text-sm sm:text-base text-gray-600">Student ID: {{ studentData.studentId || 'Not available' }}</p>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">{{ studentData.email }}</p>
           </div>
@@ -139,6 +139,14 @@
                 <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">First Name</label>
                 <input 
                   v-model="form.firstName" 
+                  type="text" 
+                  class="w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm sm:text-base"
+                />
+              </div>
+              <div>
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Middle Name</label>
+                <input 
+                  v-model="form.middleName" 
                   type="text" 
                   class="w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm sm:text-base"
                 />
@@ -336,6 +344,10 @@
                   <tr>
                     <td class="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 font-medium text-gray-700 w-1/3 text-xs sm:text-sm">First Name</td>
                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ studentData.firstName || 'Not set' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 font-medium text-gray-700 text-xs sm:text-sm">Middle Name</td>
+                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ studentData.middleName || 'Not set' }}</td>
                   </tr>
                   <tr>
                     <td class="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 font-medium text-gray-700 text-xs sm:text-sm">Last Name</td>
@@ -601,6 +613,7 @@ const availableMajors = ref([]);
 // Form data
 const form = reactive({
   firstName: '',
+  middleName: '',
   lastName: '',
   email: '',
   phoneNumber: '',
@@ -896,6 +909,7 @@ onMounted(async () => {
     // Set up studentData with data from user and class collections
     studentData.value = {
       firstName: student.value.user?.firstName || '',
+      middleName: student.value.user?.middleName || '',
       lastName: student.value.user?.lastName || '',
       email: student.value.user?.email || '',
       phoneNumber: student.value.contactNumber || '',
@@ -914,6 +928,7 @@ onMounted(async () => {
     
     // Initialize form with student data
     form.firstName = studentData.value.firstName;
+    form.middleName = studentData.value.middleName;
     form.lastName = studentData.value.lastName;
     form.email = studentData.value.email;
     form.phoneNumber = studentData.value.phoneNumber;
@@ -958,6 +973,7 @@ onMounted(async () => {
     // Clear and initialize empty data instead of using mock data
     studentData.value = {
       firstName: '',
+      middleName: '',
       lastName: '',
       email: '',
       phoneNumber: '',
@@ -975,6 +991,7 @@ onMounted(async () => {
     
     // Reset form fields
     form.firstName = '';
+    form.middleName = '';
     form.lastName = '';
     form.email = '';
     form.phoneNumber = '';
@@ -1004,6 +1021,7 @@ const updatePersonalInfo = async () => {
     // Prepare the profile data
     const profileData = {
       firstName: form.firstName,
+      middleName: form.middleName,
       lastName: form.lastName,
       email: form.email,
       contactNumber: form.phoneNumber,
@@ -1016,6 +1034,7 @@ const updatePersonalInfo = async () => {
     if (response && response.data) {
       // Update the local state with the new data
       studentData.value.firstName = form.firstName;
+      studentData.value.middleName = form.middleName;
       studentData.value.lastName = form.lastName;
       studentData.value.email = form.email;
       studentData.value.phoneNumber = form.phoneNumber;
@@ -1024,6 +1043,7 @@ const updatePersonalInfo = async () => {
       // Update auth store if it exists
       if (authStore.user) {
         authStore.user.firstName = form.firstName;
+        authStore.user.middleName = form.middleName;
         authStore.user.lastName = form.lastName;
         authStore.user.email = form.email;
       }

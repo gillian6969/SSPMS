@@ -370,6 +370,7 @@ const loading = ref(true);
 const profile = ref({
   firstName: '',
   lastName: '',
+  middleName: '',
   salutation: '',
   email: '',
   idNumber: '',
@@ -450,6 +451,7 @@ const fetchProfileData = async () => {
       profile.value = {
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
+        middleName: userData.middleName || '',
         salutation: userData.salutation || '',
         email: userData.email || '',
         idNumber: userData.idNumber || '',
@@ -460,6 +462,7 @@ const fetchProfileData = async () => {
       profile.value = {
         firstName: authStore.user?.firstName || '',
         lastName: authStore.user?.lastName || '',
+        middleName: authStore.user?.middleName || '',
         salutation: authStore.user?.salutation || '',
         email: authStore.user?.email || '',
         idNumber: authStore.user?.idNumber || '',
@@ -474,6 +477,7 @@ const fetchProfileData = async () => {
     profile.value = {
       firstName: authStore.user?.firstName || '',
       lastName: authStore.user?.lastName || '',
+      middleName: authStore.user?.middleName || '',
       salutation: authStore.user?.salutation || '',
       email: authStore.user?.email || '',
       idNumber: authStore.user?.idNumber || '',
@@ -689,16 +693,15 @@ const updateProfile = async () => {
       contactNumber: editProfile.value.contactNumber
     });
     
-    // Update profile in local state
-    profile.value = {
-      firstName: editProfile.value.firstName,
-      lastName: editProfile.value.lastName,
-      middleName: editProfile.value.middleName,
-      salutation: editProfile.value.salutation,
-      contactNumber: editProfile.value.contactNumber
-    };
+    // Update profile in local state without overwriting existing fields like email and idNumber
+    profile.value.firstName = editProfile.value.firstName;
+    profile.value.lastName = editProfile.value.lastName;
+    profile.value.middleName = editProfile.value.middleName;
+    profile.value.salutation = editProfile.value.salutation;
+    profile.value.contactNumber = editProfile.value.contactNumber;
     
     notificationService.showSuccess('Profile updated successfully');
+    editingProfile.value = false; // Close the edit form on success
   } catch (error) {
     console.error('Error updating profile:', error);
     notificationService.showError('Failed to update profile. Please try again.');
