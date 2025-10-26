@@ -262,30 +262,30 @@
                   <label class="block text-sm font-medium text-gray-700 mb-2">SSP Code</label>
                   <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
                     {{ selectedSubject?.sspCode }}
-                  </div>
+        </div>
                 </div>
                 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
                   <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
                     {{ selectedSubject?.yearLevel }} Year
-                  </div>
-                </div>
-                
-                <div>
+      </div>
+    </div>
+    
+          <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Hours</label>
                   <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
                     {{ selectedSubject?.hours }} {{ selectedSubject?.hours === 1 ? 'Hour' : 'Hours' }}
-                  </div>
-                </div>
+            </div>
+          </div>
                 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Semester</label>
                   <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
                     {{ selectedSubject?.semester }}
                   </div>
-                </div>
-                
+        </div>
+        
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">School Year</label>
                   <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
@@ -306,30 +306,30 @@
           <!-- Sessions Table -->
           <div>
             <h4 class="text-sm font-medium text-gray-800 mb-4">{{ selectedSubject?.semester }} Sessions</h4>
-            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <div class="max-h-96 overflow-y-auto">
-                <table class="min-w-full">
-                  <thead class="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Day</th>
+          <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="max-h-96 overflow-y-auto">
+              <table class="min-w-full">
+                <thead class="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Day</th>
                       <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session Title</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-200">
-                    <tr v-for="session in sortedSessions" :key="session.day" :class="{ 'bg-amber-50': isSessionAnExam(session) }">
-                      <td class="px-4 py-3 text-sm font-medium text-gray-800 text-center">{{ session.day }}</td>
-                      <td class="px-4 py-3 text-sm text-gray-800">
-                        {{ session.title }}
-                        <span v-if="isSessionAnExam(session)" class="ml-2 inline-flex px-2 py-1 text-xs font-normal rounded-md bg-amber-100 text-amber-700 border border-amber-200">
-                          Exam
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="session in sortedSessions" :key="session.day" :class="{ 'bg-amber-50': isSessionAnExam(session) }">
+                    <td class="px-4 py-3 text-sm font-medium text-gray-800 text-center">{{ session.day }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">
+                      {{ session.title }}
+                      <span v-if="isSessionAnExam(session)" class="ml-2 inline-flex px-2 py-1 text-xs font-normal rounded-md bg-amber-100 text-amber-700 border border-amber-200">
+                        Exam
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
+        </div>
         </div>
       </template>
       <template #footer>

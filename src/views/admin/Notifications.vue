@@ -155,7 +155,7 @@
             </div>
             <h3 class="text-lg font-medium text-gray-800 mb-2">No Notifications</h3>
             <p class="text-gray-500 max-w-md mx-auto">You don't have any notifications at the moment. Check back later for updates.</p>
-          </div>
+        </div>
 
         <!-- Pagination -->
           <div v-if="pagination.totalPages > 1" class="flex items-center justify-between mt-6 px-4 py-3 bg-gray-50 border-t border-gray-200">

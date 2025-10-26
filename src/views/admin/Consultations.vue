@@ -848,7 +848,7 @@
                 :placeholder="systemOptions?.consultation?.defaultDuration"
               />
               <p class="text-sm text-gray-500 mt-1">Default: {{ systemOptions?.consultation?.defaultDuration }} hours</p>
-            </div>
+          </div>
           
           <!-- Max Students -->
           <div>

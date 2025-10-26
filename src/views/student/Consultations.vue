@@ -498,7 +498,7 @@
                 {{ adviser.salutation }} {{ adviser.firstName }} {{ adviser.lastName }}
               </option>
             </select>
-          </div>
+      </div>
 
           <!-- Meeting Type Filter -->
           <div>
@@ -511,8 +511,8 @@
               <option value="In-Person">In-Person</option>
               <option value="Virtual">Virtual</option>
             </select>
-          </div>
-
+    </div>
+    
           <!-- Date From -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>

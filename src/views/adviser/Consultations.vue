@@ -267,12 +267,21 @@
                 
                 <!-- Actions Column -->
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div class="flex items-center justify-end space-x-2">
               <button 
                 @click="viewConsultation(c)"
-                    class="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                      class="text-blue-600 hover:text-blue-900 text-sm font-medium"
               >
                 View Details
               </button>
+                    <button 
+                      v-if="c.status !== 'Cancelled' && c.status !== 'Inactive'"
+                      @click="openCancellationModal(c)"
+                      class="text-red-600 hover:text-red-900 text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
+            </div>
                 </td>
               </tr>
               
@@ -285,7 +294,7 @@
                       <span class="text-sm text-gray-500">
                         {{ (c.bookings || []).filter(b => b.status === 'Pending' || b.status === 'Confirmed').length }} active bookings
                       </span>
-            </div>
+          </div>
                     
                     <div class="relative">
                       <button 
@@ -545,7 +554,6 @@
                 <div class="flex items-center space-x-6 text-sm text-gray-600">
                   <span>Duration: {{ selectedConsultation.duration }}h</span>
                   <span>Max Students: {{ selectedConsultation.maxStudents }}</span>
-                  <span>Time per Student: {{ Math.floor((selectedConsultation.duration * 60) / selectedConsultation.maxStudents) }}m</span>
             </div>
           </div>
               <div class="text-right">
@@ -973,7 +981,7 @@
           </div>
           
           <!-- Modal Footer with Actions -->
-          <div v-if="selectedConsultation && selectedConsultation.status !== 'Cancelled'" class="mt-6 pt-6 border-t border-gray-200">
+          <div v-if="selectedConsultation && selectedConsultation.status !== 'Cancelled' && selectedConsultation.status !== 'Inactive'" class="mt-6 pt-6 border-t border-gray-200">
             <div class="flex justify-end space-x-3">
               <button
                 @click="closeDetailsModal"
@@ -2478,7 +2486,11 @@ const formatDate = (dateString) => {
 }
 
 // Cancellation modal functions
-const openCancellationModal = () => {
+const openCancellationModal = (consultation = null) => {
+  // If consultation is passed, set it as selected consultation
+  if (consultation) {
+    selectedConsultation.value = consultation
+  }
   cancellationForm.value.reason = ''
   showCancellationModal.value = true
 }
@@ -2528,12 +2540,19 @@ watch(currentView, (newView) => {
 
 // Lifecycle
 onMounted(async () => {
-  // Wait a tick to ensure auth store populated
-  if (!authStore?.user?._id) {
-    await new Promise(r => setTimeout(r, 100));
+  // Wait for auth store to be fully populated
+  let attempts = 0
+  while (!authStore?.user?._id && attempts < 10) {
+    await new Promise(r => setTimeout(r, 100))
+    attempts++
   }
+  
   if (authStore?.user?._id) {
+    console.log('Auth store populated, loading consultations for user:', authStore.user._id)
     await loadConsultations()
+  } else {
+    console.error('Auth store not populated after waiting, cannot load consultations')
+    notificationService.showError('Authentication error. Please refresh the page.')
   }
   
   // Add click outside listener to close dropdowns
