@@ -1034,13 +1034,27 @@ router.get('/analytics/stats', authenticate, authorizeAdmin, async (req, res) =>
 router.get('/analytics/ssp-completion', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { yearLevel, section, major } = req.query;
-    
-    // Build filter for students
-    const studentFilter = { status: 'active' };
-    if (yearLevel) studentFilter['classDetails.yearLevel'] = yearLevel;
-    if (section) studentFilter['classDetails.section'] = section;
-    if (major) studentFilter['classDetails.major'] = major;
-    
+
+    // Build the initial match stage for the aggregation pipeline
+    const studentMatch = { 'studentInfo.status': 'active', completed: true };
+
+    if (yearLevel) {
+      studentMatch['studentInfo.classDetails.yearLevel'] = yearLevel;
+    }
+    if (section) {
+      studentMatch['studentInfo.classDetails.section'] = section;
+    }
+    if (major) {
+      studentMatch['studentInfo.classDetails.major'] = major;
+    }
+
+    console.log('SSP Completion Analytics with filter:', {
+      yearLevel,
+      section,
+      major,
+      studentMatch
+    });
+
     // Get session completion data grouped by session day (Q1, Q2, Q3, Q4)
     const completionData = await SessionHistory.aggregate([
       {
@@ -1055,13 +1069,7 @@ router.get('/analytics/ssp-completion', authenticate, authorizeAdmin, async (req
         $unwind: '$studentInfo'
       },
       {
-        $match: {
-          'studentInfo.status': 'active',
-          completed: true,
-          ...(yearLevel && { 'studentInfo.classDetails.yearLevel': yearLevel }),
-          ...(section && { 'studentInfo.classDetails.section': section }),
-          ...(major && { 'studentInfo.classDetails.major': major })
-        }
+        $match: studentMatch
       },
       {
         $group: {

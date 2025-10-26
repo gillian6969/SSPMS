@@ -300,7 +300,7 @@ const openNotification = async (n) => {
   }
   // For consultation-related notifications, always route to adviser's consultations page
   if (n.meta?.consultationId || /(consultation|reschedule)/i.test(`${n.title} ${n.message}`)) {
-    try { router.push('/adviser/consultations') } catch {}
+    try { router.push('/adviser/pending-consultations') } catch {}
     return
   }
   // Else, navigate if link exists (supports absolute URLs to our app)

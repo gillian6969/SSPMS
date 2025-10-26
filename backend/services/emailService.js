@@ -1,3 +1,17 @@
+[{
+	"resource": "/c:/Users/LENOVO/Desktop/VIsta/SSPMS/backend/services/emailService.js",
+	"owner": "typescript",
+	"code": "1128",
+	"severity": 8,
+	"message": "Declaration or statement expected.",
+	"source": "ts",
+	"startLineNumber": 999,
+	"startColumn": 3,
+	"endLineNumber": 999,
+	"endColumn": 4,
+	"origin": "extHost2"
+}]
+
 const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 
@@ -954,6 +968,80 @@ class EmailService {
         </div>
         
         <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Adviser assigned to class
+  generateAdviserAssignedEmail(adviser, classInfo) {
+    const className = `${classInfo.yearLevel} ${classInfo.section} - ${classInfo.major}`;
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">PHINMA SSCMS</h1>
+          <p style="color: #dbeafe; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
+        </div>
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">You have been assigned to a new advisory class</h2>
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Hello <strong>${adviser.salutation} ${adviser.firstName} ${adviser.lastName}</strong>,
+          </p>
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            You have been assigned as the adviser for the following class:
+          </p>
+          <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Class Details</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.8;">
+              <p style="margin: 5px 0;"><strong>Class:</strong> ${className}</p>
+              <p style="margin: 5px 0;"><strong>School Year:</strong> ${classInfo.schoolYear || 'Not set'}</p>
+            </div>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/adviser/dashboard" style="display: inline-block; background-color: #3b82f6; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View My Dashboard
+            </a>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Adviser unassigned from class
+  generateAdviserUnassignedEmail(adviser, classInfo) {
+    const className = `${classInfo.yearLevel} ${classInfo.section} - ${classInfo.major}`;
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">PHINMA SSCMS</h1>
+          <p style="color: #fecaca; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
+        </div>
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">You have been unassigned from an advisory class</h2>
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Hello <strong>${adviser.salutation} ${adviser.firstName} ${adviser.lastName}</strong>,
+          </p>
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            You have been unassigned as the adviser for the following class:
+          </p>
+          <div style="background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Class Details</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.8;">
+              <p style="margin: 5px 0;"><strong>Class:</strong> ${className}</p>
+              <p style="margin: 5px 0;"><strong>School Year:</strong> ${classInfo.schoolYear || 'Not set'}</p>
+            </div>
+          </div>
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+            If you believe this is a mistake, please contact the system administrator.
+          </p>
+        </div>
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
           <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
           <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>

@@ -222,8 +222,14 @@
             
             <div>
               <div class="fl-group">
-                <input v-model="newAdviser.idNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }" />
-                <span class="fl-label font-medium">ID Number</span>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    AU
+                  </span>
+                  <input v-model="newAdviser.idNumber" type="text" placeholder=" " class="fl-input pl-9" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }" />
+                  <span class="fl-label left-8">ID Number (XX-XXXX-XXXXXX)</span>
+                </div>
+                <p v-if="errors.idNumber" class="mt-1 text-sm text-red-600">{{ errors.idNumber }}</p>
               </div>
             </div>
             
@@ -237,7 +243,12 @@
             
             <div>
               <div class="fl-group">
-                <input v-model="newAdviser.contactNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }" />
+                <input 
+                  v-model="newAdviser.contactNumber" 
+                  @input="newAdviser.contactNumber = newAdviser.contactNumber.replace(/[^0-9]/g, '')"
+                  type="text" 
+                  placeholder=" " 
+                  class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }" maxlength="11" />
                 <span class="fl-label font-medium">Contact Number</span>
               </div>
               <p v-if="errors.contactNumber" class="mt-1 text-sm text-red-600">{{ errors.contactNumber }}</p>
@@ -258,12 +269,6 @@
         </div>
       </template>
       <template #footer>
-          <button
-            @click="closeAddModal"
-          class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
-          >
-            Cancel
-          </button>
           <button
             @click="addAdviser"
           class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
@@ -367,13 +372,7 @@
         </div>
       </template>
       <template #footer>
-        <div class="flex items-center justify-between w-full">
-          <button
-            @click="closeDetailsModal"
-            class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
-          >
-            Close
-          </button>
+        <div class="flex items-center justify-end w-full">
           <button
             @click="() => { editAdviser(selectedAdviser); closeDetailsModal(); }"
             class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
@@ -430,15 +429,20 @@
             
             <div>
               <div class="fl-group">
-                <input v-model="editedAdviser.idNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }" />
-                <span class="fl-label font-medium">ID Number *</span>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    AU
+                  </span>
+                  <input v-model="editedAdviser.idNumber" type="text" placeholder=" " class="fl-input pl-9 bg-gray-100 cursor-not-allowed" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.idNumber }" disabled />
+                  <span class="fl-label left-8 font-medium">ID Number *</span>
+                </div>
               </div>
               <p v-if="errors.idNumber" class="mt-1 text-sm text-red-600">{{ errors.idNumber }}</p>
             </div>
             
             <div>
               <div class="fl-group">
-                <input v-model="editedAdviser.email" type="email" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.email }" />
+                <input v-model="editedAdviser.email" type="email" placeholder=" " class="fl-input bg-gray-100 cursor-not-allowed" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.email }" disabled />
                 <span class="fl-label font-medium">Email *</span>
               </div>
               <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
@@ -446,7 +450,7 @@
             
             <div>
               <div class="fl-group">
-                <input v-model="editedAdviser.contactNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }" />
+                <input v-model="editedAdviser.contactNumber" type="text" placeholder=" " class="fl-input" :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.contactNumber }" maxlength="11" />
                 <span class="fl-label font-medium">Contact Number *</span>
               </div>
               <p v-if="errors.contactNumber" class="mt-1 text-sm text-red-600">{{ errors.contactNumber }}</p>
@@ -463,20 +467,8 @@
         </div>
       </template>
       <template #footer>
-        <div class="flex items-center justify-between w-full">
-          <button
-            @click="archiveAdviser"
-            class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors duration-200"
-          >
-            Archive
-          </button>
+        <div class="flex items-center justify-end w-full">
           <div class="flex space-x-3">
-            <button
-              @click="closeEditModal"
-              class="px-5 py-2.5 mr-1 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
-            >
-              Cancel
-            </button>
             <button
               @click="updateAdviser"
               class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
@@ -698,6 +690,9 @@ function validateForm() {
   if (!newAdviser.idNumber) {
     errors.idNumber = 'ID number is required'
     isValid = false
+  } else if (!/^\d{2}-\d{4}-\d{6}$/.test(newAdviser.idNumber)) {
+    errors.idNumber = 'Invalid ID number format. Use XX-XXXX-XXXXXX.'
+    isValid = false
   }
   
   if (!newAdviser.email) {
@@ -710,6 +705,9 @@ function validateForm() {
   
   if (!newAdviser.contactNumber) {
     errors.contactNumber = 'Contact number is required'
+    isValid = false
+  } else if (!/^\d{11}$/.test(newAdviser.contactNumber)) {
+    errors.contactNumber = 'Contact number must be exactly 11 digits.'
     isValid = false
   }
   
@@ -726,6 +724,7 @@ async function addAdviser() {
     // Prepare the adviser object with role and welcome email request
     const adviserData = {
       ...newAdviser,
+      idNumber: `AU${newAdviser.idNumber}`,
       role: 'adviser',
       sendWelcomeEmail: true // Changed from sendPasswordResetEmail to match backend
     }
@@ -787,9 +786,12 @@ function editAdviser(adviser) {
   
   // Set edited adviser fields with fallbacks to empty strings
   editedAdviser.salutation = adviser.salutation || ''
-  editedAdviser.firstName = adviser.firstName || ''
+  editedAdviser.firstName = adviser.firstName || ''  
+  editedAdviser.middleName = adviser.middleName || ''
+  editedAdviser.nameExtension = adviser.nameExtension || ''
   editedAdviser.lastName = adviser.lastName || ''
-  editedAdviser.idNumber = adviser.idNumber || ''
+  // Remove 'AU' prefix for editing, it will be re-added on save
+  editedAdviser.idNumber = (adviser.idNumber || '').startsWith('AU') ? (adviser.idNumber || '').substring(2) : (adviser.idNumber || '')
   editedAdviser.email = adviser.email || ''
   editedAdviser.status = adviser.status || 'active'
   editedAdviser.contactNumber = adviser.contactNumber || ''
@@ -815,7 +817,12 @@ async function updateAdviser() {
   
   try {
     console.log('Updating adviser with data:', editedAdviser)
-    const response = await adviserService.update(selectedAdviser.value._id, editedAdviser)
+    const adviserDataToUpdate = {
+      ...editedAdviser,
+      idNumber: `AU${editedAdviser.idNumber}`,
+      middleName: editedAdviser.middleName,
+    };
+    const response = await adviserService.update(selectedAdviser.value._id, adviserDataToUpdate)
     
     // Refresh advisers list
     await fetchAdvisers()
@@ -867,6 +874,9 @@ function validateAdviserForm(adviser) {
   
   if (!adviser.contactNumber) {
     errors.contactNumber = 'Contact number is required'
+    isValid = false
+  } else if (!/^\d{11}$/.test(adviser.contactNumber)) {
+    errors.contactNumber = 'Contact number must be exactly 11 digits.'
     isValid = false
   }
   

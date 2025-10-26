@@ -73,6 +73,7 @@
               <!-- Year Level Filter -->
               <select 
                 v-model="filters.yearLevel" 
+                @change="handleFilterChange"
                 class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="">All Years</option>
@@ -82,6 +83,7 @@
               <!-- Section Filter -->
               <select 
                 v-model="filters.section" 
+                @change="handleFilterChange"
                 class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="">All Sections</option>
@@ -92,6 +94,7 @@
               <select 
                 v-if="!filters.yearLevel || filters.yearLevel !== '2nd'"
                 v-model="filters.major" 
+                @change="handleFilterChange"
                 class="px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="">All Majors</option>
@@ -1133,30 +1136,36 @@ const majorOptions = computed(() => {
 
 // Sections/Majors available for filter based on system options (list filters)
 const availableSectionsFilter = computed(() => {
-  if (!filters.yearLevel) return []
-  if (systemOptionsData.value?.class?.sections?.[filters.yearLevel]) {
-    return systemOptionsData.value.class.sections[filters.yearLevel]
+  const sectionsByYear = systemOptionsData.value?.class?.sections;
+  if (!sectionsByYear) return [];
+
+  if (filters.yearLevel) {
+    return sectionsByYear[filters.yearLevel] || [];
   }
-  return []
-})
+
+  // If no year level is selected, merge all sections and remove duplicates
+  const allSections = new Set();
+  Object.values(sectionsByYear).forEach(sectionList => {
+    if (Array.isArray(sectionList)) {
+      sectionList.forEach(section => allSections.add(section));
+    }
+  });
+  return Array.from(allSections).sort();
+});
 
 const availableMajorsFilter = computed(() => {
-  if (!filters.yearLevel) return []
-  // year-level specific majors
-  if (
-    systemOptionsData.value?.class?.majors &&
-    systemOptionsData.value.class.majors[filters.yearLevel]
-  ) {
-    return systemOptionsData.value.class.majors[filters.yearLevel]
+  const majorsByYear = systemOptionsData.value?.class?.majors;
+  if (!majorsByYear) return [];
+
+  if (filters.yearLevel) {
+    return majorsByYear[filters.yearLevel] || [];
   }
-  // fallback to merged majors if object provided
-  if (systemOptionsData.value?.class?.majors && !Array.isArray(systemOptionsData.value.class.majors)) {
-    const all = new Set()
-    Object.values(systemOptionsData.value.class.majors).forEach(list => Array.isArray(list) && list.forEach(m => all.add(m)))
-    return Array.from(all)
-  }
-  return []
-})
+
+  // If no year level is selected, merge all majors and remove duplicates
+  const allMajors = new Set();
+  Object.values(majorsByYear).forEach(majorList => majorList.forEach(major => allMajors.add(major)));
+  return Array.from(allMajors).sort();
+});
 
 // Time schedule options - replaced by firstSemTimeScheduleOptions and secondSemTimeScheduleOptions
 
@@ -1331,7 +1340,8 @@ const newClass = reactive({
 const filters = reactive({
   search: '',
   yearLevel: '',
-  major: ''
+  section: '',
+  major: '',
 });
 
 // Calendar view state
@@ -3770,6 +3780,12 @@ watch(() => editedClass.value.yearLevel, (newYearLevel) => {
 function filterClasses() {
   classes.value = filteredClasses.value;
   console.log('Classes filtered, showing', classes.value.length, 'classes');
+}
+
+// Function to handle filter changes
+function handleFilterChange() {
+  // This function is now called by the @change event on the filters
+  // The computed properties will automatically update the UI
 }
 
 // Function to archive a class

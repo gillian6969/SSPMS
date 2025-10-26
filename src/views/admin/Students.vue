@@ -37,7 +37,20 @@
     </div>
 
       <!-- UnifiedTable for Students -->
-              </div>
+  </div>
+      <!-- Unassigned students indicator message -->
+      <div v-if="hasUnassignedStudents" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-yellow-700">Students highlighted in yellow are not yet assigned to a class. You can select them and use the "Assign Selected" button to place them in their appropriate classes.</p>
+          </div>
+        </div>
+      </div>
       <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mt-4">
         <UnifiedTable
           :data="studentsForUnifiedTable"
@@ -79,10 +92,10 @@
           </template>
 
           <template #row="{ item: student }">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               <input type="checkbox" v-model="selectedStudents" :value="student._id" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4 whitespace-nowrap" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               <div class="flex items-center">
                 <div class="h-10 w-10 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center">
                   <span class="text-sm font-medium text-indigo-600">{{ getInitials(student) }}</span>
@@ -95,19 +108,26 @@
                 </div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <span class="font-mono">{{ student.user?.idNumber || 'N/A' }}</span>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
+              <div class="flex items-center">
+                <span class="font-mono">{{ student.user?.idNumber || 'N/A' }}</span>
+                <span v-if="failedAssignmentStudentIds.includes(student._id)" title="Assignment failed for this student" class="ml-2 text-red-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 10-2 0 1 1 0 002 0zm1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               {{ student.yearLevel || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               {{ student.section || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               {{ student.major || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" :class="{ 'bg-red-50': failedAssignmentStudentIds.includes(student._id), 'bg-yellow-50': !student.class }">
               <div class="flex items-center justify-end space-x-2">
                 <button @click="viewStudent(student)" class="px-3 py-1.5 text-xs font-normal text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100">View</button>
                 <button @click="editStudent(student)" class="px-3 py-1.5 text-xs font-normal text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100">Edit</button>
@@ -542,16 +562,6 @@
                     </svg>
                     Reactivate Student
                   </button>
-
-                  <button
-                    class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View Full Profile
-                  </button>
                 </div>
               </div>
 
@@ -934,6 +944,7 @@ const students = ref([]);
 const allStudents = ref([]);
 const classes = ref([]);
 const loading = ref(false);
+const unassignedStudentCount = ref(0);
 const showImportModal = ref(false);
 const importFile = ref(null);
 const importProgress = ref({
@@ -968,6 +979,7 @@ const availableMajors = ref([]);
 
 // Add to the script section
 const assigningClasses = ref(false)
+const failedAssignmentStudentIds = ref([])
 
 // Add these state variables for modals
 const showViewModal = ref(false);
@@ -1205,6 +1217,10 @@ const customAddress = reactive({
   province: false,
   municipality: false,
   barangay: false
+});
+
+const hasUnassignedStudents = computed(() => {
+  return allStudents.value.some(student => !student.class || student.class === "" || student.class === null);
 });
 
 onMounted(async () => {
@@ -1684,6 +1700,8 @@ function onYearLevelChange() {
 
 // Combined function to handle student assignment
 async function assignStudentsToClasses() {
+  failedAssignmentStudentIds.value = []; // Clear previous failures
+
   if (selectedStudents.value.length === 0) {
     notificationService.showWarning('Please select at least one student to assign');
     return;
@@ -1697,8 +1715,45 @@ async function assignStudentsToClasses() {
     const response = await studentService.assignSelectedStudentsToClasses(selectedStudents.value);
     
     if (response && response.success) {
-      notificationService.showSuccess(`Successfully assigned ${response.assignedCount || selectedStudents.value.length} students to classes`);
+      const assigned = response.assignedCount || 0;
+      const totalSelected = selectedStudents.value.length;
       
+      // Get names of assigned and failed students
+      const assignedNames = response.assignedStudents?.map(s => s.name) || [];
+      const allSelectedStudents = allStudents.value.filter(s => selectedStudents.value.includes(s._id));
+      const failedStudents = allSelectedStudents.filter(s => !response.assignedStudents?.some(as => as.id === s._id));
+      const failedNames = failedStudents.map(s => `${s.user.firstName} ${s.user.lastName}`);
+
+      if (assigned === totalSelected) {
+        notificationService.showSuccess(`Successfully assigned all ${totalSelected} selected students.`);
+      } else if (assigned > 0) {
+        let warningMessage = `Assigned ${assigned} out of ${totalSelected} students.`;
+        if (failedNames.length > 0) {
+          warningMessage += ` Failed: ${failedNames.join(', ')}.`;
+        }
+        notificationService.showWarning(warningMessage);
+
+        if (response.errors) {
+            console.error('Assignment errors:', response.errors);
+            failedAssignmentStudentIds.value = failedStudents.map(s => s._id);
+        }
+      } else { // No students were assigned
+        let errorMessage = `Failed to assign any of the ${totalSelected} selected students.`;
+        if (response.errors && response.errors.some(e => e.includes('No matching class found'))) {
+          errorMessage = 'Assignment failed: No matching class found for the students based on their year level, section, and major.';
+        }
+        if (failedNames.length > 0) {
+          errorMessage += ` Students without match: ${failedNames.join(', ')}.`;
+        }
+        notificationService.showError(errorMessage);
+
+        if (response.errors) {
+            console.error('Assignment errors:', response.errors);
+            // All selected students failed in this case
+            failedAssignmentStudentIds.value = selectedStudents.value;
+        }
+      }
+
       // Refresh the student list
       await fetchStudents();
       
@@ -1874,7 +1929,7 @@ async function confirmDropStudent() {
       currentStudent.value.dropSemester = dropForm.value.semester;
       
       // Refresh the students list
-      await loadStudents();
+      await fetchStudents();
       
       // Close modal
       closeDropModal();
@@ -1959,4 +2014,4 @@ function formatDate(dateString) {
 .text-primary {
   color: #3B82F6;
 }
-</style> 
+</style>

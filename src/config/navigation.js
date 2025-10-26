@@ -38,7 +38,6 @@ export const adminNavigation = [
       { label: 'Announcements', path: '/admin/announcements' },
       { label: 'Resolved Reports', path: '/admin/resolved-reports' },
       { label: 'Consultations', path: '/admin/consultations' },
-      { label: 'Dropping Request', path: '/admin/dropping-requests' },
     ],
   },
   {

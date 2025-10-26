@@ -471,23 +471,7 @@
             </div>
           </div>
         </div>
-      </template>
-      <template #footer>
-        <div class="flex items-center justify-between w-full">
-          <button
-            @click="closeDetailsModal"
-            class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
-          >
-            Close
-          </button>
-          <button
-            @click="editAdvisoryClass(selectedAdvisoryClass); closeDetailsModal();"
-            class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-800 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors duration-200"
-          >
-            Edit
-          </button>
-        </div>
-      </template>
+      </template> 
     </UnifiedModal>
 
     <!-- Assign Advisory Class Modal -->
@@ -502,7 +486,7 @@
               :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.adviserId }"
             >
               <option value="">Select Adviser</option>
-              <option v-for="adviser in advisers" :key="adviser._id" :value="adviser._id">
+              <option v-for="adviser in availableAdvisers" :key="adviser._id" :value="adviser._id">
                 {{ adviser.salutation }} {{ adviser.firstName }} {{ adviser.lastName }}
               </option>
             </select>
@@ -578,6 +562,11 @@ const editedAdvisoryClass = reactive({
   classId: '',
   _id: '',
   status: 'active'
+});
+
+const availableAdvisers = computed(() => {
+  // Filter out advisers with 'pending' status for the assignment dropdown
+  return advisers.value.filter(adviser => adviser.status !== 'pending');
 });
 
 // For details modal
