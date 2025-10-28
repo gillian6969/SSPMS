@@ -134,6 +134,8 @@ const adminRoutes = require('./routes/admin');
 const dropRequestRoutes = require('./routes/dropRequests');
 const adminNotificationRoutes = require('./routes/adminNotifications');
 const examPermitRoutes = require('./routes/examPermits');
+const atRiskStudentsRoutes = require('./routes/atRiskStudents');
+const reminderRoutes = require('./routes/reminders');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -155,6 +157,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/drop-requests', dropRequestRoutes);
 app.use('/api/admin/notifications', adminNotificationRoutes);
 app.use('/api/exam-permits', examPermitRoutes);
+app.use('/api/admin', atRiskStudentsRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
@@ -245,12 +249,4 @@ app.listen(PORT, '0.0.0.0', () => {
   } catch (error) {
     console.log(`⏰ Notification scheduler: unavailable`);
   }
-  
-  // Check exam reminder scheduler status safely
-  try {
-    const examReminderScheduler = require('./services/examReminderScheduler');
-    console.log(`📚 Exam reminder scheduler: ${examReminderScheduler.isRunning ? 'running' : 'stopped'}`);
-  } catch (error) {
-    console.log(`📚 Exam reminder scheduler: unavailable`);
-  }
-}); 
+});

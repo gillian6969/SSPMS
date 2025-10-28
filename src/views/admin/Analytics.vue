@@ -138,6 +138,34 @@
           </div>
         </div>
 
+          <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-medium text-gray-800">
+                Session Incomplete
+                <span class="text-sm font-normal text-gray-600">
+                  - Students with incomplete sessions
+                </span>
+              </h3>
+              <div class="flex items-center space-x-3">
+                <select v-model="atRiskTimeFilter" @change="loadAtRiskStudentsData" class="text-sm border border-gray-200 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                  <option value="1">Last 1 Week</option>
+                  <option value="2">Last 2 Weeks</option>
+                </select>
+              </div>
+            </div>
+            <div class="h-72 relative">
+              <BaseTable :items="atRiskStudents" :columns="atRiskStudentsColumns" :has-actions="true">
+                <template #actions="{ item }">
+                                    <button @click="sendReminder(item)" class="text-indigo-600 hover:text-indigo-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009.894 15V11a1 1 0 112 0v4a1 1 0 00.788 1.981l5 1.428a1 1 0 001.17-1.409l-7-14z" />
+                    </svg>
+                  </button>
+                </template>
+              </BaseTable>
+            </div>
+          </div>
+
           <!-- Consultation Concerns Chart -->
           <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
             <div class="flex items-center justify-between mb-6">
@@ -184,6 +212,8 @@ import api from '../../services/api'
 import Chart from 'chart.js/auto'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import BaseTable from '../../components/ui/BaseTable.vue'
+import { notificationService } from '../../services/notificationService'
 
 // Store
 const authStore = useAuthStore()
@@ -222,11 +252,55 @@ const sspProgressChart = ref(null)
 const consultationChart = ref(null)
 const sspDateFilter = ref('month')
 const consultationDateFilter = ref('month')
+const atRiskTimeFilter = ref('1')
 const consultations = ref([])
+const atRiskStudents = ref([])
+const atRiskStudentsColumns = [
+  { key: 'name', label: 'Student Name' },
+  { key: 'sspCode', label: 'SSP Code' },
+  { key: 'section', label: 'Section' },
+  { key: 'major', label: 'Major' },
+  { key: 'missingSessions', label: 'Missing Sessions' },
+]
 
 // Chart instances
 let sspProgressChartInstance = null
 let consultationChartInstance = null
+
+// Send reminder to adviser
+const sendReminder = async (item) => {
+  try {
+    await api.post('/reminders/adviser', { 
+      studentId: item.studentId, 
+      adviserId: item.adviserId,
+      missingSessions: item.missingSessions,
+      section: item.section,
+      major: item.major
+    });
+    notificationService.showSuccess('Reminder sent successfully!');
+  } catch (error) {
+    console.error('--- Detalyadong Error sa Pag-send ng Reminder ---');
+    console.error('Student Item na Ipinasa:', JSON.stringify(item, null, 2));
+    if (error.response) {
+      // Nag-request at nag-respond ang server pero may error status code
+      console.error('Data mula sa Backend:', JSON.stringify(error.response.data, null, 2));
+      console.error('Status mula sa Backend:', error.response.status);
+      console.error('Headers mula sa Backend:', JSON.stringify(error.response.headers, null, 2));
+      notificationService.showError(`Hindi ma-send ang reminder: ${error.response.data.message || 'Server error'}`);
+    } else if (error.request) {
+      // Nag-request pero walang response na natanggap
+      console.error('Walang response mula sa server. Request details:', error.request);
+      notificationService.showError('Hindi ma-send ang reminder: Walang response mula sa server.');
+    } else {
+      // May problema sa pag-setup ng request
+      console.error('Error sa pag-setup ng request:', error.message);
+      notificationService.showError('Hindi ma-send ang reminder: Error sa pag-setup ng request.');
+    }
+    console.error('Buong error object:', error);
+    console.error('--- Katapusan ng Detalyadong Error ---');
+    notificationService.showError('Nabigo ang pag-send ng reminder. Pakitingnan ang console para sa detalye.');
+  }
+};
 
 // Load dashboard data
 const loadDashboardData = async () => {
@@ -236,7 +310,8 @@ const loadDashboardData = async () => {
     await Promise.all([
       loadSystemOptions(),
       loadConsultations(),
-      loadStats()
+      loadStats(),
+      loadAtRiskStudentsData(),
     ])
     
     // Load charts after data is ready
@@ -377,6 +452,31 @@ const loadConsultationChart = async () => {
   }
   await nextTick()
   await createConsultationChart()
+}
+
+// Load at-risk students data
+const loadAtRiskStudentsData = async () => {
+  try {
+    const queryParams = new URLSearchParams()
+    if (filters.yearLevel) queryParams.append('yearLevel', filters.yearLevel)
+    if (filters.section) queryParams.append('section', filters.section)
+    if (filters.major) queryParams.append('major', filters.major)
+    queryParams.append('weeks', atRiskTimeFilter.value)
+
+    const response = await api.get(`/admin/analytics/at-risk-students?${queryParams.toString()}`)
+    // Ensure adviserId is included for the sendReminder function
+    atRiskStudents.value = (response.data || []).map(student => ({
+      name: student.name,
+      sspCode: student.sspCode,
+      missingSessions: student.missingSessions,
+      studentId: student.studentId, // studentId is the Student document _id
+      adviserId: student.adviserId, // Use the adviserId field directly from the backend response
+      section: student.section,
+      major: student.major,
+    }));
+  } catch (error) {
+    console.error('Error loading at-risk students data:', error)
+  }
 }
 
 // Create SSP Progress Chart
@@ -647,7 +747,8 @@ const applyFilters = async () => {
     // Reload data with current filters
     await Promise.all([
       loadConsultations(),
-      loadStats()
+      loadStats(),
+      loadAtRiskStudentsData()
     ])
     
     // Reload charts with current filters
@@ -767,6 +868,32 @@ const generatePDFReport = async () => {
       body: sspTableBody,
       theme: 'striped',
       headStyles: { fillColor: [52, 152, 219] }
+    })
+    finalY = (doc).lastAutoTable.finalY
+  }
+
+  // At-Risk Students as a table
+  if (atRiskStudents.value.length > 0) {
+    if (finalY > pageHeight - 60) { // Check if there's enough space
+      doc.addPage()
+      addHeader()
+      finalY = 30
+    }
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Session Incomplete', margin, finalY + 15)
+
+    const atRiskTableBody = atRiskStudents.value.map(student => {
+      return [student.name, student.missingSessions]
+    })
+
+    autoTable(doc, {
+      startY: finalY + 20,
+      margin: { left: margin, right: margin },
+      head: [['Student', 'Missing Sessions']],
+      body: atRiskTableBody,
+      theme: 'striped',
+      headStyles: { fillColor: [231, 76, 60] }
     })
     finalY = (doc).lastAutoTable.finalY
   }
