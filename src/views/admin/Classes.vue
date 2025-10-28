@@ -284,15 +284,30 @@
           <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
             <h4 class="text-base font-medium text-gray-800 mb-3">Class Information</h4>
             <div class="grid grid-cols-2 gap-4 text-base">
-          <div>
+              <div>
                 <span class="text-gray-500">Class:</span>
                 <span class="ml-2 text-gray-800">{{ selectedClass?.yearLevel }} - {{ selectedClass?.section }}</span>
-        </div>
-          <div>
+              </div>
+              <div>
                 <span class="text-gray-500">Major:</span>
                 <span class="ml-2 text-gray-800">{{ selectedClass?.major || 'Not specified' }}</span>
-          </div>
-          </div>
+              </div>
+              <div>
+                <span class="text-gray-500">Current Period:</span>
+                <span 
+                  :class="[
+                    'ml-2 px-2 py-1 rounded-full text-xs font-medium',
+                    getPeriodBadgeClass(selectedClass?.currentPeriod)
+                  ]"
+                >
+                  {{ selectedClass?.currentPeriod || 'Prelim' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">Current Semester:</span>
+                <span class="ml-2 text-gray-800">{{ selectedClass?.currentSemester || '1st' }}</span>
+              </div>
+            </div>
           </div>
           
           <!-- Class Schedule Information -->
@@ -698,19 +713,10 @@
     </UnifiedModal>
     
     
-    <!-- Edit Class Modal - Increase width -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 flex justify-center items-center">
-      <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm border border-gray-200 border-opacity-60 rounded-2xl shadow-xl w-full max-w-4xl mx-auto p-6 z-50 max-h-[90vh] overflow-y-auto scrollbar-hide transition-all duration-300">
-        <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
-          <h2 class="text-2xl font-semibold text-primary">Edit Class</h2>
-          <button @click="() => { console.log('Closing edit modal'); showEditModal = false; }" class="text-gray-500 hover:text-gray-700 transition-colors duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Common fields for both semesters -->
+    <!-- Edit Class Modal - Unified -->
+    <UnifiedModal v-model="showEditModal" title="Edit Class" @close="closeEditModal">
+      <template #default>
+        <div class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           <div>
             <label class="block text-base font-medium text-gray-700 mb-2">Year Level *</label>
@@ -988,10 +994,12 @@
             </div>
           </div>
         </div>
-        
-        <div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end space-x-3">
           <button
-            @click="showEditModal = false"
+            @click="closeEditModal"
             class="px-5 py-2.5 mr-3 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
           >
             Cancel
@@ -1002,7 +1010,6 @@
           >
             Archive Class
           </button>
-          <!-- Show update button based on active tab -->
           <button
             v-if="activeEditSemesterTab === '1st'"
             @click="updateFirstSemester"
@@ -1017,9 +1024,9 @@
           >
             Update 2nd Semester
           </button>
-      </div>
-    </div>
   </div>
+      </template>
+    </UnifiedModal>
 </template>
 
 <script setup>
@@ -1825,6 +1832,10 @@ function closeAddModal() {
   showAddModal.value = false
 }
 
+function closeEditModal() {
+  showEditModal.value = false
+}
+
 // validateForm function moved to the bottom of the file
 
 async function addClass() {
@@ -1834,29 +1845,28 @@ async function addClass() {
   }
   
   try {
-    // Create the 1st semester class if data is provided
-    let firstSemResult = null;
-    if (newClass.firstSem.subjectId && newClass.firstSem.daySchedule && 
-        newClass.firstSem.timeSchedule && newClass.firstSem.room) {
-      firstSemResult = await createFirstSemesterClass();
+    // Both semesters are required - validation should have caught this, but double-check
+    const hasFirstSemData = newClass.firstSem.subjectId && newClass.firstSem.daySchedule && 
+                           newClass.firstSem.timeSchedule && newClass.firstSem.room;
+    const hasSecondSemData = newClass.secondSem.subjectId && newClass.secondSem.daySchedule && 
+                            newClass.secondSem.timeSchedule && newClass.secondSem.room;
+    
+    if (!hasFirstSemData || !hasSecondSemData) {
+      notificationService.showError('Both 1st and 2nd semester classes are required');
+      return;
     }
     
-    // Create the 2nd semester class if data is provided
-    let secondSemResult = null;
-    if (newClass.secondSem.subjectId && newClass.secondSem.daySchedule && 
-        newClass.secondSem.timeSchedule && newClass.secondSem.room) {
-      secondSemResult = await createSecondSemesterClass(firstSemResult);
-    }
+    // Create the 1st semester class
+    const firstSemResult = await createFirstSemesterClass();
     
-    // Show appropriate success message
+    // Create the 2nd semester class
+    const secondSemResult = await createSecondSemesterClass(firstSemResult);
+    
+    // Both semesters should be created successfully
     if (firstSemResult && secondSemResult) {
       notificationService.showSuccess('Both semester classes created successfully');
-    } else if (firstSemResult) {
-      notificationService.showSuccess('1st semester class created successfully');
-    } else if (secondSemResult) {
-      notificationService.showSuccess('2nd semester class created successfully');
     } else {
-      notificationService.showWarning('No classes were created. Please check your input.');
+      notificationService.showError('Failed to create both semester classes. Please try again.');
       return;
     }
     
@@ -1895,6 +1905,10 @@ async function createFirstSemesterClass() {
       ? parseInt(subject.hours, 10) 
       : (subject.hours || 1);
     
+  // Get default school year from system options
+  const systemOptions = systemOptionsService.getCachedOptions()
+  const defaultSchoolYear = systemOptions?.class?.defaultSchoolYear || '2025-2026'
+    
   // Construct the class data
     const classData = {
       yearLevel: newClass.yearLevel,
@@ -1904,7 +1918,8 @@ async function createFirstSemesterClass() {
     room: newClass.firstSem.room,
       status: 'active',
     sspSubjectId: newClass.firstSem.subjectId,
-      hours: hours
+      hours: hours,
+      schoolYear: defaultSchoolYear
     };
     
     // Only include major if it's not empty (for 3rd and 4th year students)
@@ -2769,9 +2784,14 @@ function validateEditForm() {
     }
   }
   
-  // If we have no data for either semester, require at least one
-  if (!hasFirstSemData && !hasSecondSemData) {
-    errors.editFirstSem.subjectId = 'At least one semester class must be defined';
+  // Require both semesters to be defined
+  if (!hasFirstSemData || !hasSecondSemData) {
+    if (!hasFirstSemData) {
+      errors.editFirstSem.subjectId = '1st semester class is required';
+    }
+    if (!hasSecondSemData) {
+      errors.editSecondSem.subjectId = '2nd semester class is required';
+    }
     isValid = false;
   }
   
@@ -3291,9 +3311,14 @@ function validateForm() {
       }
     }
     
-    // If we have no data for either semester, require at least first semester
-    if (!hasFirstSemData && !hasSecondSemData) {
-      errors.firstSem.subjectId = 'At least one semester class must be defined';
+    // Require both semesters to be defined
+    if (!hasFirstSemData || !hasSecondSemData) {
+      if (!hasFirstSemData) {
+        errors.firstSem.subjectId = '1st semester class is required';
+      }
+      if (!hasSecondSemData) {
+        errors.secondSem.subjectId = '2nd semester class is required';
+      }
       isValid = false;
     }
   }
@@ -4243,6 +4268,19 @@ function getPositionedClassBlocks() {
 }
 
 // Functions for the new modal design
+function getPeriodBadgeClass(period) {
+  switch (period) {
+    case 'Prelim':
+      return 'bg-blue-100 text-blue-800 border border-blue-200';
+    case 'Midterm':
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+    case 'Finals':
+      return 'bg-green-100 text-green-800 border border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border border-gray-200';
+  }
+}
+
 function closeDetailsModal() {
   showDetailsModal.value = false;
   selectedClass.value = null;

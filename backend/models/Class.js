@@ -95,6 +95,11 @@ const ClassSchema = new mongoose.Schema({
     enum: ['1st', '2nd'],
     default: '1st'
   },
+  currentPeriod: {
+    type: String,
+    enum: ['Prelim', 'Midterm', 'Finals'],
+    default: 'Prelim'
+  },
   lastActive: {
     type: Date,
     default: Date.now

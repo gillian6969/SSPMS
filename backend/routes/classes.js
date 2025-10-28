@@ -274,6 +274,7 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       room,
       hours: classHours,
       sspSubject: sspSubjectId,
+      currentPeriod: 'Prelim', // Set default period to Prelim
       // Set first semester details
       firstSemester: {
         daySchedule,
@@ -871,6 +872,154 @@ router.put('/:id/current-semester', authenticate, authorizeAdmin, async (req, re
     res.status(500).json({ 
       success: false, 
       message: 'Failed to update class current semester', 
+      error: error.message 
+    });
+  }
+});
+
+// Update class current period
+router.post('/:id/update-period', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid class ID format' 
+      });
+    }
+    
+    // Import the PeriodService
+    const PeriodService = require('../services/periodService');
+    
+    // Update the current period for this class
+    const result = await PeriodService.updateCurrentPeriod(id);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Class period updated successfully`,
+        period: result.period,
+        method: result.method
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to update class period'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error updating class current period:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update class current period', 
+      error: error.message 
+    });
+  }
+});
+
+// Get class current period
+router.get('/:id/current-period', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid class ID format' 
+      });
+    }
+    
+    // Import the PeriodService
+    const PeriodService = require('../services/periodService');
+    
+    // Get the current period for this class
+    const period = await PeriodService.getCurrentPeriod(id);
+    
+    res.json({
+      success: true,
+      period: period
+    });
+    
+  } catch (error) {
+    console.error('Error getting class current period:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get class current period', 
+      error: error.message 
+    });
+  }
+});
+
+// Update periods for all active classes (admin only)
+router.post('/update-all-periods', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    // Import the PeriodService
+    const PeriodService = require('../services/periodService');
+    
+    // Update periods for all active classes
+    const result = await PeriodService.updateAllClassPeriods();
+    
+    res.json({
+      success: true,
+      message: `Updated periods for ${result.updated}/${result.total} classes`,
+      result: result
+    });
+    
+  } catch (error) {
+    console.error('Error updating all class periods:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update all class periods', 
+      error: error.message 
+    });
+  }
+});
+
+// Test endpoint to manually trigger period update (for debugging)
+router.post('/:id/test-period-update', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid class ID format' 
+      });
+    }
+    
+    // Import the PeriodService
+    const PeriodService = require('../services/periodService');
+    
+    console.log(`=== MANUAL PERIOD UPDATE TEST FOR CLASS ${id} ===`);
+    
+    // Update the current period for this class
+    const result = await PeriodService.updateCurrentPeriod(id);
+    
+    console.log(`=== PERIOD UPDATE RESULT ===`, result);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Class period updated successfully`,
+        period: result.period,
+        method: result.method,
+        debug: 'Check server logs for detailed debugging information'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to update class period',
+        debug: 'Check server logs for detailed debugging information'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in test period update:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update class current period', 
       error: error.message 
     });
   }

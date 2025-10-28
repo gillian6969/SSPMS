@@ -11,6 +11,14 @@ const SessionSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
+  },
+  startDate: {
+    type: String,
+    trim: true
+  },
+  endDate: {
+    type: String,
+    trim: true
   }
 });
 
@@ -50,6 +58,25 @@ const SubjectSchema = new mongoose.Schema({
     required: true,
     enum: [1, 2, 3],
     default: 1
+  },
+  dayZeroTitle: {
+    type: String,
+    trim: true,
+    default: 'INTRODUCTION'
+  },
+  examDateRanges: {
+    prelim: {
+      start: { type: String, trim: true },
+      end: { type: String, trim: true }
+    },
+    midterm: {
+      start: { type: String, trim: true },
+      end: { type: String, trim: true }
+    },
+    finals: {
+      start: { type: String, trim: true },
+      end: { type: String, trim: true }
+    }
   },
   sessions: {
     type: [SessionSchema],

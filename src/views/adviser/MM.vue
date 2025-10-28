@@ -95,32 +95,27 @@
 
     <!-- M&M Submissions Data -->
     <div v-else class="space-y-8">
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-        <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-          <div class="text-2xl font-semibold text-gray-800">{{ totalStudents }}</div>
-          <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Total Students</div>
-        </div>
-        
-        <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-          <div class="text-2xl font-semibold text-gray-500">{{ completedStudents }}</div>
-          <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Complete</div>
-        </div>
-        
-        <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-          <div class="text-2xl font-semibold ttext-gray-500">{{ incompleteStudents }}</div>
-          <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Incomplete</div>
-        </div>
-        
-        <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-          <div class="text-2xl font-semibold text-gray-500">{{ completionRate }}%</div>
-          <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Completion Rate</div>
-        </div>
-      </div>
-
       <!-- M&M Submissions Section -->
       <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
         <h3 class="text-lg font-medium text-gray-800 mb-6">M&M Submission Status</h3>
+        
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="text-2xl font-semibold text-gray-800">{{ totalStudents }}</div>
+            <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Total Students</div>
+          </div>
+          
+          <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="text-2xl font-semibold text-gray-500">{{ completedStudents }}</div>
+            <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Complete</div>
+          </div>
+          
+          <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="text-2xl font-semibold text-gray-500">{{ incompleteStudents }}</div>
+            <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Incomplete</div>
+          </div>
+        </div>
         
         <!-- Semester Tabs -->
         <div class="border-b border-gray-200 mb-6">
@@ -187,12 +182,6 @@
                       <div class="text-sm font-medium text-white">Complete</div>
                       <div class="text-lg font-semibold text-white">
                         {{ getClassCompletedCount(classGroup) }}
-                      </div>
-                    </div>
-                    <div class="text-center">
-                      <div class="text-sm font-medium text-white">Rate</div>
-                      <div class="text-lg font-semibold text-white">
-                        {{ getClassCompletionRate(classGroup) }}%
                       </div>
                     </div>
                   </div>
@@ -286,16 +275,9 @@
                   <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <button
                       @click="viewSubmissions(student)"
-                          class="text-blue-600 hover:text-blue-800 mr-3"
+                          class="text-blue-600 hover:text-blue-800"
                     >
                       View Details
-                    </button>
-                    <button
-                      v-if="!isStudentComplete(student)"
-                      @click="sendReminder(student)"
-                          class="text-red-600 hover:text-red-800"
-                    >
-                      Send Reminder
                     </button>
                   </td>
                 </tr>
@@ -312,7 +294,7 @@
     <!-- Submission Details Modal -->
     <teleport to="body">
       <div v-if="showSubmissionModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm" @click.self="closeSubmissionModal">
-        <div class="w-11/12 max-w-5xl bg-white rounded-2xl shadow-2xl p-6">
+        <div class="w-11/12 max-w-7xl bg-white rounded-2xl shadow-2xl p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-medium text-gray-800">M&M Submissions - {{ selectedStudent?.name }}</h3>
           <button @click="closeSubmissionModal" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100">
@@ -331,7 +313,7 @@
                 <img
                   :src="getSubmissionForExam(selectedStudent, examType).imageUrl"
                   :alt="`${examType} Submission`"
-                  class="w-full h-56 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                  class="w-full h-80 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                   @click="() => window.open(getSubmissionForExam(selectedStudent, examType).imageUrl, '_blank')"
                 >
               </div>
@@ -725,52 +707,6 @@ const viewSubmissions = (student) => {
 const closeSubmissionModal = () => {
   selectedStudent.value = null
   showSubmissionModal.value = false
-}
-
-const sendReminder = async (student) => {
-  try {
-    const missingExams = ['P1', 'P2', 'P3'].filter(exam => !getSubmissionStatus(student, exam))
-    const message = `M&M Submission Reminder: You need to complete your M&M submissions for ${activeSemester.value} semester. Missing exams: ${missingExams.join(', ')}. Please upload your exam images as soon as possible.`
-    
-    // Find student's user ID from the allStudents array
-    const studentRecord = allStudents.value.find(s => s._id === student.id || s._id === student._id)
-    if (studentRecord && studentRecord.user) {
-      await api.post('/notifications/create', {
-        userId: studentRecord.user._id || studentRecord.user.id,
-        title: `M&M Submission Required - ${activeSemester.value} Semester`,
-        message: message,
-        type: 'warning',
-        link: '/student/surveys'
-      })
-      
-      notificationService.showSuccess(`Reminder sent to ${student.name}`)
-    } else {
-      // Alternative: try to find by submission data
-      const studentSubmission = submissions.value.find(sub => 
-        getStudentIdKey(sub.student) === student.id && 
-        sub.student && 
-        typeof sub.student === 'object' && 
-        sub.student.user
-      )
-      
-      if (studentSubmission && studentSubmission.student.user) {
-        await api.post('/notifications/create', {
-          userId: studentSubmission.student.user._id || studentSubmission.student.user.id,
-        title: `M&M Submission Required - ${activeSemester.value} Semester`,
-        message: message,
-        type: 'warning',
-        link: '/student/surveys'
-      })
-      
-      notificationService.showSuccess(`Reminder sent to ${student.name}`)
-    } else {
-      notificationService.showError('Could not find student user ID')
-      }
-    }
-  } catch (error) {
-    console.error('Error sending reminder:', error)
-    notificationService.showError('Failed to send reminder')
-  }
 }
 
 

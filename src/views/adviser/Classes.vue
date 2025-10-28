@@ -1,5 +1,5 @@
 <template>
-  <div class="adviser-classes">
+  <div class="adviser-classes max-w-7xl mx-auto overflow-hidden">
     <!-- Classes Header - ensuring it fits in page width -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
       <h2 class="text-xl font-semibold mb-4">Advisory Classes</h2>
@@ -85,15 +85,18 @@
     <!-- Selected Class Details -->
     <div v-if="selectedClass" class="bg-white rounded-lg shadow p-6 mb-6">
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-lg font-semibold flex items-center">
-          <span class="text-primary">{{ selectedClass.yearLevel }} Year - {{ selectedClass.section }}</span>
-          <span v-if="selectedClass.major && !selectedClass.yearLevel.includes('2nd')" class="ml-3 badge bg-primary-light text-primary text-xs px-2 py-1 rounded-full font-medium">{{ selectedClass.major }}</span>
-        </h3>
+        <div class="flex items-center space-x-4">
+          <h3 class="text-lg font-semibold flex items-center">
+            <span class="text-primary">{{ selectedClass.yearLevel }} Year - {{ selectedClass.section }}</span>
+            <span v-if="selectedClass.major && !selectedClass.yearLevel.includes('2nd')" class="ml-3 badge bg-primary-light text-primary text-xs px-2 py-1 rounded-full font-medium">{{ selectedClass.major }}</span>
+          </h3>
+        </div>
+        
         <button 
           @click="selectedClass = null" 
           class="text-gray-500 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
         >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -139,6 +142,17 @@
               <span class="text-sm text-gray-600">Semester:</span>
               <span class="text-sm font-medium" :class="{'text-green-600': activeTab === '1st', 'text-blue-600': activeTab === '2nd'}">
                 {{ activeTab === '1st' ? '1st Semester' : '2nd Semester' }}
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-gray-600">Current Period:</span>
+              <span 
+                :class="[
+                  'text-sm font-medium',
+                  getPeriodBadgeClass(selectedClass.currentPeriod)
+                ]"
+              >
+                {{ selectedClass.currentPeriod || 'Prelim' }}
               </span>
             </div>
             <div class="flex justify-between">
@@ -225,8 +239,8 @@
         </div>
       </div>
       
-      <!-- Session Compliance Matrix - no scrolling, full fit -->
-      <div class="relative border rounded my-4">
+       <!-- Session Compliance Matrix - contained width with horizontal scroll -->
+       <div class="relative border rounded my-4">
         <div class="px-4 py-2 bg-gray-50 border-b flex justify-between items-center">
           <h4 class="font-medium">Session Compliance Tracking</h4>
           <div class="flex items-center space-x-2">
@@ -318,59 +332,89 @@
               </button>
             </nav>
               
-              <!-- Promote Students Button -->
-              <button 
-                v-if="(activeTab === '1st' && eligibleFirstSemesterStudents.length > 0) || (activeTab === '2nd' && eligibleSecondSemesterStudents.length > 0)"
-                @click="initiatePromotion"
-                :disabled="hasIneligibleStudents(activeTab)"
-                :class="[
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
-                  !hasIneligibleStudents(activeTab)
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                ]"
-              >
-                Promote Students
-              </button>
+              <!-- Promote Students Buttons for Active Semester -->
+              <div class="flex gap-2">
+                <!-- 1st Semester Promote Button - Only show when 1st tab is active -->
+                <button 
+                  v-if="activeTab === '1st'"
+                  @click="initiatePromotion('1st')"
+                  :disabled="hasIneligibleStudents('1st') || !hasStudentCompletedLastExam('1st')"
+                  :class="[
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
+                    !hasIneligibleStudents('1st') && hasStudentCompletedLastExam('1st')
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ]"
+                >
+                  Promote to 2nd Semester
+                </button>
+                
+                <!-- 2nd Semester Promote Button - Only show when 2nd tab is active -->
+                <button 
+                  v-if="activeTab === '2nd'"
+                  @click="initiatePromotion('2nd')"
+                  :disabled="hasIneligibleStudents('2nd') || !hasStudentCompletedLastExam('2nd')"
+                  :class="[
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
+                    !hasIneligibleStudents('2nd') && hasStudentCompletedLastExam('2nd')
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ]"
+                >
+                  Promote to Next Year
+                </button>
+              </div>
             </div>
           </div>
           
           <!-- First Semester Students Table -->
-          <div v-if="activeTab === '1st' && firstSemesterStudents.length > 0" class="p-4">
-            
-            <table class="w-full divide-y divide-gray-200 table-auto">
+          <div v-if="activeTab === '1st'" class="p-4">
+            <!-- Show table if there are students -->
+            <div v-if="firstSemesterStudents.length > 0">
+            <!-- Isolated table container with fixed dimensions -->
+            <div class="table-wrapper">
+              <div class="table-container">
+                <table class="session-table">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th scope="col" class="sticky left-0 z-10 bg-gray-50 px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-200 min-w-[120px] sm:min-w-[140px]">
                     Student
                   </th>
                   <th 
                     v-for="session in firstSemesterSessions" 
                     :key="session._id" 
                     scope="col" 
-                    class="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase"
+                    :class="[
+                      'px-1 sm:px-2 py-2 text-center text-xs font-medium uppercase min-w-[80px] sm:min-w-[100px] whitespace-nowrap',
+                      isExamSession(session) ? 'bg-green-100 text-green-700' : 'bg-gray-50 text-gray-500'
+                    ]"
                   >
-                    <div class="text-xs">Day {{ session.day }}</div>
-                    <div class="text-sm text-blue-700 font-medium">
+                    <div class="text-xs font-semibold">Day {{ session.day }}</div>
+                    <div class="text-xs text-blue-700 font-medium leading-tight">
                       {{ session.title }}
                     </div>
+                    <!-- Show exam dates for exam sessions -->
+                    <div v-if="isExamSession(session)" 
+                         class="text-xs text-red-600 font-medium mt-1 leading-tight">
+                      {{ (() => {
+                        const dates = getExamDatesForSession(session);
+                        return dates.startDate && dates.endDate ? formatExamDateRange(dates.startDate, dates.endDate) : 'No dates';
+                      })() }}
+                    </div>
                   </th>
-                  <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                    Overall
-                  </th>
-                  <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                  <th scope="col" class="sticky right-0 z-10 bg-gray-50 px-2 sm:px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase border-l border-gray-200 min-w-[100px] sm:min-w-[120px]">
                     Actions
                   </th>
                 </tr>
                 <!-- Column Checkboxes Row for 1st Semester -->
                 <tr class="bg-gray-100">
-                  <td class="px-2 py-1 text-center">
+                  <td class="sticky left-0 z-10 bg-gray-100 px-3 py-1 text-center border-r border-gray-200">
                     <span class="text-xs text-gray-600">Select All</span>
                   </td>
                   <td 
                     v-for="session in firstSemesterSessions" 
                     :key="`checkbox-${session._id}`" 
-                    class="px-1 py-1 text-center"
+                    class="px-2 py-1 text-center"
                   >
                     <input 
                       type="checkbox" 
@@ -379,13 +423,12 @@
                       class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
                   </td>
-                  <td class="px-2 py-1"></td>
-                  <td class="px-2 py-1"></td>
+                  <td class="sticky right-0 z-10 bg-gray-100 px-3 py-1 border-l border-gray-200"></td>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="student in firstSemesterStudents" :key="student.id" class="hover:bg-gray-50">
-                  <td class="px-2 py-2 text-sm font-medium text-gray-900">
+                  <td class="sticky left-0 z-10 bg-white px-2 sm:px-3 py-2 text-sm font-medium text-gray-900 border-r border-gray-200">
                     <button 
                       @click="viewStudentDetails(student)"
                       class="text-left hover:text-blue-600 hover:underline transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-1 py-0.5"
@@ -397,7 +440,10 @@
                   <td 
                     v-for="session in firstSemesterSessions" 
                     :key="session._id" 
-                    class="px-1 py-1 text-center"
+                    :class="[
+                      'px-1 sm:px-2 py-1 text-center',
+                      isExamSession(session) ? 'bg-green-50' : ''
+                    ]"
                   >
                     <div 
                       v-if="student.sessions[session._id]"
@@ -456,41 +502,45 @@
                     </div>
                     <div v-else class="text-xs text-gray-400">N/A</div>
                   </td>
-                  <td class="px-2 py-2 text-center">
-                    <div class="inline-flex items-center">
-                      <span 
-                        class="px-2 py-1 text-xs rounded-full font-medium"
-                        :class="getComplianceClass(getStudentCompliancePercentage(student))"
-                      >
-                        {{ getStudentCompliancePercentage(student) }}%
-                      </span>
-                    </div>
-                  </td>
-                  <td class="px-2 py-2 text-center">
+                  <td class="sticky right-0 z-10 bg-white px-2 sm:px-3 py-2 text-center border-l border-gray-200">
                     <div class="flex flex-col items-center space-y-1">
                       <!-- Check for missing M&M submissions for exam sessions (with permit validation) -->
-                      <div v-if="getMissingExamMMs(student, firstSemesterSessions).length > 0">
+                      <div v-if="getMissingRequirementsDetails(student, firstSemesterSessions).length > 0">
                         <span class="text-xs text-orange-600 font-medium mb-1 block">
                           Missing requirements
                         </span>
-                        <!-- Show buttons for each missing exam M&M (or permit not validated) -->
-                        <div v-for="examType in getMissingExamMMs(student, firstSemesterSessions)" :key="examType" class="mb-1 flex items-center gap-2">
+                        <!-- Show detailed missing requirements for each exam -->
+                        <div v-for="requirement in getMissingRequirementsDetails(student, firstSemesterSessions)" :key="requirement.examType" class="mb-1 flex flex-col items-center gap-1">
+                          <span class="text-xs text-gray-600">{{ requirement.text }}</span>
                           <button 
-                            @click="sendSpecificMMReminder(student, examType)"
+                            @click="sendSpecificMMReminder(student, requirement.examType)"
                             class="px-2 py-1 text-xs border border-transparent rounded-md shadow-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
                           >
-                            Upload {{ examType }} M&M
+                            Upload {{ requirement.examType }} Requirements
                           </button>
                         </div>
                       </div>
                       
-                      <!-- Regular promotion/reminder logic -->
-                      <div v-else-if="!isEligibleForPromotion(student)">
+                      <!-- Session reminder logic - can show alongside M&M reminders -->
+                      <div v-if="getStudentMissingSessionsCount(student) > 0">
                         <span class="text-xs text-amber-600 font-medium mb-1 block">
-                          <span v-if="getStudentMissingSessionsCount(student) > 2">
                             {{ getStudentMissingSessionsCount(student) }} sessions missing
                           </span>
-                          <span v-else-if="!student.odysseyPlanCompleted">
+                        <div class="flex items-center gap-2">
+                          <button 
+                            @click="notifyStudent(student)"
+                            class="mt-1 px-2 py-1 text-xs border border-transparent rounded-md shadow-sm font-medium text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                          >
+                            Send Reminder
+                          </button>
+                          <!-- Drop functionality moved to admin -->
+                        </div>
+                      </div>
+                      
+                      <!-- Other requirements (Odyssey Plan, M&M) - only show if no session reminders -->
+                      <div v-else-if="!isEligibleForPromotion(student) && getStudentMissingSessionsCount(student) === 0">
+                        <span class="text-xs text-amber-600 font-medium mb-1 block">
+                          <span v-if="!student.odysseyPlanCompleted">
                             Odyssey Plan required
                           </span>
                           <span v-else-if="!student.mmCompleted">
@@ -504,75 +554,106 @@
                           >
                             Send Reminder
                           </button>
-                          <!-- Drop functionality moved to admin -->
                         </div>
                       </div>
-                      <template v-else>
+                      
+                      <template v-else-if="isEligibleForPromotion(student)">
                         <span class="text-xs text-green-600 font-medium block mb-1">
                           ✅ Eligible for promotion
                         </span>
                         <!-- Individual promote buttons removed - use bulk promotion -->
                       </template>
                       
+                      
+                      
                       <!-- Drop functionality moved to admin -->
                     </div>
                   </td>
                 </tr>
               </tbody>
-            </table>
+                </table>
+              </div>
+            </div>
+            </div>
+            
+            <!-- No results message for first semester -->
+            <div v-else class="py-8 text-center text-gray-500">
+              <div class="text-lg font-medium mb-2">
+                {{ searchQuery.trim() ? 'No students found' : 'No 1st semester students' }}
+              </div>
+              <p class="text-sm">
+                {{ searchQuery.trim() ? `No students match "${searchQuery}"` : 'No students are currently in 1st semester' }}
+              </p>
+            </div>
           </div>
           
           <!-- Second Semester Students Table -->
-          <div v-if="activeTab === '2nd' && secondSemesterStudents.length > 0" class="p-4">
-            
-            <table class="w-full divide-y divide-gray-200 table-auto">
+          <div v-if="activeTab === '2nd'" class="p-4">
+            <!-- Show table if there are students -->
+            <div v-if="secondSemesterStudents.length > 0">
+            <!-- Isolated table container with fixed dimensions -->
+            <div class="table-wrapper">
+              <div class="table-container">
+                <table class="session-table">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th scope="col" class="sticky left-0 z-10 bg-gray-50 px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-200 min-w-[120px] sm:min-w-[140px]">
                     Student
                   </th>
                   <th 
                     v-for="session in secondSemesterSessions" 
                     :key="session._id" 
                     scope="col" 
-                    class="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase"
+                    :class="[
+                      'px-1 sm:px-2 py-2 text-center text-xs font-medium uppercase min-w-[80px] sm:min-w-[100px] whitespace-nowrap',
+                      isExamSession(session) ? 'bg-green-100 text-green-700' : 'bg-gray-50 text-gray-500'
+                    ]"
                   >
-                    <div class="text-xs">Day {{ session.day }}</div>
-                    <div class="text-sm text-green-700 font-medium">
+                    <div class="text-xs font-semibold">Day {{ session.day }}</div>
+                    <div class="text-xs text-blue-700 font-medium leading-tight">
                       {{ session.title }}
-        </div>
+                    </div>
+                    <!-- Show exam dates for exam sessions -->
+                    <div v-if="isExamSession(session)" 
+                         class="text-xs text-red-600 font-medium mt-1 leading-tight">
+                      {{ (() => {
+                        const dates = getExamDatesForSession(session);
+                        console.log('Exam session dates for', session.title, ':', dates);
+                        return dates.startDate && dates.endDate ? formatExamDateRange(dates.startDate, dates.endDate) : 'No dates';
+                      })() }}
+                    </div>
                   </th>
-                  <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                  <th scope="col" class="px-2 sm:px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase min-w-[100px] sm:min-w-[120px]">
                     Overall
                   </th>
-                  <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                  <th scope="col" class="sticky right-0 z-10 bg-gray-50 px-2 sm:px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase border-l border-gray-200 min-w-[100px] sm:min-w-[120px]">
                     Actions
                   </th>
                 </tr>
                 <!-- Column Checkboxes Row for 2nd Semester -->
                 <tr class="bg-gray-100">
-                  <td class="px-2 py-1 text-center">
+                  <td class="sticky left-0 z-10 bg-gray-100 px-3 py-1 text-center border-r border-gray-200">
                     <span class="text-xs text-gray-600">Select All</span>
                   </td>
                   <td 
                     v-for="session in secondSemesterSessions" 
                     :key="`checkbox-2nd-${session._id}`" 
-                    class="px-1 py-1 text-center"
+                    class="px-2 py-1 text-center"
                   >
                     <input 
                       type="checkbox" 
                       :checked="isAllStudentsCheckedForSession(session._id, '2nd')"
                       @change="toggleAllSessionsForColumn(session._id, '2nd', $event.target.checked)"
-                      class="form-checkbox h-4 w-4 text-green-600 rounded border-gray-300 focus:ring-green-500"
+                      class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
                   </td>
-                  <td class="px-2 py-1"></td>
-                  <td class="px-2 py-1"></td>
+                  <td class="px-3 py-1"></td>
+                  <td class="sticky right-0 z-10 bg-gray-100 px-3 py-1 border-l border-gray-200"></td>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="student in secondSemesterStudents" :key="student.id" class="hover:bg-gray-50">
-                  <td class="px-2 py-2 text-sm font-medium text-gray-900">
+                  <td class="sticky left-0 z-10 bg-white px-2 sm:px-3 py-2 text-sm font-medium text-gray-900 border-r border-gray-200">
                     <button 
                       @click="viewStudentDetails(student)"
                       class="text-left hover:text-blue-600 hover:underline transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-1 py-0.5"
@@ -584,7 +665,10 @@
                   <td 
                     v-for="session in secondSemesterSessions" 
                     :key="session._id" 
-                    class="px-1 py-1 text-center"
+                    :class="[
+                      'px-1 sm:px-2 py-1 text-center',
+                      isExamSession(session) ? 'bg-green-50' : ''
+                    ]"
                   >
                     <div 
                       v-if="student.sessions[session._id]"
@@ -643,7 +727,7 @@
                     </div>
                     <div v-else class="text-xs text-gray-400">N/A</div>
                   </td>
-                  <td class="px-2 py-2 text-center">
+                  <td class="px-2 sm:px-3 py-2 text-center">
                     <div class="inline-flex items-center">
                       <span 
                         class="px-2 py-1 text-xs rounded-full font-medium"
@@ -653,31 +737,45 @@
                       </span>
                     </div>
                   </td>
-                  <td class="px-2 py-2 text-center">
+                  <td class="sticky right-0 z-10 bg-white px-2 sm:px-3 py-2 text-center border-l border-gray-200">
                     <div class="flex flex-col items-center space-y-1">
                       <!-- Check for missing M&M submissions for exam sessions (with permit validation) -->
-                      <div v-if="getMissingExamMMs(student, secondSemesterSessions).length > 0">
+                      <div v-if="getMissingRequirementsDetails(student, secondSemesterSessions).length > 0">
                         <span class="text-xs text-orange-600 font-medium mb-1 block">
                           Missing requirements
                         </span>
-                        <!-- Show buttons for each missing exam M&M (or permit not validated) -->
-                        <div v-for="examType in getMissingExamMMs(student, secondSemesterSessions)" :key="examType" class="mb-1 flex items-center gap-2">
+                        <!-- Show detailed missing requirements for each exam -->
+                        <div v-for="requirement in getMissingRequirementsDetails(student, secondSemesterSessions)" :key="requirement.examType" class="mb-1 flex flex-col items-center gap-1">
+                          <span class="text-xs text-gray-600">{{ requirement.text }}</span>
                           <button 
-                            @click="sendSpecificMMReminder(student, examType)"
+                            @click="sendSpecificMMReminder(student, requirement.examType)"
                             class="px-2 py-1 text-xs border border-transparent rounded-md shadow-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
                           >
-                            Upload {{ examType }} M&M
+                            Upload {{ requirement.examType }} Requirements
                           </button>
                         </div>
                       </div>
                       
-                      <!-- Regular promotion/reminder logic -->
-                      <div v-else-if="!isEligibleForPromotion(student)">
+                      <!-- Session reminder logic - can show alongside M&M reminders -->
+                      <div v-if="getStudentMissingSessionsCount(student) > 0">
                         <span class="text-xs text-amber-600 font-medium mb-1 block">
-                          <span v-if="getStudentMissingSessionsCount(student) > 2">
                             {{ getStudentMissingSessionsCount(student) }} sessions missing
                           </span>
-                          <span v-else-if="!student.odysseyPlanCompleted && !student.mmCompleted">
+                        <div class="flex items-center gap-2">
+                          <button 
+                            @click="notifyStudent(student)"
+                            class="mt-1 px-2 py-1 text-xs border border-transparent rounded-md shadow-sm font-medium text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                          >
+                            Send Reminder
+                          </button>
+                          <!-- Drop functionality moved to admin -->
+                        </div>
+                      </div>
+                      
+                      <!-- Other requirements (Odyssey Plan, M&M) - only show if no session reminders -->
+                      <div v-else-if="!isEligibleForPromotion(student) && getStudentMissingSessionsCount(student) === 0">
+                        <span class="text-xs text-amber-600 font-medium mb-1 block">
+                          <span v-if="!student.odysseyPlanCompleted && !student.mmCompleted">
                             Odyssey Plan & M&M required
                           </span>
                           <span v-else-if="!student.odysseyPlanCompleted">
@@ -697,12 +795,15 @@
                           <!-- Drop functionality moved to admin -->
                         </div>
                       </div>
-                      <template v-else>
+                      
+                      <template v-else-if="isEligibleForPromotion(student)">
                         <span class="text-xs text-green-600 font-medium block mb-1">
-                          ✅ Eligible for promotion
+                          Eligible for promotion
                         </span>
                         <!-- Individual promote buttons removed - use bulk promotion -->
                       </template>
+                      
+                      
                       
                       <!-- Drop functionality moved to admin -->
                     </div>
@@ -710,23 +811,19 @@
                 </tr>
               </tbody>
             </table>
+              </div>
+            </div>
       </div>
       
-          <!-- Empty state for no students in current semester view -->
-          <div v-if="(activeTab === '1st' && firstSemesterStudents.length === 0) || 
-                    (activeTab === '2nd' && secondSemesterStudents.length === 0)" 
-            class="p-8 text-center text-gray-500"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <p class="mb-1">No students in {{ activeTab === '1st' ? '1st' : '2nd' }} semester</p>
+            <!-- No results message for second semester -->
+            <div v-else class="py-8 text-center text-gray-500">
+              <div class="text-lg font-medium mb-2">
+                {{ searchQuery.trim() ? 'No students found' : 'No 2nd semester students' }}
+              </div>
             <p class="text-sm">
-              {{ activeTab === '1st' 
-                 ? 'All students have completed 1st semester' 
-                 : 'No students have advanced to 2nd semester yet' 
-              }}
+                {{ searchQuery.trim() ? `No students match "${searchQuery}"` : 'No students are currently in 2nd semester' }}
             </p>
+            </div>
       </div>
       
           <!-- Legend for colors -->
@@ -875,7 +972,6 @@
       :history="studentHistory"
       :loading="loadingStudentDetails"
       @close="showStudentModal = false"
-      @requestDrop="requestStudentDrop"
       @reload-student-data="reloadStudentData"
     />
 
@@ -1373,6 +1469,20 @@ async function selectClass(classData) {
         const secondSemCount = sessionMatrix.value.sessions?.filter(s => s.semester === '2nd Semester').length || 0;
         console.log(`Loaded ${sessionMatrix.value.sessions?.length} total sessions (${firstSemCount} 1st semester, ${secondSemCount} 2nd semester)`);
         
+        // Debug exam sessions specifically - what the frontend actually receives
+        const examSessions = sessionMatrix.value.sessions?.filter(s => 
+          s.day === 6 || s.day === 10 || s.day === 17
+        ) || [];
+        console.log('Exam sessions received by frontend:', examSessions.map(s => ({
+          day: s.day,
+          title: s.title,
+          startDate: s.startDate,
+          endDate: s.endDate,
+          semester: s.semester,
+          hasStartDate: !!s.startDate,
+          hasEndDate: !!s.endDate
+        })));
+        
         // Check if we have data in the matrix but didn't get students earlier
         if (students.value.length === 0 && sessionMatrix.value.students && sessionMatrix.value.students.length > 0) {
           // Convert matrix students to compatible format if we have access to users
@@ -1570,11 +1680,35 @@ async function toggleSessionCompletion(studentId, sessionId, completed) {
           sessionMatrix.value.students[studentIndex] = { ...student };
         }
         
+        // Check if this student now meets requirements for auto-checking exam sessions
+        setTimeout(async () => {
+          try {
+            await autoCheckExamSessions();
+          } catch (error) {
+            console.warn('Error auto-checking exam sessions:', error);
+          }
+        }, 500);
+        
         // Small delay to ensure the session completion is saved before checking
         setTimeout(async () => {
           try {
             await checkSessionsAndSendMMNotifications();
             console.log('M&M notification check completed after session completion');
+            
+            // Trigger period update check after session completion
+            console.log('Triggering period update check after session completion...');
+            try {
+              const response = await api.post(`/classes/${selectedClass.value._id}/update-period`);
+              if (response.data.success) {
+                console.log(`✅ Period updated: ${response.data.period} (${response.data.method})`);
+                // Refresh class details to show updated period
+                await loadClassDetails(selectedClass.value._id);
+              } else {
+                console.log(`Period update check completed: ${response.data.message}`);
+              }
+            } catch (periodError) {
+              console.warn('Error triggering period update:', periodError.message);
+            }
           } catch (notificationError) {
             console.warn('Error checking M&M notifications after session completion:', notificationError);
           }
@@ -1722,6 +1856,15 @@ async function refreshSessionMatrix() {
       
       // Check sessions and send M&M notifications if needed
       await checkSessionsAndSendMMNotifications();
+      
+      // Auto-check exam sessions after loading all data
+      setTimeout(async () => {
+        try {
+          await autoCheckExamSessions();
+        } catch (error) {
+          console.warn('Error auto-checking exam sessions after refresh:', error);
+        }
+      }, 1000);
     } else {
       console.error('Invalid matrix data received during refresh');
       
@@ -2031,6 +2174,26 @@ async function loadStudentDetailsData(student) {
   }
 }
 
+// Check if at least one student has completed the last exam session
+function hasStudentCompletedLastExam(semester) {
+  const students = semester === '1st' ? firstSemesterStudents.value : secondSemesterStudents.value;
+  const sessions = semester === '1st' ? firstSemesterSessions.value : secondSemesterSessions.value;
+  
+  if (!students.length || !sessions.length) return false;
+  
+  // Find the last exam session for this semester
+  const examSessions = sessions.filter(session => isExamSession(session));
+  if (!examSessions.length) return true; // No exam sessions, so consider it complete
+  
+  const lastExamSession = examSessions.sort((a, b) => b.day - a.day)[0];
+  
+  // Check if at least one student has completed the last exam session
+  return students.some(student => {
+    const examCompletion = student.sessions[lastExamSession._id];
+    return examCompletion?.completed === true;
+  });
+}
+
 // Bulk promotion functionality
 function hasIneligibleStudents(semester) {
   const students = semester === '1st' ? firstSemesterStudents.value : secondSemesterStudents.value;
@@ -2072,26 +2235,7 @@ async function promoteToSecondSemester(student) {
 }
 
 
-// Request student drop functionality
-async function requestStudentDrop(student, reason) {
-  try {
-    const response = await api.post('/admin/drop-requests', {
-      studentId: student.realId || student.id,
-      classId: selectedClass.value._id,
-      reason: reason
-    });
-    
-    if (response.data.success) {
-      notificationService.showSuccess('Drop request submitted to admin for review');
-      showStudentModal.value = false;
-    } else {
-      throw new Error(response.data.message || 'Failed to submit drop request');
-    }
-  } catch (error) {
-    console.error('Error submitting drop request:', error);
-    notificationService.showError('Failed to submit drop request');
-  }
-}
+// Request student drop functionality removed as requested
 
 function getStudentById(studentId) {
   return sessionMatrix.value.students.find(student => student.id === studentId);
@@ -2163,22 +2307,43 @@ async function notifyStudent(student) {
     // Send session reminders if needed
     if (missingCount > 2) {
       const isFirstSemester = firstSemesterStudents.value.some(s => s.id === student.id);
-      const totalSessions = Object.keys(student.sessions).length;
-      const completedSessions = totalSessions - missingCount;
+      const semester = isFirstSemester ? '1st Semester' : '2nd Semester';
+      const currentPeriod = selectedClass.value?.currentPeriod || 'Prelim';
       
-      let message = `You have ${missingCount} missing SSP sessions.`;
-      message += ` Please complete your sessions. Currently completed: ${completedSessions}/${totalSessions}.`;
+      let message = `You have ${missingCount} missing sessions in the current period.`;
+      message += ` Please complete your sessions to maintain good academic standing.`;
       
       console.log(`Sending session notification to student ${student.id}: ${message}`);
       
+      // Send system notification
       const response = await sessionService.notifyStudent(
         selectedClass.value._id,
         student.id,
         message
       );
       
-      if (response && response.success) {
-        notificationService.showSuccess(`Session reminder sent to ${student.name}`);
+      // Send email notification
+      try {
+        const emailResponse = await api.post('/sessions/send-session-reminder', {
+          studentId: student.id,
+          semester: semester,
+          missingCount: missingCount
+        });
+        
+        if (emailResponse.data && emailResponse.data.success) {
+          if (emailResponse.data.emailSent) {
+            notificationService.showSuccess(`Session reminder sent to ${student.name} (system notification + email)`);
+          } else {
+            notificationService.showSuccess(`Session reminder sent to ${student.name} (system notification only - no email address)`);
+          }
+        } else {
+          notificationService.showSuccess(`Session reminder sent to ${student.name} (system notification only)`);
+        }
+      } catch (emailError) {
+        console.error('Failed to send session reminder email:', emailError);
+        if (response && response.success) {
+          notificationService.showSuccess(`Session reminder sent to ${student.name} (system notification only)`);
+        }
       }
     } else if (missingCount === 0 && hasCompletedOdysseyPlan && hasCompletedMM) {
       notificationService.showInfo(`${student.name} has completed all requirements. Ready for promotion.`);
@@ -2189,7 +2354,7 @@ async function notifyStudent(student) {
   }
 }
 
-// Helper function to count missing sessions
+// Helper function to count missing sessions for current period only
 function getStudentMissingSessionsCount(student) {
   if (!student || !student.sessions) {
     console.log(`Student ${student?.name || 'unknown'} has no sessions property`);
@@ -2198,23 +2363,53 @@ function getStudentMissingSessionsCount(student) {
   
   // Get sessions for the current semester based on active tab
   const isFirstSemester = activeTab.value === '1st';
+  const currentSessions = isFirstSemester ? firstSemesterSessions.value : secondSemesterSessions.value;
+  const currentPeriod = selectedClass.value?.currentPeriod || 'Prelim';
   
-  // Filter session keys for the appropriate semester
+  // Filter session keys for the appropriate semester, exclude exam sessions, and only count sessions for current period
   const sessionKeys = Object.keys(student.sessions).filter(sessionId => {
     const session = student.sessions[sessionId];
     if (isFirstSemester) {
-      return session.semester === '1st Semester' || !session.semester;
+      const semesterMatch = session.semester === '1st Semester' || !session.semester;
+      if (!semesterMatch) return false;
     } else {
-      return session.semester === '2nd Semester';
+      const semesterMatch = session.semester === '2nd Semester';
+      if (!semesterMatch) return false;
     }
+    
+    // Find the corresponding session in currentSessions to check if it's an exam session
+    const correspondingSession = currentSessions.find(s => s._id === sessionId);
+    if (correspondingSession && isExamSession(correspondingSession)) {
+      // This is an exam session, exclude it from the count
+      return false;
+    }
+    
+    // Only count sessions for the current period
+    if (correspondingSession) {
+      const sessionDay = correspondingSession.day || 0;
+      
+      // Define period ranges based on typical session distribution
+      if (currentPeriod === 'Prelim') {
+        // Prelim period: sessions 0-5 (Day 0 to Day 5)
+        return sessionDay >= 0 && sessionDay <= 5;
+      } else if (currentPeriod === 'Midterm') {
+        // Midterm period: sessions 6-11 (Day 6 to Day 11)
+        return sessionDay >= 6 && sessionDay <= 11;
+      } else if (currentPeriod === 'Finals') {
+        // Finals period: sessions 12-17 (Day 12 to Day 17)
+        return sessionDay >= 12 && sessionDay <= 17;
+      }
+    }
+    
+    return false;
   });
   
   if (sessionKeys.length === 0) {
-    console.log(`Student ${student.name} has no ${isFirstSemester ? 'first' : 'second'} semester sessions`);
+    console.log(`Student ${student.name} has no ${currentPeriod} period non-exam sessions`);
     return 0;
   }
   
-  // Count missing sessions
+  // Count missing sessions for current period only
   let missing = 0;
   let completed = 0;
   let total = sessionKeys.length;
@@ -2227,7 +2422,7 @@ function getStudentMissingSessionsCount(student) {
     }
   }
   
-  console.log(`Student ${student.name}: ${completed}/${total} completed, ${missing} missing`);
+  console.log(`Student ${student.name} (${currentPeriod} period): ${completed}/${total} completed non-exam sessions, ${missing} missing`);
   return missing;
 }
 
@@ -2693,6 +2888,9 @@ async function handleTabChange() {
   // Re-check M&M completion status when tab changes
   await checkAllStudentsMM();
   
+  // Re-check permit submissions when tab changes
+  await checkAllStudentsPermits();
+  
   // Force refresh M&M submissions for all students when switching tabs
   console.log('Force refreshing M&M submissions for all students...');
   if (sessionMatrix.value && sessionMatrix.value.students) {
@@ -2700,6 +2898,15 @@ async function handleTabChange() {
       await fetchStudentMMSubmissions(student);
     }
   }
+  
+  // Auto-check exam sessions after refreshing all data
+  setTimeout(async () => {
+    try {
+      await autoCheckExamSessions();
+    } catch (error) {
+      console.warn('Error auto-checking exam sessions on tab change:', error);
+    }
+  }, 1000);
   
   // Check for M&M notifications when switching semesters
   // This ensures notifications are sent for both 1st and 2nd semester students
@@ -2954,29 +3161,197 @@ async function fetchStudentMMSubmissions(student) {
 
 // Add this new method to check all students' Odyssey Plan status
 
-// Helper function to check if a session is an exam session (P1, P2, P3)
+// Helper function to check if a session is an exam session (has startDate and endDate)
 function isExamSession(session) {
-  if (!session || !session.title) return false;
+  if (!session) return false;
   
-  const title = session.title.toLowerCase();
-  return title.includes('p1 exam') || 
-         title.includes('p2 exam') || 
-         title.includes('p3 exam') ||
-         title.includes('prelim exam') ||
-         title.includes('midterm exam') ||
-         title.includes('finals exam');
+  // Exam sessions are the only ones with startDate and endDate
+  return !!(session.startDate && session.endDate);
 }
 
-// Helper function to get exam type from session title
-function getExamTypeFromSession(session) {
-  if (!session || !session.title) return null;
+// Helper function to get exam dates for a session
+function getExamDatesForSession(session) {
+  if (!isExamSession(session)) {
+    return { startDate: null, endDate: null };
+  }
   
-  const title = session.title.toLowerCase();
-  if (title.includes('p1') || title.includes('prelim')) return 'P1';
-  if (title.includes('p2') || title.includes('midterm')) return 'P2';
-  if (title.includes('p3') || title.includes('finals')) return 'P3';
+  console.log('Getting exam dates for session:', {
+    day: session.day,
+    title: session.title,
+    startDate: session.startDate,
+    endDate: session.endDate,
+    semester: session.semester
+  });
+  
+  // Check if the session itself has startDate and endDate
+  if (session.startDate && session.endDate) {
+    console.log('Found direct session dates:', { startDate: session.startDate, endDate: session.endDate });
+    return {
+      startDate: session.startDate,
+      endDate: session.endDate
+    };
+  }
+  
+  console.log('No direct session dates, trying fallback...');
+  
+  // Try to get subject data from different sources
+  let subject = null;
+  let examDateRanges = null;
+  
+  // Check if session belongs to first or second semester
+  const isFirstSemester = session.semester === '1st Semester' || session.day < 18;
+  
+  if (isFirstSemester) {
+    // Try first semester subject data
+    if (selectedClass.value.firstSemester?.sspSubjectData) {
+      subject = selectedClass.value.firstSemester.sspSubjectData;
+    } else if (selectedClass.value.firstSemester?.sspSubject) {
+      subject = selectedClass.value.firstSemester.sspSubject;
+    } else if (selectedClass.value.sspSubject) {
+      subject = selectedClass.value.sspSubject;
+    }
+  } else {
+    // Try second semester subject data
+    if (selectedClass.value.secondSemester?.sspSubjectData) {
+      subject = selectedClass.value.secondSemester.sspSubjectData;
+    } else if (selectedClass.value.secondSemester?.sspSubject) {
+      subject = selectedClass.value.secondSemester.sspSubject;
+    } else if (selectedClass.value.sspSubject) {
+      subject = selectedClass.value.sspSubject;
+    }
+  }
+  
+  if (!subject) {
+    return { startDate: null, endDate: null };
+  }
+  
+  examDateRanges = subject.examDateRanges;
+  
+  if (!examDateRanges) {
+    return { startDate: null, endDate: null };
+  }
+  
+  // Determine exam type from session title
+  const examType = getExamTypeFromSession(session);
+  if (!examType) {
+    return { startDate: null, endDate: null };
+  }
+  
+  // Map exam types to examDateRanges keys
+  let dateRangeKey = null;
+  if (examType.toLowerCase().includes('p1') || examType.toLowerCase().includes('prelim')) {
+    dateRangeKey = 'prelim';
+  } else if (examType.toLowerCase().includes('p2') || examType.toLowerCase().includes('midterm')) {
+    dateRangeKey = 'midterm';
+  } else if (examType.toLowerCase().includes('p3') || examType.toLowerCase().includes('finals')) {
+    dateRangeKey = 'finals';
+  }
+  
+  if (dateRangeKey && examDateRanges[dateRangeKey]) {
+    const dates = {
+      startDate: examDateRanges[dateRangeKey].start,
+      endDate: examDateRanges[dateRangeKey].end
+    };
+    return dates;
+  }
+  
+  return { startDate: null, endDate: null };
+}
+
+// Helper function to format exam date range
+function formatExamDateRange(startDate, endDate) {
+  if (!startDate || !endDate) return '';
+  
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Format dates as "Oct 10 - Oct 15"
+    const startFormatted = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endFormatted = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    return `${startFormatted} - ${endFormatted}`;
+  } catch (error) {
+    console.error('Error formatting exam date range:', error);
+    return '';
+  }
+}
+
+// Helper function to get exam type from session (P1, P2, P3 based on day order)
+function getExamTypeFromSession(session) {
+  if (!isExamSession(session)) return null;
+  
+  // Get all exam sessions and sort by day
+  const currentSemester = activeTab.value === '1st' ? '1st Semester' : '2nd Semester';
+  const sessions = activeTab.value === '1st' ? firstSemesterSessions.value : secondSemesterSessions.value;
+  const examSessions = sessions.filter(s => isExamSession(s)).sort((a, b) => (a.day || 0) - (b.day || 0));
+  
+  // Find the index of this session in the sorted exam sessions
+  const sessionIndex = examSessions.findIndex(s => s._id === session._id);
+  
+  if (sessionIndex === 0) return 'P1';
+  if (sessionIndex === 1) return 'P2';
+  if (sessionIndex === 2) return 'P3';
   
   return null;
+}
+
+// Helper function to get period badge CSS classes
+function getPeriodBadgeClass(period) {
+  switch (period) {
+    case 'Prelim':
+      return 'bg-blue-100 text-blue-800 border border-blue-200';
+    case 'Midterm':
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+    case 'Finals':
+      return 'bg-green-100 text-green-800 border border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border border-gray-200';
+  }
+}
+
+// Test function for period update debugging - REMOVED (no longer needed)
+// Period updates are now automatic based on exam session completion
+
+// Auto-check exam sessions for students who meet requirements
+async function autoCheckExamSessions() {
+  if (!sessionMatrix.value || !sessionMatrix.value.students || !selectedClass.value) {
+    return;
+  }
+  
+  console.log('Checking for auto-checkable exam sessions...');
+  
+  const currentSemester = activeTab.value === '1st' ? '1st Semester' : '2nd Semester';
+  const sessions = activeTab.value === '1st' ? firstSemesterSessions.value : secondSemesterSessions.value;
+  const examSessions = sessions.filter(session => isExamSession(session));
+  
+  for (const student of sessionMatrix.value.students) {
+    for (const examSession of examSessions) {
+      // Check if student has M&M approved and permit validated for this exam
+      const hasApprovedMM = hasUploadedMMForExam(student, examSession);
+      const hasValidatedPermit = hasUploadedPermitForExam(student, examSession);
+      
+      // If student meets requirements but exam session is not checked
+      if (hasApprovedMM && hasValidatedPermit && !student.sessions[examSession._id]?.completed) {
+        console.log(`Auto-checking ${examSession.title} for ${student.name} (M&M: ${hasApprovedMM}, Permit: ${hasValidatedPermit})`);
+        
+        // Auto-check the exam session
+        await toggleSessionCompletion(student.id, examSession._id, true);
+      }
+    }
+  }
+  
+  console.log('Auto-check exam sessions completed');
+}
+
+// Check exam session requirements and auto-check if met
+function checkExamSessionRequirements(student, session) {
+  if (!isExamSession(session)) return false;
+  
+  const hasApprovedMM = hasUploadedMMForExam(student, session);
+  const hasValidatedPermit = hasUploadedPermitForExam(student, session);
+  
+  return hasApprovedMM && hasValidatedPermit;
 }
 
 // Helper function to check if a session should be disabled due to exam checkpoint
@@ -3146,8 +3521,74 @@ function getMissingExamMMs(student, sessions) {
   return [...new Set(missingExams)]; // Remove duplicates
 }
 
+// Helper function to get detailed missing requirements for a student
+function getMissingRequirementsDetails(student, sessions) {
+  const examSessions = sessions.filter(session => isExamSession(session));
+  const missingRequirements = [];
+  
+  // Determine current semester
+  const isInFirstSemester = firstSemesterStudents.value.some(s => s.id === student.id);
+  const currentSemester = isInFirstSemester ? '1st' : '2nd';
+  
+  // Sort exam sessions by day to determine order (P1, P2, P3)
+  const sortedExamSessions = examSessions.sort((a, b) => (a.day || 0) - (b.day || 0));
+  
+  for (let i = 0; i < sortedExamSessions.length; i++) {
+    const session = sortedExamSessions[i];
+    const examType = getExamTypeFromSession(session);
+    if (!examType) continue;
+    
+    // Check if previous exam session is completed (if not the first exam)
+    if (i > 0) {
+      const previousSession = sortedExamSessions[i - 1];
+      const previousSessionCompletion = student.sessions[previousSession._id];
+      if (!previousSessionCompletion || !previousSessionCompletion.completed) {
+        // Previous exam session not completed, don't show reminder for this one
+        continue;
+      }
+    }
+    
+    // Check what's missing for this exam session
+      const mmOk = hasUploadedMMForExam(student, session);
+      const permitOk = hasUploadedPermitForExam(student, session);
+      
+      if (!mmOk || !permitOk) {
+        const missing = [];
+        if (!mmOk) missing.push('M&M');
+        if (!permitOk) missing.push('Permit');
+        
+        missingRequirements.push({
+          examType,
+          missing: missing,
+          text: `${examType}: ${missing.join(' & ')}`
+        });
+    }
+  }
+  
+  return missingRequirements;
+}
+
 // New: return list of exams where M&M is missing OR permit not validated
 // (Removed getIncompleteExamRequirements as per request)
+
+// Helper function to check M&M submission status
+async function checkMMSubmissionStatus(student, examType, semester) {
+  try {
+    const response = await midtermFinalsService.getSubmissionsByStudent(student.id);
+    if (response && response.data) {
+      const submissions = response.data;
+      return submissions.some(submission => 
+        submission.examType === examType && 
+        submission.semester === `${semester} Semester` &&
+        submission.status === 'approved'
+      );
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking M&M submission status:', error);
+    return false;
+  }
+}
 
 // Function to send specific M&M reminder for a particular exam
 async function sendSpecificMMReminder(student, examType) {
@@ -3233,7 +3674,36 @@ async function sendSpecificMMReminder(student, examType) {
       console.log('Notification API response:', notificationResponse.data);
       
       if (notificationResponse.data && notificationResponse.data.success) {
-        notificationService.showSuccess(`${examType} exam M&M reminder sent to ${student.name}`);
+        // Send email notification for M&M/Permit requirements
+        try {
+          // Determine what requirements are missing
+          const missingRequirements = [];
+          const hasMM = await checkMMSubmissionStatus(student, examType, currentSemester);
+          const hasPermit = hasUploadedPermitForExam(student, { examType }, currentSemester);
+          
+          if (!hasMM) missingRequirements.push('mm');
+          if (!hasPermit) missingRequirements.push('permit');
+          
+          const emailResponse = await api.post('/sessions/send-mm-permit-reminder', {
+            studentId: student.id,
+            examType: examType,
+            semester: `${currentSemester} Semester`,
+            missingRequirements: missingRequirements
+          });
+          
+          if (emailResponse.data && emailResponse.data.success) {
+            if (emailResponse.data.emailSent) {
+              notificationService.showSuccess(`${examType} exam M&M reminder sent to ${student.name} (system notification + email)`);
+            } else {
+              notificationService.showSuccess(`${examType} exam M&M reminder sent to ${student.name} (system notification only - no email address)`);
+            }
+          } else {
+            notificationService.showSuccess(`${examType} exam M&M reminder sent to ${student.name} (system notification only)`);
+          }
+        } catch (emailError) {
+          console.error('Failed to send M&M/Permit reminder email:', emailError);
+          notificationService.showSuccess(`${examType} exam M&M reminder sent to ${student.name} (system notification only)`);
+        }
       } else {
         throw new Error(notificationResponse.data?.message || 'Failed to create notification');
       }
@@ -3279,20 +3749,18 @@ async function refreshMMData() {
 }
 
 // Initiate promotion process
-async function initiatePromotion() {
+async function initiatePromotion(semester) {
   if (!selectedClass.value || !selectedClass.value._id) {
     notificationService.showError('Invalid class data');
     return;
   }
   
   try {
-    console.log('Initiating promotion...');
-    console.log('Active tab:', activeTab.value);
-    console.log('Promotion type:', getPromotionType.value);
+    console.log('Initiating promotion for semester:', semester);
     
-    // Get all eligible students from current semester
-    const currentStudents = currentSemesterStudents.value;
-    console.log('Current semester students:', currentStudents.length);
+    // Get all eligible students from the specified semester
+    const currentStudents = semester === '1st' ? firstSemesterStudents.value : secondSemesterStudents.value;
+    console.log(`Current ${semester} semester students:`, currentStudents.length);
     
     const eligibleStudents = currentStudents.filter(student => isEligibleForPromotion(student));
     console.log('Eligible students:', eligibleStudents.length);
@@ -3310,7 +3778,7 @@ async function initiatePromotion() {
     
     // Set the students to promote and promotion type
     studentsToPromote.value = eligibleStudents;
-    promotionType.value = getPromotionType.value;
+    promotionType.value = semester === '1st' ? 'semester' : 'year';
     
     console.log('Students to promote:', studentsToPromote.value.map(s => s.name));
     console.log('Promotion type:', promotionType.value);
@@ -4015,6 +4483,103 @@ function getExamSessionTooltip(student, session) {
 </script>
 
 <style scoped>
+.adviser-classes {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1280px) {
+  .adviser-classes {
+    max-width: 100%;
+    padding: 0 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .adviser-classes {
+    padding: 0 0.5rem;
+  }
+  
+  .table-wrapper {
+    border-radius: 0.25rem;
+  }
+  
+  .session-table th,
+  .session-table td {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .adviser-classes {
+    padding: 0 0.25rem;
+  }
+  
+  .table-wrapper {
+    border: none;
+    border-radius: 0;
+  }
+  
+  .session-table th,
+  .session-table td {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+  
+  .session-table th.min-w-\[140px\],
+  .session-table td.sticky {
+    min-width: 120px;
+  }
+}
+
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  contain: layout;
+  box-sizing: border-box;
+}
+
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+  contain: layout;
+}
+
+.session-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+}
+
+.session-table thead {
+  background-color: #f9fafb;
+}
+
+.session-table th,
+.session-table td {
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.session-table th:last-child,
+.session-table td:last-child {
+  border-right: none;
+}
+
 .bg-primary {
   background-color: #3B82F6;
 }

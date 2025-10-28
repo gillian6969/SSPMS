@@ -11,7 +11,8 @@ export const notificationApiService = {
   async getAll() {
     try {
       const response = await api.get('/notifications');
-      return response.data;
+      // Backend returns { data: [...], pagination: {...} }
+      return response.data.data || response.data;
     } catch (error) {
       // Don't log 401 errors as they're expected when not authenticated
       if (error.response?.status !== 401) {

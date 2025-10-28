@@ -29,6 +29,9 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const updatedOptions = req.body;
     
+    // Debug: Log the received data
+    console.log('Received updatedOptions:', JSON.stringify(updatedOptions, null, 2));
+    
     // Find the options in the database, or create default if none exist
     let options = await SystemOption.findOne();
     
@@ -49,9 +52,21 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       // Update validation for year levels in Class model
       if (updatedOptions.class.yearLevels && updatedOptions.class.yearLevels.length > 0) {
         try {
+          // Ensure yearLevels is an array
+          let yearLevels = updatedOptions.class.yearLevels;
+          if (typeof yearLevels === 'string') {
+            yearLevels = JSON.parse(yearLevels);
+          }
+          
+          // Ensure it's an array
+          if (!Array.isArray(yearLevels)) {
+            console.error('yearLevels is not an array:', yearLevels);
+            return;
+          }
+          
           // Update Class schema to match new year levels
-          Class.schema.path('yearLevel').enum(updatedOptions.class.yearLevels);
-          console.log('Updated Class schema yearLevel enum with:', updatedOptions.class.yearLevels);
+          Class.schema.path('yearLevel').enum(yearLevels);
+          console.log('Updated Class schema yearLevel enum with:', yearLevels);
         } catch (err) {
           console.error('Error updating Class schema yearLevel enum:', err);
         }
@@ -63,13 +78,25 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
           // Collect all unique majors from all year levels
           const allMajors = new Set();
           
+          // Ensure majors is properly parsed
+          let majors = updatedOptions.class.majors;
+          if (typeof majors === 'string') {
+            majors = JSON.parse(majors);
+          }
+          
+          // Ensure it's an object or array
+          if (!majors || (typeof majors !== 'object')) {
+            console.error('majors is not an object:', majors);
+            return;
+          }
+          
           // Check if majors is an object (per year level) or array (legacy format)
-          if (Array.isArray(updatedOptions.class.majors)) {
+          if (Array.isArray(majors)) {
             // Legacy format - flat array of majors
-            updatedOptions.class.majors.forEach(major => allMajors.add(major));
+            majors.forEach(major => allMajors.add(major));
           } else {
             // New format - majors organized by year level
-            Object.values(updatedOptions.class.majors).forEach(majorList => {
+            Object.values(majors).forEach(majorList => {
               if (Array.isArray(majorList)) {
                 majorList.forEach(major => allMajors.add(major));
               }
@@ -94,9 +121,21 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       // Update validation for subject year levels separately
       if (updatedOptions.subject.yearLevels && updatedOptions.subject.yearLevels.length > 0) {
         try {
+          // Ensure yearLevels is an array
+          let yearLevels = updatedOptions.subject.yearLevels;
+          if (typeof yearLevels === 'string') {
+            yearLevels = JSON.parse(yearLevels);
+          }
+          
+          // Ensure it's an array
+          if (!Array.isArray(yearLevels)) {
+            console.error('subject yearLevels is not an array:', yearLevels);
+            return;
+          }
+          
           // Update Subject schema to match new year levels
-          Subject.schema.path('yearLevel').enum(updatedOptions.subject.yearLevels);
-          console.log('Updated Subject schema yearLevel enum with:', updatedOptions.subject.yearLevels);
+          Subject.schema.path('yearLevel').enum(yearLevels);
+          console.log('Updated Subject schema yearLevel enum with:', yearLevels);
         } catch (err) {
           console.error('Error updating Subject schema yearLevel enum:', err);
         }
@@ -105,9 +144,21 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       // Update validation for hours in Subject model
       if (updatedOptions.subject.hoursOptions && updatedOptions.subject.hoursOptions.length > 0) {
         try {
+          // Ensure hoursOptions is an array
+          let hoursOptions = updatedOptions.subject.hoursOptions;
+          if (typeof hoursOptions === 'string') {
+            hoursOptions = JSON.parse(hoursOptions);
+          }
+          
+          // Ensure it's an array
+          if (!Array.isArray(hoursOptions)) {
+            console.error('hoursOptions is not an array:', hoursOptions);
+            return;
+          }
+          
           // Update subject hours options
-          Subject.schema.path('hours').enum(updatedOptions.subject.hoursOptions);
-          console.log('Updated Subject schema hours enum with:', updatedOptions.subject.hoursOptions);
+          Subject.schema.path('hours').enum(hoursOptions);
+          console.log('Updated Subject schema hours enum with:', hoursOptions);
         } catch (err) {
           console.error('Error updating Subject schema hours enum:', err);
         }

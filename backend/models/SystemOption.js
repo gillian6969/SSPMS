@@ -35,16 +35,16 @@ const SystemOptionSchema = new mongoose.Schema({
     rooms: {
       type: [String],
       default: ['301', '302', '303', '304', '401', '402', '403', '404']
+    },
+    defaultSchoolYear: {
+      type: String,
+      default: '2025-2026'
     }
   },
   subject: {
     yearLevels: {
       type: [String],
       default: ['1st', '2nd', '3rd', '4th']
-    },
-    schoolYear: {
-      type: String,
-      default: '2025 - 2026'
     },
     defaultZeroDayTitle: {
       type: String,
@@ -65,50 +65,9 @@ const SystemOptionSchema = new mongoose.Schema({
         { name: 'Final Exam', day: 15 }
       ]
     },
-    sspTemplates: {
+    sspSubjectsBySchoolYear: {
       type: mongoose.Schema.Types.Mixed,
-      default: {
-        '1st': {
-          '1st Semester': {
-            sspCode: '',
-            sessions: []
-          },
-          '2nd Semester': {
-            sspCode: '',
-            sessions: []
-          }
-        },
-        '2nd': {
-          '1st Semester': {
-            sspCode: '',
-            sessions: []
-          },
-          '2nd Semester': {
-            sspCode: '',
-            sessions: []
-          }
-        },
-        '3rd': {
-          '1st Semester': {
-            sspCode: '',
-            sessions: []
-          },
-          '2nd Semester': {
-            sspCode: '',
-            sessions: []
-          }
-        },
-        '4th': {
-          '1st Semester': {
-            sspCode: '',
-            sessions: []
-          },
-          '2nd Semester': {
-            sspCode: '',
-            sessions: []
-          }
-        }
-      }
+      default: {}
     }
   },
   consultation: {

@@ -110,8 +110,9 @@ const SessionCompletionSchema = new mongoose.Schema({
 });
 
 // Create a compound index to ensure uniqueness per student-session combination
+// Use sessionDay + semester instead of session ID to prevent duplicates when sessions are updated
 SessionCompletionSchema.index(
-  { student: 1, session: 1 },
+  { student: 1, class: 1, sessionDay: 1, semester: 1 },
   { unique: true }
 );
 

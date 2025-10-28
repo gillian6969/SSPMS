@@ -2594,6 +2594,16 @@ router.post('/promote-year', authenticate, async (req, res) => {
     await Class.findByIdAndUpdate(nextClassId, { schoolYear: newSchoolYear });
     console.log(`Updated class ${nextClassId} school year from ${currentSchoolYear} to ${newSchoolYear}`);
     
+    // Reset current period to Prelim after year promotion
+    try {
+      const PeriodService = require('../services/periodService');
+      const periodResult = await PeriodService.resetCurrentPeriodToPrelim(nextClassId);
+      console.log(`✅ Year promotion: Reset class ${nextClassId} current period to ${periodResult.period}`);
+    } catch (periodError) {
+      console.error('Error resetting period after year promotion:', periodError.message);
+      // Don't fail the promotion if period reset fails
+    }
+    
     // Also update the Subject's school year
     const Subject = require('../models/Subject');
     const subjectUpdateResult = await Subject.updateMany(
@@ -2935,6 +2945,17 @@ router.post('/bulk-promote-year', authenticate, async (req, res) => {
       { $set: { schoolYear: incrementedSchoolYear } }
     );
     console.log(`BULK PROMOTION: Updated ${subjectUpdateResult.modifiedCount} subjects school year to ${incrementedSchoolYear}`);
+    
+    // Reset current period to Prelim for both classes after bulk year promotion
+    try {
+      const PeriodService = require('../services/periodService');
+      const classIds = [currentClassId, nextClassId];
+      const periodResult = await PeriodService.resetMultipleClassesPeriodToPrelim(classIds);
+      console.log(`✅ Bulk year promotion: Reset ${periodResult.updated}/${periodResult.total} classes current period to Prelim`);
+    } catch (periodError) {
+      console.error('Error resetting periods after bulk year promotion:', periodError.message);
+      // Don't fail the promotion if period reset fails
+    }
     
     // Return success response
     res.json({
@@ -3417,6 +3438,16 @@ router.post('/promote-semester', authenticate, authorizeAdviser, async (req, res
       const Class = require('../models/Class');
       await Class.findByIdAndUpdate(classId, { currentSemester: '2nd' });
       console.log(`Updated class ${classId} currentSemester to 2nd`);
+      
+      // Reset current period to Prelim after semester promotion
+      try {
+        const PeriodService = require('../services/periodService');
+        const periodResult = await PeriodService.resetCurrentPeriodToPrelim(classId);
+        console.log(`✅ Semester promotion: Reset class ${classId} current period to ${periodResult.period}`);
+      } catch (periodError) {
+        console.error('Error resetting period after semester promotion:', periodError.message);
+        // Don't fail the promotion if period reset fails
+      }
     }
 
     console.log(`Student ${student.user.firstName} ${student.user.lastName} promoted from ${fromSemester} to ${toSemester}`);
@@ -3646,6 +3677,16 @@ router.post('/promote-year-generic', authenticate, async (req, res) => {
       await currentClass.save();
       
       console.log(`Generic promotion: Reset class ${currentClassId} currentSemester to 1st and updated school year from ${currentSchoolYear} to ${newSchoolYear}`);
+      
+      // Reset current period to Prelim after generic promotion
+      try {
+        const PeriodService = require('../services/periodService');
+        const periodResult = await PeriodService.resetCurrentPeriodToPrelim(currentClassId);
+        console.log(`✅ Generic promotion: Reset class ${currentClassId} current period to ${periodResult.period}`);
+      } catch (periodError) {
+        console.error('Error resetting period after generic promotion:', periodError.message);
+        // Don't fail the promotion if period reset fails
+      }
       
       // Also update the Subject's school year
       const Subject = require('../models/Subject');

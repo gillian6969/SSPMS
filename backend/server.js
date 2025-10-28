@@ -221,6 +221,15 @@ try {
   console.log('⚠️  Server will continue without automated reminders');
 }
 
+// Start exam reminder scheduler
+try {
+  const examReminderScheduler = require('./services/examReminderScheduler');
+  examReminderScheduler.start();
+} catch (examSchedulerError) {
+  console.error('❌ Failed to start exam reminder scheduler:', examSchedulerError);
+  console.log('⚠️  Server will continue without automated exam reminders');
+}
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
@@ -235,5 +244,13 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`⏰ Notification scheduler: ${notificationScheduler.getStatus().isRunning ? 'running' : 'stopped'}`);
   } catch (error) {
     console.log(`⏰ Notification scheduler: unavailable`);
+  }
+  
+  // Check exam reminder scheduler status safely
+  try {
+    const examReminderScheduler = require('./services/examReminderScheduler');
+    console.log(`📚 Exam reminder scheduler: ${examReminderScheduler.isRunning ? 'running' : 'stopped'}`);
+  } catch (error) {
+    console.log(`📚 Exam reminder scheduler: unavailable`);
   }
 }); 

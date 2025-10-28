@@ -187,7 +187,7 @@ router.post('/check-sessions-and-notify', authenticate, async (req, res) => {
           if (!existingSubmission) {
             console.log(`Sending M&M notification to student for ${examType} exam`);
             // Send notification to upload M&M image
-            await createMMUploadNotification(student, examType, semesterData.semester, classData.yearLevel);
+            await createMMUploadNotification(student, examType, semesterData.semester, classData.yearLevel, examSession);
             notificationsSent++;
             
             results.push({
@@ -242,7 +242,7 @@ router.post('/check-sessions-and-notify', authenticate, async (req, res) => {
 });
 
 // Helper function to create M&M upload notification
-async function createMMUploadNotification(student, examType, semester, yearLevel) {
+async function createMMUploadNotification(student, examType, semester, yearLevel, examSession = null) {
   try {
     const populatedStudent = await Student.findById(student._id).populate('user');
     if (!populatedStudent || !populatedStudent.user) {
@@ -292,6 +292,33 @@ Your ${examType} exam session cannot be marked complete until you upload the M&M
 
       await notification.save();
       console.log(`✅ M&M notification created successfully for student ${populatedStudent.user._id}, exam ${examType}`);
+      
+      // Send email notification if student has email address
+      if (populatedStudent.user.email) {
+        try {
+          const emailService = require('../services/emailService');
+          
+          // Use exam session details if provided, otherwise create default dates
+          const examSessionForEmail = examSession || {
+            startDate: new Date(),
+            endDate: new Date()
+          };
+          
+          await emailService.sendExamReminderEmail(
+            populatedStudent.user.email,
+            populatedStudent,
+            examSessionForEmail,
+            examType,
+            semester
+          );
+          console.log(`📧 Email reminder sent to ${populatedStudent.user.email} for ${examType} exam`);
+        } catch (emailError) {
+          console.error(`❌ Failed to send email to ${populatedStudent.user.email}:`, emailError);
+          // Don't fail the entire operation if email fails
+        }
+      } else {
+        console.log(`⚠️  No email address for student ${populatedStudent.user.firstName} ${populatedStudent.user.lastName}, only system notification sent`);
+      }
       
       // Track this notification for flagging system
       try {
@@ -537,6 +564,13 @@ router.post('/submit', authenticate, upload.single('examImage'), async (req, res
 
       // Update existing submission with auto-approval for valid uploads
       existingSubmission.imageUrl = `/uploads/mm-submissions/${req.file.filename}`;
+      existingSubmission.fileAttachment = {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path
+      };
       existingSubmission.submissionDate = new Date();
       existingSubmission.status = 'approved'; // Auto-approve valid uploads
       existingSubmission.feedback = 'Automatically approved - valid M&M response form detected';
@@ -562,6 +596,13 @@ router.post('/submit', authenticate, upload.single('examImage'), async (req, res
         semester,
         examType,
         imageUrl: `/uploads/mm-submissions/${req.file.filename}`,
+        fileAttachment: {
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+          path: req.file.path
+        },
         status: 'approved', // Auto-approve valid uploads
         feedback: 'Automatically approved - valid M&M response form detected'
       });
@@ -600,12 +641,13 @@ router.get('/my-submissions', authenticate, async (req, res) => {
       .populate('class', 'yearLevel section major schoolYear')
       .sort({ yearLevel: 1, semester: 1, examType: 1 });
     
-    // Transform imageUrl to full URL
+    // Transform imageUrl to use attachment route instead of direct file URLs
+    const absoluteBase = `${req.protocol}://${req.get('host')}`;
     const transformedSubmissions = submissions.map(submission => ({
       ...submission.toObject(),
-      imageUrl: submission.imageUrl.startsWith('http') ? 
-        submission.imageUrl : 
-        `${process.env.BACKEND_URL || 'https://sscms-au.com'}${submission.imageUrl}`
+      imageUrl: submission.imageUrl ? 
+        `${absoluteBase}/api/mm-submissions/attachment/${submission._id}` : 
+        null
     }));
     
     return res.status(200).json({
@@ -640,12 +682,12 @@ router.get('/history', authenticate, async (req, res) => {
     
     // Build absolute URL based on current request host (works in local/prod)
     const absoluteBase = `${req.protocol}://${req.get('host')}`;
-    // Transform imageUrl to full URL for all submissions
+    // Transform imageUrl to use attachment route instead of direct file URLs
     const transformedSubmissions = submissions.map(submission => ({
       ...submission.toObject(),
-      imageUrl: submission.imageUrl?.startsWith('http') ? 
-        submission.imageUrl : 
-        `${absoluteBase}${submission.imageUrl}`
+      imageUrl: submission.imageUrl ? 
+        `${absoluteBase}/api/mm-submissions/attachment/${submission._id}` : 
+        null
     }));
     
     // Also include exam permits (pending/validated/rejected) in history
@@ -798,13 +840,13 @@ router.get('/all', authenticate, async (req, res) => {
       })
       .sort({ yearLevel: 1, semester: 1, examType: 1, submissionDate: -1 });
     
-    // Transform imageUrl to full URL for all submissions
+    // Transform imageUrl to use attachment route instead of direct file URLs
     const absoluteBase = `${req.protocol}://${req.get('host')}`;
     const transformedSubmissions = submissions.map(submission => ({
       ...submission.toObject(),
-      imageUrl: submission.imageUrl?.startsWith('http') ? 
-        submission.imageUrl : 
-        `${absoluteBase}${submission.imageUrl}`
+      imageUrl: submission.imageUrl ? 
+        `${absoluteBase}/api/mm-submissions/attachment/${submission._id}` : 
+        null
     }));
     
     return res.status(200).json({
@@ -1031,13 +1073,13 @@ router.get('/student-submissions/:studentId', authenticate, async (req, res) => 
       .populate('class', 'yearLevel section major schoolYear')
       .sort({ schoolYear: -1, yearLevel: 1, semester: 1, examType: 1, submissionDate: -1 });
     
-    // Transform imageUrl to full URL
+    // Transform imageUrl to use attachment route instead of direct file URLs
     const absoluteBase = `${req.protocol}://${req.get('host')}`;
     const transformedSubmissions = submissions.map(submission => ({
       ...submission.toObject(),
-      imageUrl: submission.imageUrl?.startsWith('http') ? 
-        submission.imageUrl : 
-        `${absoluteBase}${submission.imageUrl}`
+      imageUrl: submission.imageUrl ? 
+        `${absoluteBase}/api/mm-submissions/attachment/${submission._id}` : 
+        null
     }));
     
     return res.status(200).json({
@@ -1096,11 +1138,13 @@ router.get('/adviser/my', authenticate, async (req, res) => {
       if (cls && cls.major) majors.add(cls.major);
     });
 
-    // Transform imageUrl to full URL
+    // Transform imageUrl to use attachment route instead of direct file URLs
     const absoluteBase = `${req.protocol}://${req.get('host')}`;
     const transformed = subs.map(submission => ({
       ...submission.toObject(),
-      imageUrl: submission.imageUrl?.startsWith('http') ? submission.imageUrl : `${absoluteBase}${submission.imageUrl}`
+      imageUrl: submission.imageUrl ? 
+        `${absoluteBase}/api/mm-submissions/attachment/${submission._id}` : 
+        null
     }));
 
     return res.status(200).json({
@@ -1116,6 +1160,108 @@ router.get('/adviser/my', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error fetching adviser M&M submissions:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch adviser M&M submissions', error: error.message });
+  }
+});
+
+// Get M&M attachment (public for student preview) - copied from permits exactly
+router.get('/attachment/:submissionId', async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    console.log(`🔍 M&M attachment request for submission ${submissionId}`);
+    
+    const submission = await MMSubmission.findById(submissionId);
+    
+    if (!submission) {
+      console.log(`❌ M&M submission ${submissionId} not found`);
+      return res.status(404).json({
+        success: false,
+        message: 'M&M submission not found'
+      });
+    }
+    
+    console.log(`✅ M&M submission found:`, {
+      id: submission._id,
+      imageUrl: submission.imageUrl,
+      fileAttachment: submission.fileAttachment
+    });
+    
+    if (!submission.imageUrl) {
+      console.log(`❌ M&M submission ${submissionId} has no imageUrl`);
+      return res.status(404).json({
+        success: false,
+        message: 'M&M attachment not found'
+      });
+    }
+    
+    // Resolve stored path safely (supports absolute or relative)
+    const storedPath = submission.imageUrl || '';
+    console.log(`📁 Stored path: ${storedPath}`);
+    
+    let resolvedPath = null;
+    if (storedPath) {
+      resolvedPath = path.isAbsolute(storedPath)
+        ? storedPath
+        : path.join(__dirname, '..', storedPath);
+      console.log(`📁 Resolved path: ${resolvedPath}`);
+    }
+
+    // Fallback to uploads/mm-submissions/<filename>
+    const filename = path.basename(storedPath);
+    const uploadsFallback = filename
+      ? path.join(__dirname, '../uploads/mm-submissions', filename)
+      : null;
+    
+    console.log(`📁 Uploads fallback: ${uploadsFallback}`);
+
+    const candidatePaths = [resolvedPath, uploadsFallback].filter(Boolean);
+    console.log(`📁 Candidate paths:`, candidatePaths);
+    
+    const existingPath = candidatePaths.find(p => fs.existsSync(p));
+    console.log(`📁 Existing path found: ${existingPath}`);
+
+    if (!existingPath) {
+      console.error(`❌ M&M file not found at any candidate path:`, candidatePaths);
+      return res.status(404).json({ success: false, message: 'M&M file not found on server' });
+    }
+
+    console.log(`✅ Serving M&M file from: ${existingPath}`);
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Content-Disposition', `inline; filename="${filename || 'mm-submission'}"`);
+    return res.sendFile(existingPath);
+  } catch (error) {
+    console.error('❌ Error serving M&M attachment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to serve M&M attachment'
+    });
+  }
+});
+
+// Test endpoint to check if attachment route is working
+router.get('/test-attachment/:submissionId', async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    console.log(`🧪 Testing M&M attachment for submission ${submissionId}`);
+    
+    const submission = await MMSubmission.findById(submissionId);
+    
+    if (!submission) {
+      return res.json({ success: false, message: 'Submission not found' });
+    }
+    
+    return res.json({
+      success: true,
+      submission: {
+        id: submission._id,
+        imageUrl: submission.imageUrl,
+        fileAttachment: submission.fileAttachment,
+        filename: path.basename(submission.imageUrl || ''),
+        attachmentUrl: `${req.protocol}://${req.get('host')}/api/mm-submissions/attachment/${submission._id}`
+      }
+    });
+  } catch (error) {
+    console.error('Test attachment error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

@@ -511,7 +511,34 @@
               <option value="In-Person">In-Person</option>
               <option value="Virtual">Virtual</option>
             </select>
-    </div>
+          </div>
+          
+          <!-- Period Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+            <select
+              v-model="historyFilters.period"
+              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Periods</option>
+              <option value="Prelim">Prelim</option>
+              <option value="Midterm">Midterm</option>
+              <option value="Finals">Finals</option>
+            </select>
+          </div>
+          
+          <!-- Semester Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Semester</label>
+            <select
+              v-model="historyFilters.semester"
+              class="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Semesters</option>
+              <option value="1st Semester">1st Semester</option>
+              <option value="2nd Semester">2nd Semester</option>
+            </select>
+          </div>
     
           <!-- Date From -->
           <div>
@@ -1213,7 +1240,9 @@ const historyFilters = reactive({
   adviser: '',
   dateFrom: '',
   dateTo: '',
-  meetingType: ''
+  meetingType: '',
+  period: '',
+  semester: ''
 })
 
 // UnifiedTable data for student history
@@ -1620,6 +1649,20 @@ const filteredHistory = computed(() => {
     })
   }
 
+  // Filter by period
+  if (historyFilters.period) {
+    filtered = filtered.filter(consultation => 
+      consultation.currentPeriod === historyFilters.period
+    )
+  }
+
+  // Filter by semester
+  if (historyFilters.semester) {
+    filtered = filtered.filter(consultation => 
+      consultation.currentSemester === historyFilters.semester
+    )
+  }
+
   if (historyFilters.dateFrom || historyFilters.dateTo) {
     filtered = filtered.filter(consultation => {
       const consultationDate = new Date(consultation.weekStart)
@@ -1687,6 +1730,8 @@ const clearHistoryFilters = () => {
   historyFilters.dateFrom = ''
   historyFilters.dateTo = ''
   historyFilters.meetingType = ''
+  historyFilters.period = ''
+  historyFilters.semester = ''
 }
 
 // UnifiedTable event handlers for student history

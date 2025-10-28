@@ -114,20 +114,12 @@
               <div class="bg-blue-50 text-blue-700 border border-blue-100 rounded-lg px-3 py-1 text-sm flex items-center mr-2">
                 <span class="font-medium">{{ currentSemester === '2nd' ? '2nd Semester' : '1st Semester' }}</span>
               </div>
+              <div class="bg-green-50 text-green-700 border border-green-100 rounded-lg px-3 py-1 text-sm flex items-center mr-2">
+                <span class="font-medium">Period: {{ currentPeriod }}</span>
+              </div>
             <div class="bg-gray-100 rounded-lg px-3 py-1 text-sm flex items-center mr-2">
               <span class="mr-2">Completed:</span>
               <span class="font-medium">{{ completedSessions.length }}/{{ sessions.length }}</span>
-            </div>
-            <div 
-              class="bg-gray-100 rounded-lg px-3 py-1 text-sm flex items-center mr-2"
-              :class="{ 
-                'bg-red-100 text-red-800': completionPercentage < 50,
-                'bg-yellow-100 text-yellow-800': completionPercentage >= 50 && completionPercentage < 80,
-                'bg-green-100 text-green-800': completionPercentage >= 80 
-              }"
-            >
-              <span class="mr-2">Completion:</span>
-              <span class="font-medium">{{ completionPercentage }}%</span>
             </div>
             </div>
           </div>
@@ -147,7 +139,11 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="session in sessions" :key="session._id" class="hover:bg-gray-50">
+              <tr v-for="session in sessions" :key="session._id" 
+                  :class="[
+                    'hover:bg-gray-50',
+                    isExamSession(session) ? 'bg-green-50 hover:bg-green-100' : ''
+                  ]">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm font-medium text-gray-900">Day {{ session.sessionDay }}</div>
                 </td>
@@ -821,6 +817,29 @@ function closeAttachmentModal() {
   selectedSessionId.value = null;
   selectedAttachmentName.value = null;
 }
+
+// Exam session detection function
+function isExamSession(session) {
+  if (!session) return false;
+  // Exam sessions are identified by having startDate and endDate
+  // Also check for exam-related titles as fallback
+  const hasExamDates = !!(session.startDate && session.endDate);
+  const hasExamTitle = session.sessionTitle && (
+    session.sessionTitle.toLowerCase().includes('exam') ||
+    session.sessionTitle.toLowerCase().includes('prelim') ||
+    session.sessionTitle.toLowerCase().includes('midterm') ||
+    session.sessionTitle.toLowerCase().includes('finals')
+  );
+  
+  console.log('Checking session for exam:', session.sessionTitle, 'hasExamDates:', hasExamDates, 'hasExamTitle:', hasExamTitle);
+  return hasExamDates || hasExamTitle;
+}
+
+// Get current period from student details
+const currentPeriod = computed(() => {
+  return student.value?.class?.currentPeriod || 'Prelim';
+});
+
 
 
 

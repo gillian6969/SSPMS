@@ -79,31 +79,33 @@
     </div>
     </div>
 
-    <!-- Counter Section -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-        <div class="text-2xl font-semibold text-gray-800">{{ getTotalPermits() }}</div>
-        <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Total Permits</div>
-    </div>
-
-      <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-        <div class="text-2xl font-semibold text-yellow-600">{{ getStatusCount('pending') }}</div>
-        <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Pending</div>
-      </div>
-
-      <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-        <div class="text-2xl font-semibold text-green-600">{{ getStatusCount('validated') }}</div>
-        <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Validated</div>
-        </div>
-
-      <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-        <div class="text-2xl font-semibold text-red-600">{{ getStatusCount('rejected') }}</div>
-        <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Rejected</div>
-      </div>
-    </div>
-
     <!-- Unified container for Semester Tabs + Content -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mt-6" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+      <!-- Summary Stats -->
+      <div class="p-6 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-800 mb-4">Permit Submission Status</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="text-2xl font-semibold text-gray-800">{{ getTotalPermits() }}</div>
+            <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Total Permits</div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="text-2xl font-semibold text-yellow-600">{{ getStatusCount('pending') }}</div>
+            <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Pending</div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="text-2xl font-semibold text-green-600">{{ getStatusCount('validated') }}</div>
+            <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Validated</div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="text-2xl font-semibold text-red-600">{{ getStatusCount('rejected') }}</div>
+            <div class="text-sm text-gray-500 uppercase tracking-wide mt-2">Rejected</div>
+          </div>
+        </div>
+      </div>
       <div class="border-b border-gray-200">
         <nav class="flex -mb-px">
           <button 
@@ -181,11 +183,7 @@
                     <div class="text-sm font-medium text-white">Validated</div>
                     <div class="text-lg font-semibold text-white">{{ classGroup.validatedCount }}</div>
                   </div>
-                  <div class="text-center">
-                    <div class="text-sm font-medium text-white">Rate</div>
-                    <div class="text-lg font-semibold text-white">{{ classGroup.validationRate }}%</div>
-            </div>
-            </div>
+                </div>
           </div>
         </div>
         
@@ -307,10 +305,6 @@
                 <div class="text-sm font-medium text-white">Validated</div>
                 <div class="text-lg font-semibold text-white">{{ classGroup.validatedCount }}</div>
             </div>
-              <div class="text-center">
-                <div class="text-sm font-medium text-white">Rate</div>
-                <div class="text-lg font-semibold text-white">{{ classGroup.validationRate }}%</div>
-            </div>
           </div>
         </div>
       </div>
@@ -399,6 +393,106 @@
       </div>
     </div>
   </div>
+
+  <!-- Permit View Modal -->
+  <teleport to="body">
+    <div v-if="showPermitModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm" @click.self="closePermitModal">
+      <div class="w-11/12 max-w-4xl bg-white rounded-2xl shadow-2xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium text-gray-800">Permit Submission - {{ selectedPermit?.studentName || 'Student' }}</h3>
+          <button @click="closePermitModal" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div v-if="selectedPermit">
+          <div class="bg-gray-50 rounded-lg p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Permit Image -->
+              <div class="space-y-4">
+                <h4 class="font-medium text-gray-800">Permit Image</h4>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    :src="getPermitImageUrl(selectedPermit)"
+                    :alt="`P${selectedPermit.period} Permit`"
+                    class="w-full h-96 object-contain bg-white cursor-pointer hover:opacity-90 transition-opacity"
+                    @click="() => window.open(getPermitImageUrl(selectedPermit), '_blank')"
+                    @error="handleImageError"
+                  >
+                </div>
+              </div>
+              
+              <!-- Permit Details -->
+              <div class="space-y-4">
+                <h4 class="font-medium text-gray-800">Permit Details</h4>
+                <div class="space-y-3">
+                  <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Student Name:</span>
+                    <span class="text-sm text-gray-900">{{ selectedPermit.studentName }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Student Number:</span>
+                    <span class="text-sm text-gray-900">{{ selectedPermit.studentNumber }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Period:</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      P{{ selectedPermit.period }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Reference Number:</span>
+                    <span class="text-sm text-gray-900">{{ selectedPermit.referenceNumber || 'N/A' }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Semester:</span>
+                    <span class="text-sm text-gray-900">{{ selectedPermit.semester }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Status:</span>
+                    <span :class="getStatusBadgeClass(selectedPermit.status)" class="px-2 py-1 rounded-full text-xs font-medium">
+                      {{ getStatusText(selectedPermit.status) }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Submitted:</span>
+                    <span class="text-sm text-gray-900">{{ formatDate(selectedPermit.createdAt) }}</span>
+                  </div>
+                  <div v-if="selectedPermit.validatedAt" class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-600">Validated:</span>
+                    <span class="text-sm text-gray-900">{{ formatDate(selectedPermit.validatedAt) }}</span>
+                  </div>
+                  <div v-if="selectedPermit.validationNotes" class="flex flex-col">
+                    <span class="text-sm font-medium text-gray-600 mb-1">Validation Notes:</span>
+                    <span class="text-sm text-gray-900 bg-gray-100 p-2 rounded">{{ selectedPermit.validationNotes }}</span>
+                  </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div v-if="selectedPermit.status === 'pending'" class="pt-4 border-t border-gray-200">
+                  <div class="flex space-x-3">
+                    <button 
+                      @click="validatePermit(selectedPermit._id, true)" 
+                      class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Approve Permit
+                    </button>
+                    <button 
+                      @click="validatePermit(selectedPermit._id, false)" 
+                      class="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                    >
+                      Reject Permit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <script setup>
@@ -409,6 +503,8 @@ import { notificationService } from '../../services/notificationService'
 // State
 const loading = ref(false)
 const permits = ref([])
+const selectedPermit = ref(null)
+const showPermitModal = ref(false)
 
 // Filter options
 const availableSchoolYears = ref([])
@@ -585,13 +681,42 @@ const getStatusBadgeClass = (status) => {
 }
 
 const viewPermit = (permit) => {
-  // Always use attachment endpoint; backend serves the file by id
-  if (!permit || !permit._id) {
-    notificationService.showError('Permit not found')
-    return
+  console.log('Viewing permit:', permit);
+  selectedPermit.value = permit
+  showPermitModal.value = true
+}
+
+const closePermitModal = () => {
+  selectedPermit.value = null
+  showPermitModal.value = false
+}
+
+const getPermitForExam = (permit, examType) => {
+  // The permit object should have p1, p2, p3 properties
+  const examKey = examType.toLowerCase(); // Convert P1 to p1, etc.
+  console.log(`Getting permit for ${examType} (${examKey}):`, permit[examKey]);
+  return permit[examKey] || null;
+}
+
+// Get permit image URL for display
+const getPermitImageUrl = (permit) => {
+  if (!permit || !permit.permitAttachment) {
+    return '/placeholder-permit.png'; // Fallback image
   }
-  const url = `/api/exam-permits/attachment/${permit._id}`
-  window.open(url, '_blank', 'noopener')
+  
+  // Construct the image URL based on the permit attachment
+  const filename = permit.permitAttachment.filename;
+  if (filename) {
+    return `/api/exam-permits/attachment/${permit._id}`;
+  }
+  
+  return '/placeholder-permit.png';
+}
+
+// Handle image loading errors
+const handleImageError = (event) => {
+  console.error('Failed to load permit image:', event);
+  event.target.src = '/placeholder-permit.png';
 }
 
 const validatePermit = async (permitId, isValid) => {

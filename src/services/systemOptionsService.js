@@ -21,10 +21,15 @@ const defaultOptions = {
     rooms: ['301', '302', '303', '304', '401', '402', '403', '404']
   },
   subject: {
-    schoolYear: '2025 - 2026',
     defaultZeroDayTitle: 'INTRODUCTION',
     hoursOptions: [1, 2, 3],
-    yearLevels: ['1st', '2nd', '3rd', '4th']
+    yearLevels: ['1st', '2nd', '3rd', '4th'],
+    examSessionDays: [
+      { name: 'Prelim Exam', day: 5 },
+      { name: 'Midterm Exam', day: 10 },
+      { name: 'Final Exam', day: 15 }
+    ],
+    sspSubjectsBySchoolYear: {}
   },
   consultation: {
     defaultDuration: 3,

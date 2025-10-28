@@ -23,6 +23,8 @@ services:
         value: https://sscms-au.com
       - key: BACKEND_URL
         value: https://sscms-au.com
+      - key: TURNSTILE_PROD_SECRET_KEY
+        value: 0x4AAAAAAB8L-ebS9kL0zlpcolxXEk6KOEY
     healthCheckPath: /api/health
     autoDeploy: true
 
@@ -37,3 +39,5 @@ services:
     envVars:
       - key: VITE_API_BASE_URL
         value: https://sscms-au.com/api
+      - key: VITE_TURNSTILE_PROD_SITE_KEY
+        value: 0x4AAAAAAB8L-aAqFIPoryrm

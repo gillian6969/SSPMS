@@ -1,49 +1,36 @@
 <template>
-  <div class="mm-submissions">
-    <div class="max-w-6xl mx-auto p-6">
-      <!-- Title -->
-      <div class="text-center mb-8">
-        <div class="flex justify-between items-center">
-          <div class="flex-1">
-            <h1 class="text-3xl font-bold text-primary mb-2">M&M</h1>
-            <p class="text-gray-600">Upload your M&M response forms organized by year level and semester</p>
-        </div>
-          <router-link 
-            to="/student/mm-history" 
-            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            View History
-          </router-link>
+  <div class="min-h-screen p-2" style="background-color: #F6FBF9;">
+    <div class="max-w-7xl mx-auto space-y-6">
+      <!-- Header -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div>
+              <h1 class="text-2xl font-normal text-gray-800">M&M and Permit Submission</h1>
+              <p class="text-gray-500 font-normal">Upload your M&M response forms and exam permits</p>
+            </div>
+          </div>
         </div>
       </div>
       
       <!-- Loading Year Level -->
       <div v-if="loadingYearLevel" class="flex justify-center my-8">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p class="ml-4 text-gray-600">Loading...</p>
       </div>
 
       <!-- Year Level Display -->
-      <div v-else class="bg-white rounded-lg shadow-md overflow-hidden">
+      <div v-else class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <!-- Year Level Header -->
-        <div class="bg-gradient-to-r from-primary to-blue-600 text-white px-8 py-6">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6">
           <div class="flex justify-between items-center">
             <div class="flex items-center">
-              <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
-                <span class="text-2xl font-bold">{{ getYearNumber(currentYearLevel) }}</span>
-              </div>
-        <div>
+              <div>
                 <h2 class="text-2xl font-bold">{{ getYearLevelText(currentYearLevel) }}</h2>
-                <p class="text-blue-100 mt-1">
+                <p class="text-green-100 mt-1">
                   M&M Response Submissions
                 </p>
               </div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm text-blue-100">Total Submissions</div>
-              <div class="text-2xl font-bold">{{ getTotalSubmissions() }}/6</div>
             </div>
           </div>
         </div>
@@ -94,9 +81,12 @@
           </nav>
         </div>
         
-        <!-- Exam Upload Cards -->
+        <!-- Content -->
         <div class="p-8">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- M&M Response Forms -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">M&M Response Forms</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- P1 Response -->
             <div class="bg-white rounded-lg border-2 transition-colors">
               <div class="p-6">
@@ -131,7 +121,7 @@
                   <p class="mb-2" 
                      :class="(selectedSemester !== currentSemester) ? 'text-gray-400' : examEligibility.P1 ? 'text-gray-600' : 'text-red-500'">
                     {{ (selectedSemester !== currentSemester) ? 'Semester Locked' : 
-                       examEligibility.P1 ? 'Click to upload or drag and drop' : 'Complete sessions before P1 exam to unlock' }}
+                       examEligibility.P1 ? 'Click to upload or drag and drop' : 'P1 M&M submission is available' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ (selectedSemester !== currentSemester) ? 
@@ -215,7 +205,7 @@
                   <p class="mb-2" 
                      :class="(selectedSemester !== currentSemester) ? 'text-gray-400' : examEligibility.P2 ? 'text-gray-600' : 'text-red-500'">
                     {{ (selectedSemester !== currentSemester) ? 'Semester Locked' : 
-                       examEligibility.P2 ? 'Click to upload or drag and drop' : 'Complete P1 exam and sessions before P2 to unlock' }}
+                       examEligibility.P2 ? 'Click to upload or drag and drop' : 'P2 M&M submission will be unlocked when your class advances to Midterm period' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ (selectedSemester !== currentSemester) ? 
@@ -299,7 +289,7 @@
                   <p class="mb-2" 
                      :class="(selectedSemester !== currentSemester) ? 'text-gray-400' : examEligibility.P3 ? 'text-gray-600' : 'text-red-500'">
                     {{ (selectedSemester !== currentSemester) ? 'Semester Locked' : 
-                       examEligibility.P3 ? 'Click to upload or drag and drop' : 'Complete P2 exam and sessions before P3 to unlock' }}
+                       examEligibility.P3 ? 'Click to upload or drag and drop' : 'P3 M&M submission will be unlocked when your class advances to Finals period' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ (selectedSemester !== currentSemester) ? 
@@ -349,28 +339,11 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Exam Permit Upload Section -->
-      <div class="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6">
-          <div class="flex items-center">
-            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <h2 class="text-2xl font-bold">Exam Permit Upload</h2>
-              <p class="text-green-100 mt-1">Upload your exam permits for P1, P2, P3 verification</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Permit Upload Cards -->
-        <div class="p-8">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Exam Permit Upload Cards -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Exam Permit Upload</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- P1 Permit -->
             <div class="bg-white rounded-lg border-2 border-gray-200 hover:border-gray-300 transition-colors">
               <div class="p-6">
@@ -407,7 +380,7 @@
                   <p class="mb-2" 
                      :class="(selectedSemester !== currentSemester) ? 'text-gray-400' : examEligibility.P1 ? 'text-gray-600' : 'text-red-500'">
                     {{ (selectedSemester !== currentSemester) ? 'Semester Locked' : 
-                       examEligibility.P1 ? 'Click to upload or drag and drop' : 'Complete sessions before P1 exam to unlock permit submission' }}
+                       examEligibility.P1 ? 'Click to upload or drag and drop' : 'P1 permit submission is available' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ (selectedSemester !== currentSemester) ? 
@@ -488,7 +461,7 @@
                   <p class="mb-2" 
                      :class="(selectedSemester !== currentSemester) ? 'text-gray-400' : examEligibility.P2 ? 'text-gray-600' : 'text-red-500'">
                     {{ (selectedSemester !== currentSemester) ? 'Semester Locked' : 
-                       examEligibility.P2 ? 'Click to upload or drag and drop' : 'Complete P1 exam and sessions before P2 to unlock permit submission' }}
+                       examEligibility.P2 ? 'Click to upload or drag and drop' : 'P2 permit submission will be unlocked when your class advances to Midterm period' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ (selectedSemester !== currentSemester) ? 
@@ -569,7 +542,7 @@
                   <p class="mb-2" 
                      :class="(selectedSemester !== currentSemester) ? 'text-gray-400' : examEligibility.P3 ? 'text-gray-600' : 'text-red-500'">
                     {{ (selectedSemester !== currentSemester) ? 'Semester Locked' : 
-                       examEligibility.P3 ? 'Click to upload or drag and drop' : 'Complete P2 exam and sessions before P3 to unlock permit submission' }}
+                       examEligibility.P3 ? 'Click to upload or drag and drop' : 'P3 permit submission will be unlocked when your class advances to Finals period' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ (selectedSemester !== currentSemester) ? 
@@ -636,21 +609,14 @@
         accept="image/*,application/pdf"
         @change="(e) => handlePermitFileSelect(e.target.files[0], 'P3')"
         class="hidden">
-
-      <!-- Success/Error Messages -->
-      <div v-if="successMessage" class="mt-6 p-4 bg-green-100 text-green-700 rounded-md">
-        {{ successMessage }}
-      </div>
-      
-      <div v-if="errorMessage" class="mt-6 p-4 bg-red-100 text-red-700 rounded-md">
-        {{ errorMessage }}
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Image View Modal -->
   <div v-if="showImageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" @click="closeImageModal">
-    <div class="relative max-w-4xl max-h-full bg-white rounded-lg overflow-hidden" @click.stop>
+    <div class="relative max-w-2xl max-h-[80vh] bg-white rounded-lg overflow-hidden" @click.stop>
       <div class="bg-gray-800 text-white px-4 py-3 flex items-center justify-between">
         <h3 class="text-lg font-medium">{{ modalImageTitle }}</h3>
         <button @click="closeImageModal" class="text-gray-300 hover:text-white transition-colors">
@@ -660,7 +626,18 @@
         </button>
       </div>
       <div class="p-4">
-        <img :src="modalImageSrc" :alt="modalImageTitle" class="max-w-full max-h-96 mx-auto object-contain rounded">
+        <div v-if="modalImageSrc" class="text-center p-4">
+          <img 
+            :src="modalImageSrc" 
+            :alt="modalImageTitle" 
+            class="max-w-full max-h-[60vh] mx-auto object-contain rounded"
+            @error="handleImageError"
+            @load="handleImageLoad"
+          >
+        </div>
+        <div v-else class="text-center text-gray-500">
+          <p>No image available</p>
+        </div>
       </div>
     </div>
   </div>
@@ -680,7 +657,7 @@ import Tesseract from 'tesseract.js';
 
 // State
 const loadingYearLevel = ref(true);
-const currentYearLevel = ref('2nd');
+const currentYearLevel = ref('2nd Year');
 const currentSemester = ref('1st');
 const selectedSemester = ref('1st');
 const submissions = ref([]);
@@ -716,12 +693,19 @@ const modalImageTitle = ref('');
 
 // Image viewing functions
 function viewSubmissionImage(imageSrc, title) {
+  console.log('Opening M&M image modal with:', { imageSrc, title });
+  console.log('Image source type:', typeof imageSrc);
+  console.log('Image source value:', imageSrc);
+  console.log('Current modalImageSrc before setting:', modalImageSrc.value);
   modalImageSrc.value = imageSrc;
   modalImageTitle.value = title;
   showImageModal.value = true;
+  console.log('Modal opened, modalImageSrc after setting:', modalImageSrc.value);
+  console.log('Modal opened, showImageModal:', showImageModal.value);
 }
 
 function viewPermitImage(imageSrc, title) {
+  console.log('Opening permit image modal with:', { imageSrc, title });
   modalImageSrc.value = imageSrc;
   modalImageTitle.value = title;
   showImageModal.value = true;
@@ -731,6 +715,19 @@ function closeImageModal() {
   showImageModal.value = false;
   modalImageSrc.value = '';
   modalImageTitle.value = '';
+}
+
+// Image error handling
+function handleImageError(event) {
+  console.error('M&M Image failed to load:', modalImageSrc.value);
+  console.error('Error event:', event);
+  console.error('Image element:', event.target);
+  console.error('Image naturalWidth:', event.target.naturalWidth);
+  console.error('Image naturalHeight:', event.target.naturalHeight);
+}
+
+function handleImageLoad(event) {
+  console.log('Image loaded successfully:', modalImageSrc.value);
 }
 const permits = ref([]);
 const permitImages = reactive({
@@ -759,7 +756,7 @@ const submissionsByKey = computed(() => {
   return map;
 });
 
-// Exam eligibility checker - P1 unlocks after completing sessions up to day 5, P2 after day 10, P3 after day 15
+// Exam eligibility checker - based on class current period
 const examEligibility = computed(() => {
   const eligibility = {
     P1: false,
@@ -767,46 +764,31 @@ const examEligibility = computed(() => {
     P3: false
   };
 
-  if (!sessionData.value || sessionData.value.length === 0) {
-    return eligibility;
+  // Get class current period from student details
+  const classCurrentPeriod = studentDetails.value?.class?.currentPeriod || 'Prelim';
+  
+  console.log('Class current period:', classCurrentPeriod);
+  console.log('Student details:', studentDetails.value);
+
+  // Based on class current period, determine which exams are unlocked
+  // P1 is always unlocked (no session completion requirements)
+  eligibility.P1 = true;
+  
+  if (classCurrentPeriod === 'Prelim') {
+    // In Prelim period - only P1 is unlocked
+    eligibility.P2 = false;
+    eligibility.P3 = false;
+  } else if (classCurrentPeriod === 'Midterm') {
+    // In Midterm period - P1 and P2 are unlocked
+    eligibility.P2 = true;
+    eligibility.P3 = false;
+  } else if (classCurrentPeriod === 'Finals') {
+    // In Finals period - all exams are unlocked
+    eligibility.P2 = true;
+    eligibility.P3 = true;
   }
 
-  // Filter sessions for the selected semester
-  const semesterSessions = sessionData.value.filter(session => {
-    if (selectedSemester.value === '1st') {
-      return !session.semester || session.semester === '1st Semester';
-    } else {
-      return session.semester === '2nd Semester';
-    }
-  });
-
-  // Count completed sessions before each exam checkpoint
-  const completedSessions = semesterSessions.filter(s => s.completed);
-  
-  // P1 exam at day 5 - need to complete sessions 0-4 (5 sessions)
-  const sessionsBeforeP1 = semesterSessions.filter(s => s.sessionDay < 5);
-  const completedBeforeP1 = sessionsBeforeP1.filter(s => s.completed);
-  eligibility.P1 = completedBeforeP1.length >= sessionsBeforeP1.length && sessionsBeforeP1.length > 0;
-  
-  // P2 exam at day 10 - need P1 requirement passed AND complete sessions 5-9
-  const sessionsBeforeP2 = semesterSessions.filter(s => s.sessionDay < 10);
-  const completedBeforeP2 = sessionsBeforeP2.filter(s => s.completed);
-  const hasP1Submission = getSubmissionStatus(selectedSemester.value, 'P1') === 'approved';
-  eligibility.P2 = eligibility.P1 && hasP1Submission && completedBeforeP2.length >= sessionsBeforeP2.length;
-  
-  // P3 exam at day 15 - need P2 requirement passed AND complete sessions 10-14  
-  const sessionsBeforeP3 = semesterSessions.filter(s => s.sessionDay < 15);
-  const completedBeforeP3 = sessionsBeforeP3.filter(s => s.completed);
-  const hasP2Submission = getSubmissionStatus(selectedSemester.value, 'P2') === 'approved';
-  eligibility.P3 = eligibility.P2 && hasP2Submission && completedBeforeP3.length >= sessionsBeforeP3.length;
-
-  console.log('Exam eligibility:', eligibility, {
-    semesterSessions: semesterSessions.length,
-    completedSessions: completedSessions.length,
-    hasP1Submission,
-    hasP2Submission
-  });
-
+  console.log('Exam eligibility based on class period:', eligibility);
   return eligibility;
 });
 
@@ -1106,13 +1088,14 @@ async function submitPermit(examType) {
 
   // Check exam eligibility before allowing permit submission
   if (!examEligibility.value[examType]) {
+    const classCurrentPeriod = studentDetails.value?.class?.currentPeriod || 'Prelim';
     let message = '';
     if (examType === 'P1') {
-      message = 'Complete sessions before P1 exam to unlock permit submission';
+      message = 'P1 permit submission is always available';
     } else if (examType === 'P2') {
-      message = 'Complete P1 exam and sessions before P2 to unlock permit submission';
+      message = 'P2 permit submission will be unlocked when your class advances to Midterm period';
     } else if (examType === 'P3') {
-      message = 'Complete P2 exam and sessions before P3 to unlock permit submission';
+      message = 'P3 permit submission will be unlocked when your class advances to Finals period';
     }
     notificationService.showError(message);
     return;
@@ -1132,7 +1115,10 @@ async function submitPermit(examType) {
     
     if (result.success) {
       notificationService.showSuccess(`${examType} permit uploaded successfully and is pending validation`);
-      removePermitImage(examType);
+      // Clear local preview immediately
+      permitImages[examType] = null;
+      permitImages[`${examType}_file`] = null;
+      // Don't set permitCleared to true - let backend data show
       // Refresh permits to show updated status
       await loadPermits();
     } else {
@@ -1149,11 +1135,29 @@ async function submitPermit(examType) {
 
 // Lifecycle
 onMounted(async () => {
-  await loadStudentYear();
-  await loadCurrentSemester();
-  await loadStudentSessionData();
-  await loadSubmissions();
-  await loadPermits();
+  try {
+    console.log('Starting Surveys page initialization...');
+    
+    // Set a maximum timeout for the entire initialization
+    const initTimeout = setTimeout(() => {
+      console.warn('Initialization timeout - showing page anyway');
+      loadingYearLevel.value = false;
+    }, 15000);
+    
+    await loadStudentYear();
+    await loadCurrentSemester();
+    await loadStudentSessionData();
+    await loadSubmissions();
+    await loadPermits();
+    
+    clearTimeout(initTimeout);
+    console.log('Surveys page initialization completed');
+  } catch (error) {
+    console.error('Error during Surveys page initialization:', error);
+    notificationService.showError('Failed to load page data');
+    // Ensure loading is set to false even on error
+    loadingYearLevel.value = false;
+  }
   
   // Auto-refresh on focus disabled per requirement to prevent M&M section from refreshing
 });
@@ -1163,26 +1167,40 @@ async function loadStudentYear() {
   try {
     loadingYearLevel.value = true;
     
-    // Always fetch fresh student data to get current year level
-    const studentDetails = await studentService.getStudentDetails();
-    if (studentDetails.data && studentDetails.data.class) {
-      const classYearLevel = studentDetails.data.class.yearLevel;
-      if (classYearLevel) {
-        currentYearLevel.value = classYearLevel;
-        console.log('Current year level from class:', currentYearLevel.value);
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout loading student year')), 10000)
+    );
+    
+    const loadPromise = (async () => {
+      // Always fetch fresh student data to get current year level
+      const studentDetails = await studentService.getStudentDetails();
+      if (studentDetails.data && studentDetails.data.class) {
+        const classYearLevel = studentDetails.data.class.yearLevel;
+        if (classYearLevel) {
+          currentYearLevel.value = classYearLevel;
+          console.log('Current year level from class:', currentYearLevel.value);
+        }
       }
-    }
+      
+      // Also get from M&M service as fallback
+      const response = await mmService.getStudentYear();
+      if (response.yearLevel && !currentYearLevel.value) {
+        currentYearLevel.value = response.yearLevel;
+      }
+      
+      console.log('Final current year level:', currentYearLevel.value);
+    })();
     
-    // Also get from M&M service as fallback
-    const response = await mmService.getStudentYear();
-    if (response.yearLevel && !currentYearLevel.value) {
-      currentYearLevel.value = response.yearLevel;
-    }
+    await Promise.race([loadPromise, timeoutPromise]);
     
-    console.log('Final current year level:', currentYearLevel.value);
   } catch (error) {
     console.error('Error loading student year:', error);
     notificationService.showError('Failed to load student year level');
+    // Set a default year level if loading fails
+    if (!currentYearLevel.value) {
+      currentYearLevel.value = '2nd Year';
+    }
   } finally {
     loadingYearLevel.value = false;
   }
@@ -1282,6 +1300,9 @@ async function loadSubmissions() {
 }
 
 function getYearNumber(yearLevel) {
+  if (!yearLevel) return '?';
+  
+  // Handle different formats: "2nd Year", "2nd", "2", etc.
   const match = /(\d+)/.exec(yearLevel);
   return match ? match[1] : '?';
 }
@@ -1290,9 +1311,6 @@ function getYearLevelText(yearLevel) {
   return `${yearLevel} Year`;
 }
 
-function getTotalSubmissions() {
-  return submissions.value.filter(s => s.yearLevel === currentYearLevel.value).length;
-}
 
 function getSemesterSubmissionCount(semester) {
   return submissions.value.filter(s => 
@@ -1318,13 +1336,18 @@ function getSubmissionImage(semester, examType) {
   console.log(`Getting submission image for ${semester} ${examType}:`, {
     submission: submission,
     imageUrl: imageUrl,
-    submissionsByKey: submissionsByKey.value
+    submissionsByKey: submissionsByKey.value,
+    currentYearLevel: currentYearLevel.value
   });
-  if (!imageUrl) return null;
-  // Ensure absolute URL for backend-served uploads (e.g., /uploads/mm-submissions/...)
-  if (/^https?:\/\//i.test(imageUrl)) return imageUrl;
-  const normalized = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-  return `${apiOrigin}${normalized}`;
+  
+  if (!imageUrl) {
+    console.log(`No image URL found for ${semester} ${examType}`);
+    return null;
+  }
+  
+  // The backend now provides attachment route URLs directly
+  console.log(`Using M&M attachment URL from backend: ${imageUrl}`);
+  return imageUrl;
 }
 
 function isSubmitted(semester, examType) {
@@ -1372,11 +1395,10 @@ function handleFileDrop(event, examType) {
   // Check if trying to upload for wrong semester
   if (selectedSemester.value !== currentSemester.value) {
     if (currentSemester.value === '1st') {
-      errorMessage.value = '2nd semester is locked. Your class has not been promoted to 2nd semester yet.';
+      notificationService.showError('2nd semester is locked. Your class has not been promoted to 2nd semester yet.');
     } else {
-      errorMessage.value = '1st semester is completed. Your class is now in 2nd semester.';
+      notificationService.showError('1st semester is completed. Your class is now in 2nd semester.');
     }
-    setTimeout(() => { errorMessage.value = ''; }, 5000);
     return;
   }
   
@@ -1389,15 +1411,13 @@ function handleFileDrop(event, examType) {
 function handleFile(file, examType) {
   // Validate file size (10MB)
   if (file.size > 10 * 1024 * 1024) {
-    errorMessage.value = 'File size must be less than 10MB';
-    setTimeout(() => { errorMessage.value = ''; }, 5000);
+    notificationService.showError('File size must be less than 10MB');
     return;
   }
 
   // Validate file type
   if (!file.type.startsWith('image/')) {
-    errorMessage.value = 'Only image files are allowed';
-    setTimeout(() => { errorMessage.value = ''; }, 5000);
+    notificationService.showError('Only image files are allowed');
     return;
   }
 
@@ -1415,13 +1435,12 @@ function validateMMImageFormat(file, examType) {
       const minHeight = 100;
       
       if (img.width < minWidth || img.height < minHeight) {
-        errorMessage.value = 'Image invalid';
-        setTimeout(() => { errorMessage.value = ''; }, 3000);
+        notificationService.showError('Image invalid');
         return;
       }
       
       // Show loading message during analysis
-      successMessage.value = `Analyzing ${examType} image...`;
+      notificationService.showInfo(`Analyzing ${examType} image...`);
       
       try {
         // Enhanced OCR with better preprocessing
@@ -1494,9 +1513,7 @@ function validateMMImageFormat(file, examType) {
           });
           
           if (!altHasValidText) {
-            errorMessage.value = 'Image invalid';
-            setTimeout(() => { errorMessage.value = ''; }, 3000);
-            successMessage.value = '';
+            notificationService.showError('Image invalid');
             return;
           }
         }
@@ -1505,14 +1522,11 @@ function validateMMImageFormat(file, examType) {
         pendingImages[examType] = e.target.result;
         pendingImages[`${examType}_file`] = file;
         
-        successMessage.value = `Image valid`;
-        setTimeout(() => { successMessage.value = ''; }, 3000);
+        notificationService.showSuccess(`Image valid`);
         
       } catch (ocrError) {
         console.error('OCR Error:', ocrError);
-        errorMessage.value = 'Image invalid';
-        setTimeout(() => { errorMessage.value = ''; }, 3000);
-        successMessage.value = '';
+        notificationService.showError('Image invalid');
       }
     };
     

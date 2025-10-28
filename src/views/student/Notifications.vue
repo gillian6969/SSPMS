@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen p-6" style="background-color: #F6FBF9;">
+  <div class="student-notifications min-h-screen p-6" style="background-color: #F6FBF9;">
     <div class="max-w-7xl mx-auto space-y-8">
       <!-- Header -->
       <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6">
@@ -42,47 +42,73 @@
       
       <div v-else class="space-y-4">
         <!-- Filter Options -->
-        <div class="flex justify-between items-center mb-4 text-sm">
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
+          <!-- Type Filter -->
           <div class="flex items-center space-x-2">
-            <span>Filter:</span>
+            <span class="text-sm font-medium text-gray-700">Filter:</span>
             <button 
               @click="activeFilter = 'all'" 
-              class="px-3 py-1 rounded-full" 
+              class="px-3 py-1 rounded-full text-sm" 
               :class="activeFilter === 'all' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'"
             >
               All
             </button>
             <button 
               @click="activeFilter = 'class'" 
-              class="px-3 py-1 rounded-full" 
+              class="px-3 py-1 rounded-full text-sm" 
               :class="activeFilter === 'class' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'"
             >
               Class
             </button>
             <button 
               @click="activeFilter = 'mm'" 
-              class="px-3 py-1 rounded-full" 
+              class="px-3 py-1 rounded-full text-sm" 
               :class="activeFilter === 'mm' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'"
             >
               M&M
             </button>
             <button 
               @click="activeFilter = 'odyssey'" 
-              class="px-3 py-1 rounded-full" 
+              class="px-3 py-1 rounded-full text-sm" 
               :class="activeFilter === 'odyssey' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'"
             >
               Odyssey Plan
             </button>
             <button 
               @click="activeFilter = 'consultation'" 
-              class="px-3 py-1 rounded-full" 
+              class="px-3 py-1 rounded-full text-sm" 
               :class="activeFilter === 'consultation' ? 'bg-primary-light text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'"
             >
               Consultation
             </button>
           </div>
           
-          <!-- Mark all as read button removed -->
+          <!-- Date Filter -->
+          <div class="flex items-center space-x-2">
+            <span class="text-sm font-medium text-gray-700">Date:</span>
+            <select v-model="dateFilter" @change="applyFilters" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="thisWeek">This Week</option>
+              <option value="lastWeek">Last Week</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Custom Date Range (shown when custom is selected) -->
+        <div v-if="dateFilter === 'custom'" class="flex items-center space-x-4 mb-4 p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center space-x-2">
+            <label class="text-sm font-medium text-gray-700">From:</label>
+            <input v-model="startDate" type="date" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div class="flex items-center space-x-2">
+            <label class="text-sm font-medium text-gray-700">To:</label>
+            <input v-model="endDate" type="date" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <button @click="applyFilters" class="px-4 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            Apply
+          </button>
         </div>
         
         <!-- Notifications List -->
@@ -155,27 +181,61 @@
           </div>
         </div>
         
-        <!-- Pagination (if needed) -->
-        <div v-if="totalPages > 1" class="flex justify-center items-center space-x-2 mt-4">
-          <button 
-            @click="prevPage" 
-            :disabled="currentPage === 1"
-            class="px-3 py-1 rounded border text-sm" 
-            :class="currentPage === 1 ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-50'"
-          >
-            Previous
-          </button>
+        <!-- Pagination Footer -->
+        <div v-if="totalPages > 1" class="flex justify-between items-center mt-6 p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600">
+              Page {{ currentPage }} of {{ totalPages }}
+            </span>
+          </div>
           
-          <span class="text-sm text-gray-600">Page {{ currentPage }} of {{ totalPages }}</span>
-          
-          <button 
-            @click="nextPage" 
-            :disabled="currentPage === totalPages"
-            class="px-3 py-1 rounded border text-sm" 
-            :class="currentPage === totalPages ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-50'"
-          >
-            Next
-          </button>
+          <div class="flex items-center space-x-2">
+            <button
+              @click="goToPage(1)"
+              :disabled="currentPage === 1"
+              class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="First Page"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M20 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              @click="prevPage"
+              :disabled="currentPage === 1"
+              class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Previous Page"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            <span class="px-3 py-1 text-sm text-gray-600">
+              {{ currentPage }}
+            </span>
+            
+            <button
+              @click="nextPage"
+              :disabled="currentPage === totalPages"
+              class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Next Page"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <button
+              @click="goToPage(totalPages)"
+              :disabled="currentPage === totalPages"
+              class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Last Page"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
         </div>
       </div>
@@ -188,6 +248,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { notificationService } from '../../services/notificationService';
 import { useAuthStore } from '../../stores/authStore';
 import { notificationApiService } from '../../services/notificationApiService';
+import api from '../../services/api';
 
 // State variables
 const loading = ref(true);
@@ -195,6 +256,9 @@ const notifications = ref([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const activeFilter = ref('all'); // 'all', 'class', 'mm', 'odyssey', 'consultation'
+const dateFilter = ref('all'); // 'all', 'today', 'thisWeek', 'lastWeek', 'custom'
+const startDate = ref('');
+const endDate = ref('');
 const authStore = useAuthStore();
 const pageSize = 10; // Number of notifications per page
 
@@ -245,13 +309,7 @@ const filteredNotifications = computed(() => {
     filtered = notifications.value;
   }
   
-  // Calculate total pages based on filtered results
-  totalPages.value = Math.ceil(filtered.length / pageSize);
-  
-  // Return paginated results
-  const startIndex = (currentPage.value - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  return filtered.slice(startIndex, endIndex);
+  return filtered;
 });
 
 const hasUnread = computed(() => {
@@ -292,18 +350,33 @@ async function fetchNotifications() {
     
     loading.value = true;
     
-    // Call API to get notifications using our service
-    const response = await notificationApiService.getAll();
+    // Build query parameters for backend pagination and date filtering
+    const params = new URLSearchParams({
+      page: currentPage.value,
+      limit: pageSize,
+      dateFilter: dateFilter.value
+    });
     
-    if (response) {
-      notifications.value = response.map(notification => ({
+    if (dateFilter.value === 'custom' && startDate.value && endDate.value) {
+      params.append('startDate', startDate.value);
+      params.append('endDate', endDate.value);
+    }
+    
+    // Call API directly with parameters
+    const response = await api.get(`/notifications?${params}`);
+    
+    if (response.data) {
+      notifications.value = (response.data.data || []).map(notification => ({
         ...notification,
         // Format dates if needed
         createdAt: new Date(notification.createdAt),
       }));
       
-      // Calculate pagination
-      totalPages.value = Math.ceil(notifications.value.length / pageSize);
+      // Update pagination from backend response
+      if (response.data.pagination) {
+        totalPages.value = response.data.pagination.totalPages || 1;
+        currentPage.value = response.data.pagination.currentPage || 1;
+      }
     }
   } catch (error) {
     console.error('Failed to fetch notifications:', error);
@@ -340,13 +413,30 @@ async function markAsRead(notificationId) {
 function prevPage() {
   if (currentPage.value > 1) {
     currentPage.value--;
+    fetchNotifications();
   }
 }
 
 function nextPage() {
   if (currentPage.value < totalPages.value) {
     currentPage.value++;
+    fetchNotifications();
   }
+}
+
+function goToPage(page) {
+  currentPage.value = page;
+  fetchNotifications();
+}
+
+async function applyFilters() {
+  currentPage.value = 1;
+  await fetchNotifications();
+}
+
+async function refreshNotifications() {
+  currentPage.value = 1;
+  await fetchNotifications();
 }
 
 function formatDate(date) {
@@ -377,10 +467,6 @@ function formatDate(date) {
     });
   }
 }
-
-async function refreshNotifications() {
-  await fetchNotifications();
-}
 </script>
 
 <style scoped>
@@ -405,8 +491,66 @@ async function refreshNotifications() {
 }
 
 .student-notifications {
+  max-width: 1280px;
   width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1280px) {
+  .student-notifications {
+    max-width: 100%;
+    padding: 0 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-notifications {
+    padding: 0 0.5rem;
+  }
+  
+  .student-notifications .space-y-8 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .student-notifications .p-6 {
+    padding: 1rem;
+  }
+  
+  .student-notifications .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  .student-notifications .flex.items-center.justify-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .student-notifications {
+    padding: 0 0.25rem;
+  }
+  
+  .student-notifications .p-6 {
+    padding: 0.75rem;
+  }
+  
+  .student-notifications .text-2xl {
+    font-size: 1.25rem;
+  }
+  
+  .student-notifications .space-x-2 {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .student-notifications .px-3 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 }
 </style> 

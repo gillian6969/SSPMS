@@ -18,6 +18,16 @@
           </div>
           <div class="flex space-x-3">
             <button 
+              @click="saveCurrentTabOptions"
+              :disabled="loading"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-normal text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
+            >
+              <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              {{ loading ? 'Saving...' : getSaveButtonText() }}
+            </button>
+            <button 
               @click="resetToDefaults" 
               class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-md shadow-sm text-sm font-normal text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
@@ -25,15 +35,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
               Reset to Defaults
-            </button>
-            <button 
-              @click="saveOptions" 
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-normal text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-              Save All Changes
             </button>
           </div>
         </div>
@@ -237,36 +238,16 @@
         </div>
 
         <div class="mb-6">
-          <h3 class="text-lg font-medium mb-3">Default Sessions</h3>
-          <p class="text-sm text-gray-500 mb-4">These sessions will be automatically added to new classes</p>
+          <h3 class="text-lg font-medium mb-3">Default School Year</h3>
           <div class="space-y-2 mb-4">
-            <div v-for="(session, index) in options.class.defaultSessions" :key="index" class="flex items-center">
               <input
                 type="text"
-                v-model="options.class.defaultSessions[index].title"
-                class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-              />
-              <button
-                @click="removeDefaultSession(index)"
-                class="ml-2 text-red-500 hover:text-red-700"
-                :disabled="index === 0"
-                :class="{'opacity-50 cursor-not-allowed': index === 0}"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
+              v-model="options.class.defaultSchoolYear" 
+              class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+              placeholder="e.g., 2025-2026"
+            />
+            <p class="text-sm text-gray-500">This will be the default school year for all new classes. Format: YYYY-YYYY</p>
           </div>
-          <button
-            @click="addDefaultSession"
-            class="text-primary hover:text-primary-dark flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
-            Add Default Session
-          </button>
         </div>
       </div>
 
@@ -279,21 +260,21 @@
                 <input 
                   type="text" 
                 v-model="options.subject.yearLevels[index]" 
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
               />
-              <button 
+              <button
                 @click="removeSubjectYearLevel(index)" 
                 class="ml-2 text-red-500 hover:text-red-700"
               >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                  </svg>
-                </button>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+              </button>
             </div>
           </div>
           <button
             @click="addSubjectYearLevel" 
-            class="text-primary hover:text-primary-dark flex items-center"     
+            class="text-primary hover:text-primary-dark flex items-center"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
@@ -301,27 +282,15 @@
             Add Year Level
           </button>
           <p class="mt-2 text-sm text-gray-500">These are the year levels available for subjects. Different from class year levels.</p>
-        </div>
+      </div>
 
-        <div class="mb-6">
-          <h3 class="text-lg font-medium mb-3">School Year</h3>
-          <div class="space-y-2 mb-4">
-            <input 
-              type="text" 
-              v-model="options.subject.schoolYear" 
-              class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-            />
-            <p class="text-sm text-gray-500">This will be the fixed school year for all subjects</p>
-          </div>
-        </div>
-        
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">First Day Session</h3>
           <div class="space-y-2 mb-4">
-            <input 
-              type="text" 
+                <input 
+                  type="text" 
               v-model="options.subject.defaultZeroDayTitle" 
-              class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
             />
             <p class="text-sm text-gray-500">This is the title for day zero session (automatically added to all subjects)</p>
           </div>
@@ -331,8 +300,8 @@
           <h3 class="text-lg font-medium mb-3">Hours Options</h3>
           <div class="space-y-2 mb-4">
             <div v-for="(hour, index) in options.subject.hoursOptions" :key="index" class="flex items-center">
-              <input 
-                type="number" 
+                <input 
+                  type="number" 
                 v-model.number="options.subject.hoursOptions[index]" 
                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
               />
@@ -340,11 +309,11 @@
                 @click="removeHoursOption(index)" 
                 class="ml-2 text-red-500 hover:text-red-700"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
           </div>
           <button
             @click="addHoursOption" 
@@ -357,61 +326,192 @@
           </button>
         </div>
 
-        <!-- SSP Subject Setup -->
+        <!-- SSP Subject Setup by School Year -->
         <div class="mb-6">
           <h3 class="text-lg font-medium mb-3">SSP Subject Setup</h3>
-          <p class="text-sm text-gray-500 mb-4">Configure SSP codes and session titles for specific year level and semester combinations</p>
+          <p class="text-sm text-gray-500 mb-4">Configure SSP subjects and Session Titles</p>
           
-          <!-- Template Selection -->
+          <!-- School Year Management -->
           <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-600 mb-2">Select Year Level</label>
+                <label class="block text-sm font-medium text-gray-600 mb-2">Select School Year</label>
                 <select 
-                  v-model="selectedTemplate.yearLevel" 
+                  v-model="selectedSchoolYear" 
                   class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                  @change="loadSchoolYearData"
                 >
-                  <option value="">Choose Year Level</option>
-                  <option v-for="yearLevel in options.subject.yearLevels" :key="yearLevel" :value="yearLevel">
-                    {{ yearLevel }} Year
+                  <option value="">Choose School Year</option>
+                  <option v-for="schoolYear in availableSchoolYears" :key="schoolYear" :value="schoolYear">
+                    {{ schoolYear }}
                   </option>
+                  <option value="new">+ Add New School Year</option>
                 </select>
               </div>
               
-              <div>
-                <label class="block text-sm font-medium text-gray-600 mb-2">Select Semester</label>
-                <select 
-                  v-model="selectedTemplate.semester" 
+              <div v-if="selectedSchoolYear === 'new'">
+                <label class="block text-sm font-medium text-gray-600 mb-2">New School Year</label>
+                    <input 
+                      type="text" 
+                  v-model="newSchoolYear" 
                   class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
-                  :disabled="!selectedTemplate.yearLevel"
+                  placeholder="e.g., 2026-2027"
+                />
+              </div>
+              
+              <div v-if="selectedSchoolYear && selectedSchoolYear !== 'new' && availableSchoolYears.length > 1">
+                <label class="block text-sm font-medium text-gray-600 mb-2">Copy From</label>
+                <select 
+                  v-model="copyFromSchoolYear" 
+                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
                 >
-                  <option value="">Choose Semester</option>
-                  <option value="1st Semester">1st Semester</option>
-                  <option value="2nd Semester">2nd Semester</option>
-                </select>
+                  <option value="">Don't copy</option>
+                  <option v-for="schoolYear in availableSchoolYears.filter(sy => sy !== selectedSchoolYear)" :key="schoolYear" :value="schoolYear">
+                    {{ schoolYear }}
+                  </option>
+                      </select>
+                    </div>
+                    </div>
+            
+            <div class="flex justify-end mt-4 space-x-2">
+              <button 
+                v-if="selectedSchoolYear === 'new'" 
+                @click="createNewSchoolYear"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+              >
+                Create School Year
+              </button>
+              <button 
+                v-if="copyFromSchoolYear && selectedSchoolYear !== 'new'" 
+                @click="copySchoolYearData"
+                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+              >
+                Copy Data
+                    </button>
+                  </div>
+                </div>
+          
+          
+          <!-- Template Selection -->
+          <div v-if="selectedSchoolYear && selectedSchoolYear !== 'new'" class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-600 mb-3">Select Year Level</label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="yearLevel in options.subject.yearLevels"
+                  :key="yearLevel"
+                  @click="selectedTemplate.yearLevel = yearLevel"
+                  class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="{
+                    'bg-blue-600 text-white': selectedTemplate.yearLevel === yearLevel,
+                    'bg-red-100 text-red-700 border border-red-300': selectedTemplate.yearLevel !== yearLevel && !isYearLevelComplete(yearLevel, selectedSchoolYear),
+                    'bg-gray-100 text-gray-700 border border-gray-300': selectedTemplate.yearLevel !== yearLevel && isYearLevelComplete(yearLevel, selectedSchoolYear)
+                  }"
+                >
+                  {{ yearLevel }} Year
+                  <span v-if="selectedTemplate.yearLevel !== yearLevel && !isYearLevelComplete(yearLevel, selectedSchoolYear)" class="ml-1 text-xs">⚠️</span>
+                </button>
               </div>
             </div>
-          </div>
-          
+            
+            <div v-if="selectedTemplate.yearLevel">
+              <label class="block text-sm font-medium text-gray-600 mb-3">Select Semester</label>
+              <div class="flex gap-2">
+          <button
+                  @click="selectedTemplate.semester = '1st Semester'"
+                  class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="{
+                    'bg-blue-600 text-white': selectedTemplate.semester === '1st Semester',
+                    'bg-gray-100 text-gray-700 border border-gray-300': selectedTemplate.semester !== '1st Semester'
+                  }"
+                >
+                  1st Semester
+          </button>
+                <button
+                  @click="selectedTemplate.semester = '2nd Semester'"
+                  class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="{
+                    'bg-blue-600 text-white': selectedTemplate.semester === '2nd Semester',
+                    'bg-gray-100 text-gray-700 border border-gray-300': selectedTemplate.semester !== '2nd Semester'
+                  }"
+                >
+                  2nd Semester
+                </button>
+              </div>
+            </div>
+        </div>
+
           <!-- Template Editor -->
-          <div v-if="selectedTemplate.yearLevel && selectedTemplate.semester" class="border border-gray-200 rounded-lg p-6">
-            <div class="mb-6">
+          <div v-if="selectedTemplate.yearLevel && selectedTemplate.semester && selectedSchoolYear && selectedSchoolYear !== 'new'" class="border border-gray-200 rounded-lg p-6">
+        <div class="mb-6">
               <h4 class="text-lg font-medium text-gray-800">
-                {{ selectedTemplate.yearLevel }} Year - {{ selectedTemplate.semester }}
+                {{ selectedTemplate.yearLevel }} Year - {{ selectedTemplate.semester }} ({{ selectedSchoolYear }})
               </h4>
             </div>
             
             <!-- SSP Code -->
             <div class="mb-6">
               <label class="block text-sm font-medium text-gray-600 mb-2">SSP Code</label>
-              <input 
-                type="text" 
+            <input 
+              type="text" 
                 v-model="currentTemplate.sspCode" 
                 class="w-full p-3 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                 placeholder="e.g., SSP-2A-1"
               />
             </div>
             
+            <!-- Exam Date Ranges -->
+            <div class="mb-6">
+              <h5 class="text-md font-medium text-gray-700 mb-3">Exam Date Ranges</h5>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-600 mb-2">Prelim Exam</label>
+                  <div class="space-y-2">
+                    <input 
+                      type="date" 
+                      v-model="currentTemplate.examDateRanges.prelim.start" 
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                    />
+                    <input 
+                      type="date" 
+                      v-model="currentTemplate.examDateRanges.prelim.end" 
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-600 mb-2">Midterm Exam</label>
+                  <div class="space-y-2">
+                    <input 
+                      type="date" 
+                      v-model="currentTemplate.examDateRanges.midterm.start" 
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                    />
+                    <input 
+                      type="date" 
+                      v-model="currentTemplate.examDateRanges.midterm.end" 
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-600 mb-2">Finals Exam</label>
+                  <div class="space-y-2">
+                    <input 
+                      type="date" 
+                      v-model="currentTemplate.examDateRanges.finals.start" 
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                    />
+                    <input 
+                      type="date" 
+                      v-model="currentTemplate.examDateRanges.finals.end" 
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                    />
+                  </div>
+                </div>
+          </div>
+        </div>
+
             <!-- Session Titles -->
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-3">Session Titles (Day 0-17)</label>
@@ -457,7 +557,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <h4 class="text-lg font-medium text-gray-600 mb-2">No Template Selected</h4>
-            <p class="text-sm">Please select a year level and semester to configure the SSP template.</p>
+            <p class="text-sm">Please select a school year, year level, and semester to configure the SSP template.</p>
           </div>
         </div>
 
@@ -478,7 +578,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Exam Name</label>
-                    <input 
+              <input 
                       type="text" 
                       v-model="sessionInfo.name" 
                       class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary bg-white"
@@ -497,33 +597,33 @@
                 </div>
                 
                 <div class="flex justify-end mt-3">
-                  <button 
+              <button 
                     @click="removeExamSessionDay(index)" 
                     class="text-red-500 hover:text-red-700 text-sm flex items-center"
                     :disabled="options.subject.examSessionDays.length <= 1"
                     :class="{'opacity-50 cursor-not-allowed': options.subject.examSessionDays.length <= 1}"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                    </svg>
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
                     Remove
-                  </button>
-                </div>
-              </div>
+              </button>
+            </div>
+          </div>
             </div>
             
-            <button 
+          <button
               @click="addExamSessionDay" 
-              class="text-primary hover:text-primary-dark flex items-center"
+            class="text-primary hover:text-primary-dark flex items-center"     
               :disabled="options.subject.examSessionDays && options.subject.examSessionDays.length >= 3"
               :class="{'opacity-50 cursor-not-allowed': options.subject.examSessionDays && options.subject.examSessionDays.length >= 3}"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-              </svg>
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
               Add Exam Session
-            </button>
-     
+          </button>
+
           </div>
         </div>
       </div>
@@ -613,14 +713,26 @@ const activeMajorTab = ref('') // Active tab for majors section
 // Template selection and editing
 const selectedTemplate = reactive({
   yearLevel: '',
-  semester: ''
+  semester: '',
+  schoolYear: ''
 })
 
 const currentTemplate = reactive({
   sspCode: '',
   dayZeroTitle: 'INTRODUCTION',
-  sessions: Array(17).fill('')
+  sessions: Array(17).fill(''),
+  examDateRanges: {
+    prelim: { start: '', end: '' },
+    midterm: { start: '', end: '' },
+    finals: { start: '', end: '' }
+  }
 })
+
+// School year management
+const availableSchoolYears = ref([])
+const selectedSchoolYear = ref('')
+const copyFromSchoolYear = ref('')
+const newSchoolYear = ref('')
 
 const options = reactive({
   class: {
@@ -630,19 +742,15 @@ const options = reactive({
       '3rd': ['Business Informatics', 'System Development', 'Digital Arts', 'Computer Security'],
       '4th': ['Business Informatics', 'System Development', 'Digital Arts', 'Computer Security']
     },
-    defaultSessions: [
-      { title: 'INTRODUCTION', count: 0 },
-      { title: 'ORIENTATION', count: 0 }
-    ],
     sections: {
       '2nd': ['South-1', 'South-2', 'South-3', 'South-4', 'South-5'],
       '3rd': ['South-1', 'South-2', 'South-3'],
       '4th': ['South-1', 'South-2']
     },
-    rooms: ['301', '302', '303', '304', '401', '402', '403', '404']
+    rooms: ['301', '302', '303', '304', '401', '402', '403', '404'],
+    defaultSchoolYear: '2025-2026'
   },
   subject: {
-    schoolYear: '2025 - 2026',
     defaultZeroDayTitle: 'INTRODUCTION',
     hoursOptions: [1, 2, 3],
     yearLevels: ['1st', '2nd', '3rd', '4th'],
@@ -650,7 +758,8 @@ const options = reactive({
       { name: 'Prelim Exam', day: 5 },
       { name: 'Midterm Exam', day: 10 },
       { name: 'Final Exam', day: 15 }
-    ]
+    ],
+    sspSubjectsBySchoolYear: {}
   },
   consultation: {
     defaultDuration: 3,
@@ -670,19 +779,15 @@ const defaultOptions = {
       '3rd': ['Business Informatics', 'System Development', 'Digital Arts', 'Computer Security'],
       '4th': ['Business Informatics', 'System Development', 'Digital Arts', 'Computer Security']
     },
-    defaultSessions: [
-      { title: 'INTRODUCTION', count: 0 },
-      { title: 'ORIENTATION', count: 0 }
-    ],
     sections: {
       '2nd': ['South-1', 'South-2', 'South-3', 'South-4', 'South-5'],
       '3rd': ['South-1', 'South-2', 'South-3'],
       '4th': ['South-1', 'South-2']
     },
-    rooms: ['301', '302', '303', '304', '401', '402', '403', '404']
+    rooms: ['301', '302', '303', '304', '401', '402', '403', '404'],
+    defaultSchoolYear: '2025-2026'
   },
   subject: {
-    schoolYear: '2025 - 2026',
     defaultZeroDayTitle: 'INTRODUCTION',
     hoursOptions: [1, 2, 3],
     yearLevels: ['1st', '2nd', '3rd', '4th'],
@@ -690,7 +795,8 @@ const defaultOptions = {
       { name: 'Prelim Exam', day: 5 },
       { name: 'Midterm Exam', day: 10 },
       { name: 'Final Exam', day: 15 }
-    ]
+    ],
+    sspSubjectsBySchoolYear: {}
   },
   consultation: {
     defaultDuration: 3,
@@ -797,7 +903,50 @@ async function saveOptions() {
       notificationService.showError('You must be logged in as an admin to save options');
       showStatus('Authentication required', 'error');
           return;
+        }
+    
+    // Validate all school years have complete semester setups
+    if (options.subject.sspSubjectsBySchoolYear) {
+      for (const [schoolYear, yearLevelData] of Object.entries(options.subject.sspSubjectsBySchoolYear)) {
+        for (const yearLevel of options.subject.yearLevels) {
+          if (yearLevelData[yearLevel]) {
+            const firstSemester = yearLevelData[yearLevel]['1st Semester']
+            const secondSemester = yearLevelData[yearLevel]['2nd Semester']
+            
+            // Check if SSP code is missing
+            if (firstSemester && (!firstSemester.sspCode || firstSemester.sspCode.trim() === '')) {
+              notificationService.showError(`${yearLevel} Year - 1st Semester SSP code is required`)
+              return
+            }
+            
+            if (secondSemester && (!secondSemester.sspCode || secondSemester.sspCode.trim() === '')) {
+              notificationService.showError(`${yearLevel} Year - 2nd Semester SSP code is required`)
+              return
+            }
+            
+            // Validate exam session dates
+            if (firstSemester && firstSemester.examDateRanges) {
+              const dateErrors = validateExamSessionDates(firstSemester.examDateRanges)
+              if (dateErrors.length > 0) {
+                notificationService.showError(`${yearLevel} Year - 1st Semester: ${dateErrors[0]}`)
+                return
+              }
+            }
+            
+            if (secondSemester && secondSemester.examDateRanges) {
+              const dateErrors = validateExamSessionDates(secondSemester.examDateRanges)
+              if (dateErrors.length > 0) {
+                notificationService.showError(`${yearLevel} Year - 2nd Semester: ${dateErrors[0]}`)
+                return
+              }
+            }
+          }
+        }
+      }
     }
+    
+    // Debug: Log what we're sending
+    console.log('Sending options to backend:', JSON.stringify(options, null, 2));
     
     await systemOptionsService.update(options)
     notificationService.showSuccess('System options saved successfully')
@@ -810,7 +959,7 @@ async function saveOptions() {
         notificationService.showError('You must be logged in to save options');
       } else if (error.response.status === 403) {
         notificationService.showError('You must be an admin to save options');
-      } else {
+          } else {
         notificationService.showError('Failed to save system options: ' + (error.response.data?.message || 'Server error'));
       }
     } else {
@@ -818,6 +967,304 @@ async function saveOptions() {
     }
     
     showStatus('Error saving settings', 'error')
+  }
+}
+
+// Update existing subjects when sessions change
+async function updateExistingSubjects() {
+  try {
+    // Import the subject service
+    const { subjectService } = await import('../../services/subjectService')
+    
+    // Get all existing subjects
+    const existingSubjects = await subjectService.getAll()
+    console.log('Found existing subjects:', existingSubjects.length)
+    
+    let updatedCount = 0
+    
+    // Update each subject based on the current template data
+    for (const subject of existingSubjects) {
+      if (subject.schoolYear && subject.yearLevel && subject.semester) {
+        const schoolYearData = options.subject.sspSubjectsBySchoolYear[subject.schoolYear]
+        if (schoolYearData && schoolYearData[subject.yearLevel] && schoolYearData[subject.yearLevel][subject.semester]) {
+          const templateData = schoolYearData[subject.yearLevel][subject.semester]
+          
+          console.log(`Updating subject ${subject.sspCode} (${subject.yearLevel} - ${subject.semester})`)
+          
+          // Prepare update data
+          const updateData = {}
+          
+          // Update SSP code if it exists in template
+          if (templateData.sspCode && templateData.sspCode.trim() !== '') {
+            updateData.sspCode = templateData.sspCode
+          }
+          
+          // Update sessions if they exist in template
+          if (templateData.sessions && templateData.sessions.length > 0) {
+            const updatedSessions = []
+            
+            // Add day 0 session with dayZeroTitle
+            if (templateData.dayZeroTitle && templateData.dayZeroTitle.trim() !== '') {
+              updatedSessions.push({
+                day: 0,
+                title: templateData.dayZeroTitle.trim()
+              })
+            }
+            
+            // Add sessions for days 1-17 from templateData.sessions (copy SystemOptions process)
+            templateData.sessions.forEach((sessionTitle, index) => {
+              const day = index + 1 // Days 1-17
+              const sessionData = {
+                day: day,
+                title: sessionTitle && sessionTitle.trim() !== '' ? sessionTitle.trim() : `Session ${day}`
+              }
+              
+              // Add exam dates for exam sessions
+              const examDay = options.subject.examSessionDays.find(exam => exam.day === day)
+              if (examDay && templateData.examDateRanges) {
+                // Override the title with the actual exam name
+                sessionData.title = examDay.name;
+                
+                let examPeriod = null
+                if (examDay.name.includes('P1') || examDay.name.toLowerCase().includes('prelim')) {
+                  examPeriod = templateData.examDateRanges.prelim
+                } else if (examDay.name.includes('P2') || examDay.name.toLowerCase().includes('midterm')) {
+                  examPeriod = templateData.examDateRanges.midterm
+                } else if (examDay.name.includes('P3') || examDay.name.toLowerCase().includes('finals')) {
+                  examPeriod = templateData.examDateRanges.finals
+                }
+                
+                if (examPeriod && examPeriod.start && examPeriod.end) {
+                  sessionData.startDate = examPeriod.start
+                  sessionData.endDate = examPeriod.end
+                }
+              }
+              
+              updatedSessions.push(sessionData)
+            })
+            
+            updateData.sessions = updatedSessions
+            console.log('Updated sessions:', updatedSessions)
+          }
+          
+          // Update day zero title (if field exists in Subject model)
+          if (templateData.dayZeroTitle && templateData.dayZeroTitle.trim() !== '') {
+            updateData.dayZeroTitle = templateData.dayZeroTitle
+          }
+          
+          // Update exam date ranges (if field exists in Subject model)
+          if (templateData.examDateRanges) {
+            updateData.examDateRanges = templateData.examDateRanges
+          }
+          
+          // Only update if there's data to update
+          if (Object.keys(updateData).length > 0) {
+            console.log('Update data:', updateData)
+            await subjectService.update(subject._id, updateData)
+            updatedCount++
+          }
+        }
+      }
+    }
+    
+    console.log(`Updated ${updatedCount} existing subjects with new session data`)
+  } catch (error) {
+    console.error('Error updating existing subjects:', error)
+    // Don't throw error here as it's not critical for the main save operation
+  }
+}
+
+// Reactive save function based on active tab
+async function saveCurrentTabOptions() {
+  switch (activeTab.value) {
+    case 'class':
+      await saveClassOptions()
+      break
+    case 'subject':
+      await saveSubjectOptions()
+      break
+    case 'consultation':
+      await saveConsultationOptions()
+      break
+    default:
+      notificationService.showError('Invalid tab selected')
+  }
+}
+
+// Get save button text based on active tab
+function getSaveButtonText() {
+  switch (activeTab.value) {
+    case 'class':
+      return 'Save Class Settings'
+    case 'subject':
+      return 'Save Subject Settings'
+    case 'consultation':
+      return 'Save Consultation Settings'
+    default:
+      return 'Save Settings'
+  }
+}
+
+// Individual save functions for each section
+async function saveClassOptions() {
+  try {
+    loading.value = true
+    
+    // Check if user is logged in first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notificationService.showError('You must be logged in as an admin to save options');
+      return;
+    }
+    
+    const classOptions = {
+      class: options.class
+    }
+    
+    await systemOptionsService.update(classOptions)
+    notificationService.showSuccess('Class settings saved successfully')
+  } catch (error) {
+    console.error('Error saving class options:', error)
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        notificationService.showError('You must be logged in to save options');
+      } else if (error.response.status === 403) {
+        notificationService.showError('You must be an admin to save options');
+          } else {
+        notificationService.showError('Failed to save class settings: ' + (error.response.data?.message || 'Server error'));
+      }
+    } else {
+      notificationService.showError('Failed to save class settings: Network error');
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveSubjectOptions() {
+  try {
+    loading.value = true
+    
+    // Check if user is logged in first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notificationService.showError('You must be logged in as an admin to save options');
+          return;
+        }
+    
+    // Only validate the currently selected year level and semester if they exist
+    if (selectedTemplate.yearLevel && selectedTemplate.semester && selectedSchoolYear.value && selectedSchoolYear.value !== 'new') {
+      const schoolYearData = options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value]
+      if (schoolYearData && schoolYearData[selectedTemplate.yearLevel]) {
+        const semesterData = schoolYearData[selectedTemplate.yearLevel][selectedTemplate.semester]
+        
+        if (semesterData) {
+          // Check if SSP code is missing for the current semester
+          if (!semesterData.sspCode || semesterData.sspCode.trim() === '') {
+            notificationService.showError(`${selectedTemplate.yearLevel} Year - ${selectedTemplate.semester} SSP code is required`)
+            return
+          }
+          
+          // Validate exam session dates for the current semester
+          if (semesterData.examDateRanges) {
+            // Check if exam dates are provided
+            const prelimDates = semesterData.examDateRanges.prelim
+            const midtermDates = semesterData.examDateRanges.midterm
+            const finalsDates = semesterData.examDateRanges.finals
+            
+            // Check if any exam dates are missing
+            if (!prelimDates.start || !prelimDates.end) {
+              notificationService.showError(`${selectedTemplate.yearLevel} Year - ${selectedTemplate.semester}: Prelim exam dates are required`)
+              return
+            }
+            
+            if (!midtermDates.start || !midtermDates.end) {
+              notificationService.showError(`${selectedTemplate.yearLevel} Year - ${selectedTemplate.semester}: Midterm exam dates are required`)
+              return
+            }
+            
+            if (!finalsDates.start || !finalsDates.end) {
+              notificationService.showError(`${selectedTemplate.yearLevel} Year - ${selectedTemplate.semester}: Finals exam dates are required`)
+              return
+            }
+            
+            // Validate date logic
+            const dateErrors = validateExamSessionDates(semesterData.examDateRanges)
+            if (dateErrors.length > 0) {
+              notificationService.showError(`${selectedTemplate.yearLevel} Year - ${selectedTemplate.semester}: ${dateErrors[0]}`)
+              return
+            }
+          } else {
+            notificationService.showError(`${selectedTemplate.yearLevel} Year - ${selectedTemplate.semester}: Exam session dates are required`)
+            return
+          }
+        }
+      }
+    }
+    
+    const subjectOptions = {
+      subject: options.subject
+    }
+    
+    await systemOptionsService.update(subjectOptions)
+    
+    // Update existing subjects if sessions or exam dates changed
+    await updateExistingSubjects()
+    
+    notificationService.showSuccess('Subject settings saved successfully')
+  } catch (error) {
+    console.error('Error saving subject options:', error)
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        notificationService.showError('You must be logged in to save options');
+      } else if (error.response.status === 403) {
+        notificationService.showError('You must be an admin to save options');
+      } else {
+        notificationService.showError('Failed to save subject settings: ' + (error.response.data?.message || 'Server error'));
+      }
+    } else {
+      notificationService.showError('Failed to save subject settings: Network error');
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveConsultationOptions() {
+  try {
+    loading.value = true
+    
+    // Check if user is logged in first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notificationService.showError('You must be logged in as an admin to save options');
+          return;
+        }
+    
+    const consultationOptions = {
+      consultation: options.consultation
+    }
+    
+    await systemOptionsService.update(consultationOptions)
+    notificationService.showSuccess('Consultation settings saved successfully')
+  } catch (error) {
+    console.error('Error saving consultation options:', error)
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        notificationService.showError('You must be logged in to save options');
+      } else if (error.response.status === 403) {
+        notificationService.showError('You must be an admin to save options');
+      } else {
+        notificationService.showError('Failed to save consultation settings: ' + (error.response.data?.message || 'Server error'));
+      }
+    } else {
+      notificationService.showError('Failed to save consultation settings: Network error');
+    }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -900,16 +1347,6 @@ function removeMajorForYearLevel(yearLevel, index) {
   }
 }
 
-function addDefaultSession() {
-  options.class.defaultSessions.push({ title: '', count: 0 })
-}
-
-function removeDefaultSession(index) {
-  // Don't allow removing the INTRODUCTION session
-  if (index === 0) return
-  options.class.defaultSessions.splice(index, 1)
-}
-
 // Room configuration functions
 function addRoom() {
   options.class.rooms.push('')
@@ -943,7 +1380,7 @@ function addSectionForYearLevel(yearLevel) {
   options.class.sections[yearLevel].push('');
 }
 
-function removeSectionForYearLevel(yearLevel, index) {
+function removeSectionForYearLevel(yearLevel, index) {      
   if (options.class.sections[yearLevel]) {
     options.class.sections[yearLevel].splice(index, 1);
   }
@@ -966,64 +1403,6 @@ function removeExamSessionDay(index) {
   options.subject.examSessionDays.splice(index, 1)
 }
 
-// Template management - auto-load when selection changes
-watch(() => [selectedTemplate.yearLevel, selectedTemplate.semester], ([yearLevel, semester]) => {
-  if (yearLevel && semester) {
-    
-    // Initialize sspTemplates if it doesn't exist
-    if (!options.subject.sspTemplates) {
-      options.subject.sspTemplates = {}
-    }
-    
-    if (!options.subject.sspTemplates[yearLevel]) {
-      options.subject.sspTemplates[yearLevel] = {}
-    }
-    
-    if (!options.subject.sspTemplates[yearLevel][semester]) {
-      options.subject.sspTemplates[yearLevel][semester] = {
-        sspCode: '',
-        sessions: Array(17).fill('')
-      }
-    }
-    
-    // Load existing template data
-    const template = options.subject.sspTemplates[yearLevel][semester]
-    currentTemplate.sspCode = template.sspCode || ''
-    currentTemplate.dayZeroTitle = options.subject.defaultZeroDayTitle || 'INTRODUCTION'
-    currentTemplate.sessions = [...(template.sessions || Array(17).fill(''))]
-    
-    // Apply exam session titles to the sessions array
-    if (options.subject.examSessionDays && options.subject.examSessionDays.length > 0) {
-      options.subject.examSessionDays.forEach(exam => {
-        if (exam.day > 0 && exam.day < 18 && exam.name) {
-          currentTemplate.sessions[exam.day - 1] = exam.name
-        }
-      })
-    }
-    
-  }
-}, { immediate: true })
-
-// Auto-save template changes
-watch(() => [currentTemplate.sspCode, currentTemplate.sessions], () => {
-  if (selectedTemplate.yearLevel && selectedTemplate.semester) {
-    // Ensure sspTemplates structure exists
-    if (!options.subject.sspTemplates) {
-      options.subject.sspTemplates = {}
-    }
-    
-    if (!options.subject.sspTemplates[selectedTemplate.yearLevel]) {
-      options.subject.sspTemplates[selectedTemplate.yearLevel] = {}
-    }
-    
-    // Save the template data automatically
-    options.subject.sspTemplates[selectedTemplate.yearLevel][selectedTemplate.semester] = {
-      sspCode: currentTemplate.sspCode,
-      sessions: [...currentTemplate.sessions]
-    }
-  }
-}, { deep: true })
-
 // Watch for exam session changes and update template sessions
 watch(() => options.subject.examSessionDays, () => {
   if (selectedTemplate.yearLevel && selectedTemplate.semester && options.subject.examSessionDays) {
@@ -1040,4 +1419,189 @@ watch(() => options.subject.examSessionDays, () => {
 function isExamSessionDay(day) {
   return options.subject.examSessionDays && options.subject.examSessionDays.some(exam => exam.day === day)
 }
+
+// Check if both semesters are configured for a year level
+function isBothSemestersConfigured(yearLevel, schoolYear) {
+  if (!options.subject.sspSubjectsBySchoolYear || !options.subject.sspSubjectsBySchoolYear[schoolYear]) {
+    return false
+  }
+  
+  const yearLevelData = options.subject.sspSubjectsBySchoolYear[schoolYear][yearLevel]
+  if (!yearLevelData) {
+    return false
+  }
+  
+  const firstSemester = yearLevelData['1st Semester']
+  const secondSemester = yearLevelData['2nd Semester']
+  
+  return firstSemester && secondSemester && 
+         firstSemester.sspCode && secondSemester.sspCode &&
+         firstSemester.sspCode.trim() !== '' && secondSemester.sspCode.trim() !== ''
+}
+
+// Check if a year level is complete (both semesters configured)
+function isYearLevelComplete(yearLevel, schoolYear) {
+  return isBothSemestersConfigured(yearLevel, schoolYear)
+}
+
+// Validate exam session dates
+function validateExamSessionDates(examDateRanges) {
+  const errors = []
+  
+  // Check prelim dates
+  if (examDateRanges.prelim.start && examDateRanges.prelim.end) {
+    if (new Date(examDateRanges.prelim.start) > new Date(examDateRanges.prelim.end)) {
+      errors.push('Prelim exam start date must be before end date')
+    }
+  }
+  
+  // Check midterm dates
+  if (examDateRanges.midterm.start && examDateRanges.midterm.end) {
+    if (new Date(examDateRanges.midterm.start) > new Date(examDateRanges.midterm.end)) {
+      errors.push('Midterm exam start date must be before end date')
+    }
+  }
+  
+  // Check finals dates
+  if (examDateRanges.finals.start && examDateRanges.finals.end) {
+    if (new Date(examDateRanges.finals.start) > new Date(examDateRanges.finals.end)) {
+      errors.push('Finals exam start date must be before end date')
+    }
+  }
+  
+  return errors
+}
+
+// School year management functions
+function loadAvailableSchoolYears() {
+  if (options.subject.sspSubjectsBySchoolYear) {
+    availableSchoolYears.value = Object.keys(options.subject.sspSubjectsBySchoolYear)
+  }
+}
+
+function loadSchoolYearData() {
+  if (selectedSchoolYear.value && selectedSchoolYear.value !== 'new') {
+    // Load existing data for the selected school year
+    const schoolYearData = options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value]
+    if (schoolYearData) {
+      // Reset template selection
+      selectedTemplate.yearLevel = ''
+      selectedTemplate.semester = ''
+      selectedTemplate.schoolYear = selectedSchoolYear.value
+    }
+  }
+}
+
+function createNewSchoolYear() {
+  if (!newSchoolYear.value.trim()) {
+    notificationService.showError('Please enter a school year')
+    return
+  }
+  
+  // Validate school year format (YYYY-YYYY)
+  const yearPattern = /^\d{4}-\d{4}$/
+  if (!yearPattern.test(newSchoolYear.value)) {
+    notificationService.showError('School year must be in format YYYY-YYYY (e.g., 2026-2027)')
+    return
+  }
+  
+  // Check if school year already exists
+  if (availableSchoolYears.value.includes(newSchoolYear.value)) {
+    notificationService.showError('School year already exists')
+    return
+  }
+  
+  // Add to available school years
+  availableSchoolYears.value.push(newSchoolYear.value)
+  
+  // Initialize empty data structure
+  if (!options.subject.sspSubjectsBySchoolYear) {
+    options.subject.sspSubjectsBySchoolYear = {}
+  }
+  options.subject.sspSubjectsBySchoolYear[newSchoolYear.value] = {}
+  
+  // Select the new school year
+  selectedSchoolYear.value = newSchoolYear.value
+  newSchoolYear.value = ''
+  
+  notificationService.showSuccess(`School year ${selectedSchoolYear.value} created successfully`)
+}
+
+function copySchoolYearData() {
+  if (!copyFromSchoolYear.value || !selectedSchoolYear.value) {
+    notificationService.showError('Please select both source and target school years')
+    return
+  }
+  
+  const sourceData = options.subject.sspSubjectsBySchoolYear[copyFromSchoolYear.value]
+  if (!sourceData) {
+    notificationService.showError('Source school year data not found')
+    return
+  }
+  
+  // Deep copy the data
+  options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value] = JSON.parse(JSON.stringify(sourceData))
+  
+  notificationService.showSuccess(`Data copied from ${copyFromSchoolYear.value} to ${selectedSchoolYear.value}`)
+  copyFromSchoolYear.value = ''
+}
+
+// Load school year data when template selection changes
+watch(() => [selectedTemplate.yearLevel, selectedTemplate.semester, selectedSchoolYear.value], ([yearLevel, semester, schoolYear]) => {
+  if (yearLevel && semester && schoolYear && schoolYear !== 'new') {
+    // Load existing template data
+    const schoolYearData = options.subject.sspSubjectsBySchoolYear[schoolYear]
+    if (schoolYearData && schoolYearData[yearLevel] && schoolYearData[yearLevel][semester]) {
+      const template = schoolYearData[yearLevel][semester]
+      currentTemplate.sspCode = template.sspCode || ''
+      currentTemplate.dayZeroTitle = template.dayZeroTitle || options.subject.defaultZeroDayTitle || 'INTRODUCTION'
+      currentTemplate.sessions = [...(template.sessions || Array(17).fill(''))]
+      currentTemplate.examDateRanges = { ...(template.examDateRanges || { prelim: { start: '', end: '' }, midterm: { start: '', end: '' }, finals: { start: '', end: '' } }) }
+    } else {
+      // Initialize empty template
+      currentTemplate.sspCode = ''
+      currentTemplate.dayZeroTitle = options.subject.defaultZeroDayTitle || 'INTRODUCTION'
+      currentTemplate.sessions = Array(17).fill('')
+      currentTemplate.examDateRanges = {
+        prelim: { start: '', end: '' },
+        midterm: { start: '', end: '' },
+        finals: { start: '', end: '' }
+      }
+    }
+  }
+}, { immediate: true })
+
+// Auto-save template changes
+watch(() => [currentTemplate.sspCode, currentTemplate.sessions, currentTemplate.examDateRanges], () => {
+  if (selectedTemplate.yearLevel && selectedTemplate.semester && selectedSchoolYear.value && selectedSchoolYear.value !== 'new') {
+    // Initialize school year data if it doesn't exist
+    if (!options.subject.sspSubjectsBySchoolYear) {
+      options.subject.sspSubjectsBySchoolYear = {}
+    }
+    if (!options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value]) {
+      options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value] = {}
+    }
+    if (!options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value][selectedTemplate.yearLevel]) {
+      options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value][selectedTemplate.yearLevel] = {}
+    }
+    
+    // Save the template data automatically
+    options.subject.sspSubjectsBySchoolYear[selectedSchoolYear.value][selectedTemplate.yearLevel][selectedTemplate.semester] = {
+      sspCode: currentTemplate.sspCode,
+      dayZeroTitle: currentTemplate.dayZeroTitle,
+      sessions: [...currentTemplate.sessions],
+      examDateRanges: { ...currentTemplate.examDateRanges }
+    }
+  }
+}, { deep: true })
+
+// Initialize available school years on mount and when options change
+onMounted(() => {
+  loadAvailableSchoolYears()
+})
+
+// Watch for changes in sspSubjectsBySchoolYear to update available school years
+watch(() => options.subject.sspSubjectsBySchoolYear, () => {
+  loadAvailableSchoolYears()
+}, { deep: true })
 </script>

@@ -1,7 +1,107 @@
 const express = require('express');
 const router = express.Router();
 const Subject = require('../models/Subject');
+const SessionCompletion = require('../models/SessionCompletion');
 const { authenticate, authorizeAdmin } = require('../middleware/auth');
+
+// Helper function to update SessionCompletion records when subject sessions are updated
+async function updateSessionCompletionRecords(subject) {
+  try {
+    console.log(`Updating SessionCompletion records for subject ${subject.sspCode}`);
+    
+    // Get all classes that use this subject
+    const Class = require('../models/Class');
+    const classes = await Class.find({
+      $or: [
+        { sspSubject: subject._id },
+        { 'firstSemester.sspSubject': subject._id },
+        { 'secondSemester.sspSubject': subject._id }
+      ]
+    }).populate('students');
+    
+    console.log(`Found ${classes.length} classes using subject ${subject.sspCode}`);
+    
+    let totalUpdated = 0;
+    
+    for (const classData of classes) {
+      console.log(`Processing class ${classData.className} (${classData.yearLevel})`);
+      
+      // Determine which semester sessions to update
+      const isFirstSemesterSubject = classData.sspSubject?.toString() === subject._id.toString() || 
+                                   classData.firstSemester?.sspSubject?.toString() === subject._id.toString();
+      const isSecondSemesterSubject = classData.secondSemester?.sspSubject?.toString() === subject._id.toString();
+      
+      // Update first semester sessions
+      if (isFirstSemesterSubject && subject.sessions) {
+        console.log(`Updating 1st semester sessions for class ${classData.className}`);
+        const updated = await updateSessionsForSemester(classData, subject.sessions, '1st Semester');
+        totalUpdated += updated;
+      }
+      
+      // Update second semester sessions
+      if (isSecondSemesterSubject && subject.secondSemesterSessions) {
+        console.log(`Updating 2nd semester sessions for class ${classData.className}`);
+        const updated = await updateSessionsForSemester(classData, subject.secondSemesterSessions, '2nd Semester');
+        totalUpdated += updated;
+      }
+    }
+    
+    console.log(`✅ Updated ${totalUpdated} SessionCompletion records for subject ${subject.sspCode}`);
+    return totalUpdated;
+    
+  } catch (error) {
+    console.error('Error updating SessionCompletion records:', error);
+    throw error;
+  }
+}
+
+// Helper function to update sessions for a specific semester
+async function updateSessionsForSemester(classData, sessions, semester) {
+  let updatedCount = 0;
+  
+  for (const student of classData.students) {
+    for (const session of sessions) {
+      try {
+        // Find existing SessionCompletion record
+        const existingRecord = await SessionCompletion.findOne({
+          student: student._id,
+          class: classData._id,
+          sessionDay: session.day,
+          semester: semester
+        });
+        
+        if (existingRecord) {
+          // Update the title and session reference, but preserve completion status
+          const updateData = {
+            sessionTitle: session.title,
+            session: session._id,
+            updatedAt: new Date()
+          };
+          
+          // Check if anything actually changed
+          const titleChanged = existingRecord.sessionTitle !== session.title;
+          const sessionIdChanged = existingRecord.session?.toString() !== session._id?.toString();
+          
+          if (titleChanged || sessionIdChanged) {
+            await SessionCompletion.findByIdAndUpdate(existingRecord._id, updateData);
+            updatedCount++;
+            
+            if (titleChanged) {
+              console.log(`Updated session ${session.day} title for student ${student.user?.firstName} ${student.user?.lastName}: "${existingRecord.sessionTitle}" → "${session.title}"`);
+            }
+            if (sessionIdChanged) {
+              console.log(`Updated session ${session.day} reference for student ${student.user?.firstName} ${student.user?.lastName}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error updating session ${session.day} for student ${student._id}:`, error);
+      }
+    }
+  }
+  
+  return updatedCount;
+}
 
 // Get all subjects
 router.get('/', authenticate, authorizeAdmin, async (req, res) => {
@@ -165,6 +265,17 @@ router.put('/:id', authenticate, authorizeAdmin, async (req, res) => {
     
     subject.updatedAt = Date.now();
     await subject.save();
+    
+    // Update SessionCompletion records if sessions were updated
+    if (sessions || secondSemesterSessions) {
+      try {
+        await updateSessionCompletionRecords(subject);
+        console.log(`Updated SessionCompletion records for subject ${subject.sspCode}`);
+      } catch (updateError) {
+        console.error('Error updating SessionCompletion records:', updateError);
+        // Don't fail the entire operation if SessionCompletion update fails
+      }
+    }
     
     // Return the updated subject
     res.json(subject);

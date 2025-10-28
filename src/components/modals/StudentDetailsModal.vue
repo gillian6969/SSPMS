@@ -312,18 +312,9 @@
             <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
               <h4 class="font-medium text-orange-600 border-b border-gray-100 pb-2 mb-4">Adviser Actions</h4>
               <div class="grid grid-cols-1 gap-4">
-                <!-- Request Drop -->
-                <div class="border border-orange-200 rounded-lg p-4">
-                  <h5 class="text-sm font-medium text-orange-800 mb-2">Request Student Drop</h5>
-                  <p class="text-xs text-orange-600 mb-3">
-                    Submit a request to admin to drop this student from the class
-                  </p>
-                  <button
-                    @click="showDropModal = true"
-                    class="w-full px-3 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
-                  >
-                    Request Drop
-                  </button>
+                <!-- Actions content removed as requested -->
+                <div class="text-center py-8 text-gray-500">
+                  No actions available at this time
                 </div>
               </div>
             </div>
@@ -346,47 +337,7 @@
       </div>
     </div>
 
-    <!-- Drop Request Modal -->
-    <div v-if="showDropModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex justify-center items-center">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-auto p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold text-gray-800">Request Student Drop</h3>
-          <button @click="showDropModal = false" class="text-gray-400 hover:text-gray-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Drop Request</label>
-            <textarea
-              v-model="dropReason"
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 text-sm"
-              placeholder="Please provide a detailed reason for requesting to drop this student..."
-            ></textarea>
-          </div>
-          
-          <div class="flex justify-end space-x-3">
-            <button 
-              @click="showDropModal = false" 
-              class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button 
-              @click="submitDropRequest" 
-              :disabled="!dropReason.trim()"
-              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Submit Request
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Drop Request Modal removed as requested -->
   </div>
 </template>
 
@@ -463,11 +414,9 @@ const hasAddress = computed(() => {
   return addr.block || addr.street || addr.barangay || addr.municipality || addr.province || addr.region
 })
 
-const emit = defineEmits(['close', 'requestDrop', 'reload-student-data'])
+const emit = defineEmits(['close', 'reload-student-data'])
 
 const activeTab = ref('sessions')
-const showDropModal = ref(false)
-const dropReason = ref('')
 
 function getStudentFullName(student) {
   if (!student) return 'Unknown Student'
@@ -643,14 +592,6 @@ function formatClassInfo(classInfo) {
   }
   
   return displayText || 'Not Assigned'
-}
-
-function submitDropRequest() {
-  if (!dropReason.value.trim()) return
-  
-  emit('requestDrop', props.student, dropReason.value.trim())
-  showDropModal.value = false
-  dropReason.value = ''
 }
 </script>
 

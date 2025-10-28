@@ -819,6 +819,270 @@ class EmailService {
     `;
   }
 
+  // Generate exam reminder email for students
+  generateExamReminderEmail(student, examSession, examType, semester) {
+    const startDate = new Date(examSession.startDate);
+    const endDate = new Date(examSession.endDate);
+    
+    const startDateFormatted = startDate.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const endDateFormatted = endDate.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">PHINMA SSCMS</h1>
+          <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">📚 ${examType} Exam Reminder - ${semester} Semester</h2>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Hey <strong>${student.user.firstName}</strong>,
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Your <strong>${examType} exam</strong> is coming on <strong>${startDateFormatted} - ${endDateFormatted}</strong>. Make sure you've secured your permit and answered the M&M survey.
+          </p>
+          
+          <!-- Exam Details -->
+          <div style="background-color: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">📅 Exam Schedule</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.8;">
+              <p style="margin: 5px 0;"><strong>Exam Type:</strong> ${examType}</p>
+              <p style="margin: 5px 0;"><strong>Semester:</strong> ${semester}</p>
+              <p style="margin: 5px 0;"><strong>Start Date:</strong> ${startDateFormatted}</p>
+              <p style="margin: 5px 0;"><strong>End Date:</strong> ${endDateFormatted}</p>
+            </div>
+          </div>
+          
+          <!-- Instructions -->
+          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">📋 Required Actions</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.8;">
+              <p style="margin: 5px 0;"><strong>1. Secure Your Permit:</strong> Make sure you have your exam permit ready</p>
+              <p style="margin: 5px 0;"><strong>2. Complete M&M Survey:</strong> Answer the M&M survey questions</p>
+              <p style="margin: 5px 0;"><strong>3. Upload Requirements:</strong> Submit both M&M submission and permit attachment</p>
+            </div>
+          </div>
+          
+          <!-- Upload Instructions -->
+          <div style="background-color: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">📤 How to Upload</h3>
+            <div style="color: #374151; font-size: 14px; line-height: 1.8;">
+              <p style="margin: 5px 0;"><strong>Step 1:</strong> Go to M&M page</p>
+              <p style="margin: 5px 0;"><strong>Step 2:</strong> Select ${semester} Semester tab</p>
+              <p style="margin: 5px 0;"><strong>Step 3:</strong> Upload ${examType} M&M submission image</p>
+              <p style="margin: 5px 0;"><strong>Step 4:</strong> Upload ${examType} exam permit attachment</p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/student/surveys" style="display: inline-block; background-color: #10b981; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Upload M&M & Permit Now
+            </a>
+          </div>
+          
+          <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin: 20px 0;">
+            <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 14px;">⚠️ Important</h4>
+            <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.5;">
+              Your ${examType} exam session cannot be marked complete until you upload both the M&M submission and exam permit. Both are required for promotion to the next semester/year level.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Send exam reminder email to student
+  async sendExamReminderEmail(studentEmail, student, examSession, examType, semester) {
+    const emailHtml = this.generateExamReminderEmail(student, examSession, examType, semester);
+    await this.sendEmail(studentEmail, `PHINMA SSCMS - ${examType} Exam Reminder - ${semester} Semester`, emailHtml);
+  }
+
+  // Generate M&M/Permit requirement reminder email
+  generateMMPermitReminderEmail(student, examType, semester, missingRequirements, adviserName = 'Your Adviser') {
+    let requirementText = '';
+    let actionText = '';
+    let buttonText = '';
+    
+    if (missingRequirements.includes('mm') && missingRequirements.includes('permit')) {
+      requirementText = `${examType} Requirements and exam permit`;
+      actionText = 'Please upload both your M&M submission image and exam permit attachment';
+      buttonText = 'Upload M&M & Permit';
+    } else if (missingRequirements.includes('mm')) {
+      requirementText = `${examType} Requirements`;
+      actionText = 'Please upload your M&M submission image';
+      buttonText = 'Upload M&M Submission';
+    } else if (missingRequirements.includes('permit')) {
+      requirementText = `${examType} exam permit`;
+      actionText = 'Please upload your exam permit attachment';
+      buttonText = 'Upload Exam Permit';
+    }
+    
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">PHINMA SSCMS</h1>
+          <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">📋 ${examType} Requirements Reminder - ${semester} Semester</h2>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Dear <strong>${student.user.firstName}</strong>,
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            I hope this message finds you well. I am writing to express my concern regarding your academic progress and to remind you about the pending submission of your ${requirementText} for the ${examType} exam in ${semester} semester.
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            As your academic adviser, I want to ensure that you have all the support you need to succeed. ${actionText} as soon as possible to maintain your academic standing and progress toward graduation.
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Your ${examType} exam session cannot be marked complete until all requirements are submitted. Both M&M submission and exam permit are required for promotion to the next semester/year level.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/student/surveys" style="display: inline-block; background-color: #10b981; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ${buttonText}
+            </a>
+          </div>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            If you are experiencing any difficulties with your permit submission or M&M requirements, please do not hesitate to reach out for assistance. We have several support resources available to help you succeed:
+          </p>
+          
+          <ul style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; padding-left: 20px;">
+            <li>Use the consultation system in SSCMS to schedule a meeting with me</li>
+            <li>Contact me directly for immediate assistance</li>
+            <li>Visit the student services office for additional support</li>
+          </ul>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            I am committed to your academic success and am here to support you throughout your journey. Please do not hesitate to reach out if you need any assistance or have any questions.
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            <strong>${adviserName}</strong><br>
+            Academic Adviser
+          </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This message was sent by your adviser: ${adviserName}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Generate session reminder email
+  generateSessionReminderEmail(student, semester, missingCount, adviserName = 'Your Adviser', currentPeriod = 'Prelim') {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">PHINMA SSCMS</h1>
+          <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 16px;">Student Success Compliance and Monitoring System</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">📚 Session Compliance Reminder - ${currentPeriod} ${semester}</h2>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Dear <strong>${student.user.firstName}</strong>,
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            I hope this message finds you well. I am writing to express my concern regarding your academic compliance and to address the matter of your session attendance in ${semester}.
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            I have noticed that you currently have <strong>${missingCount} missing session${missingCount > 1 ? 's' : ''}</strong> in the current period. As your academic adviser, I am concerned about the impact this may have on your academic progress and overall performance.
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Regular attendance and active participation in all scheduled sessions are fundamental to your academic success. These sessions are designed to provide you with essential knowledge, skills, and support necessary for your academic development and future career readiness.
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            I strongly encourage you to prioritize your attendance and ensure that you attend all remaining sessions. Your active participation in these sessions is crucial for maintaining your academic standing and progressing toward your educational goals.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://sscms-au.com'}/student/ssp" style="display: inline-block; background-color: #10b981; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View My Sessions
+            </a>
+          </div>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            If you are experiencing any challenges that are affecting your ability to attend sessions or complete requirements, please do not hesitate to reach out for assistance. I am here to support you and help you overcome any obstacles you may be facing:
+          </p>
+          
+          <ul style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; padding-left: 20px;">
+            <li>Use the consultation system in SSCMS to schedule a meeting with me</li>
+            <li>Contact me directly for immediate assistance and guidance</li>
+            <li>Visit the student services office for additional support</li>
+            <li>Consider forming study groups with your classmates for mutual support</li>
+          </ul>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            I am committed to your academic success and believe in your potential to excel. Please do not hesitate to reach out if you need any assistance, have questions, or would like to discuss your academic progress.
+          </p>
+          
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            <strong>${adviserName}</strong><br>
+            Academic Adviser
+          </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p style="margin: 0;">© 2024 PHINMA Education. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This message was sent by your adviser: ${adviserName}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Send M&M/Permit requirement reminder email
+  async sendMMPermitReminderEmail(studentEmail, student, examType, semester, missingRequirements, adviserName = 'Your Adviser') {
+    const emailHtml = this.generateMMPermitReminderEmail(student, examType, semester, missingRequirements, adviserName);
+    await this.sendEmail(studentEmail, `PHINMA SSCMS - ${examType} Requirements Reminder - ${semester} Semester`, emailHtml);
+  }
+
+  // Send session reminder email
+  async sendSessionReminderEmail(studentEmail, student, semester, missingCount, adviserName = 'Your Adviser', currentPeriod = 'Prelim') {
+    const emailHtml = this.generateSessionReminderEmail(student, semester, missingCount, adviserName, currentPeriod);
+    await this.sendEmail(studentEmail, `PHINMA SSCMS - Session Compliance Reminder - ${currentPeriod} ${semester}`, emailHtml);
+  }
+
   // Generate admin consultation cancellation email
   generateAdminConsultationCancellationEmail(adminName, adviserFirstName, adviserLastName, dayOfWeek, startTime, endTime, cancelledBookingsCount, reason) {
     return `

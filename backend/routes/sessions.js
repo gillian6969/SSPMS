@@ -494,11 +494,26 @@ router.get('/matrix/:classId', authenticate, async (req, res) => {
         const firstSemesterSubject = await Subject.findById(firstSemesterSubjectId);
         if (firstSemesterSubject && firstSemesterSubject.sessions && firstSemesterSubject.sessions.length > 0) {
           const firstSemSessions = firstSemesterSubject.sessions.map(session => ({
-            ...session.toObject(),
+            _id: session._id,
+            day: session.day,
+            title: session.title,
+            startDate: session.startDate,
+            endDate: session.endDate,
             semester: '1st Semester'
           }));
           allSessions.push(...firstSemSessions);
           console.log(`Added ${firstSemSessions.length} sessions from first semester subject`);
+          
+          // Debug exam sessions specifically
+          const examSessions = firstSemSessions.filter(s => s.day === 6 || s.day === 10 || s.day === 17);
+          if (examSessions.length > 0) {
+            console.log('Exam sessions being sent to frontend:', examSessions.map(s => ({
+              day: s.day,
+              title: s.title,
+              startDate: s.startDate,
+              endDate: s.endDate
+            })));
+          }
         }
       } catch (error) {
         console.error('Error loading first semester subject:', error);
@@ -511,11 +526,26 @@ router.get('/matrix/:classId', authenticate, async (req, res) => {
         const secondSemesterSubject = await Subject.findById(secondSemesterSubjectId);
         if (secondSemesterSubject && secondSemesterSubject.sessions && secondSemesterSubject.sessions.length > 0) {
           const secondSemSessions = secondSemesterSubject.sessions.map(session => ({
-            ...session.toObject(),
+            _id: session._id,
+            day: session.day,
+            title: session.title,
+            startDate: session.startDate,
+            endDate: session.endDate,
             semester: '2nd Semester'
           }));
           allSessions.push(...secondSemSessions);
           console.log(`Added ${secondSemSessions.length} sessions from second semester subject`);
+          
+          // Debug exam sessions specifically
+          const examSessions = secondSemSessions.filter(s => s.day === 6 || s.day === 10 || s.day === 17);
+          if (examSessions.length > 0) {
+            console.log('Exam sessions being sent to frontend (2nd sem):', examSessions.map(s => ({
+              day: s.day,
+              title: s.title,
+              startDate: s.startDate,
+              endDate: s.endDate
+            })));
+          }
         }
       } catch (error) {
         console.error('Error loading second semester subject:', error);
@@ -550,6 +580,8 @@ router.get('/matrix/:classId', authenticate, async (req, res) => {
         _id: session._id,
         day: session.day,
         title: session.title,
+        startDate: session.startDate,
+        endDate: session.endDate,
         semester: session.semester
       })),
       students: students.map(student => {
@@ -601,6 +633,19 @@ router.get('/matrix/:classId', authenticate, async (req, res) => {
     };
     
     console.log(`Returning matrix with ${matrix.students.length} students and ${matrix.sessions.length} sessions`);
+    
+    // Debug: Check what's actually being sent in the final response
+    const examSessionsInResponse = matrix.sessions.filter(s => s.day === 6 || s.day === 10 || s.day === 17);
+    console.log('Final response exam sessions:', examSessionsInResponse.map(s => ({
+      day: s.day,
+      title: s.title,
+      startDate: s.startDate,
+      endDate: s.endDate,
+      semester: s.semester,
+      hasStartDate: !!s.startDate,
+      hasEndDate: !!s.endDate
+    })));
+    
     res.json(matrix);
   } catch (error) {
     console.error('Error getting session matrix:', error);
@@ -649,23 +694,20 @@ router.put('/:sessionId', authenticate, async (req, res) => {
     
     console.log(`Session ${sessionId} updated successfully`);
     
-    // If session was marked as completed, trigger M&M notification check
+    // If session was marked as completed, trigger period update
     if (completed) {
       try {
-        console.log(`Triggering M&M notification check for class ${session.class}`);
-        const axios = require('axios');
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        console.log(`Session completed, updating period for class ${session.class}`);
         
-        // Call the M&M check endpoint asynchronously
-        axios.post(`${baseUrl}/api/midtermFinals/check-sessions-and-notify`, {
-          classId: session.class
-        }).then(response => {
-          console.log(`M&M notification check completed: ${response.data.notificationsSent} notifications sent`);
-        }).catch(error => {
-          console.error('Error triggering M&M notification check:', error.message);
-        });
+        // Import services
+        const PeriodService = require('../services/periodService');
+        
+        // Update period directly
+        const periodResult = await PeriodService.updateCurrentPeriod(session.class);
+        console.log(`Period update completed: ${periodResult.period} (${periodResult.method})`);
+        
       } catch (error) {
-        console.error('Error setting up M&M notification check:', error);
+        console.error('Error updating period:', error.message);
       }
     }
     
@@ -1080,23 +1122,20 @@ router.put('/bulk/:classId', authenticate, authorizeAdviser, async (req, res) =>
         session.updatedAt = new Date();
         await session.save();
         
-        // If session was marked as completed, trigger M&M notification check
+        // If session was marked as completed, trigger period update
         if (completed) {
           try {
-            console.log(`Triggering M&M notification check for class ${classId}`);
-            const axios = require('axios');
-            const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+            console.log(`Session completed, updating period for class ${classId}`);
             
-            // Call the M&M check endpoint asynchronously
-            axios.post(`${baseUrl}/api/midtermFinals/check-sessions-and-notify`, {
-              classId: classId
-            }).then(response => {
-              console.log(`M&M notification check completed: ${response.data.notificationsSent} notifications sent`);
-            }).catch(error => {
-              console.error('Error triggering M&M notification check:', error.message);
-            });
+            // Import services
+            const PeriodService = require('../services/periodService');
+            
+            // Update period directly
+            const periodResult = await PeriodService.updateCurrentPeriod(classId);
+            console.log(`Period update completed: ${periodResult.period} (${periodResult.method})`);
+            
           } catch (error) {
-            console.error('Error setting up M&M notification check:', error);
+            console.error('Error updating period:', error.message);
           }
         }
         
@@ -1220,40 +1259,41 @@ router.post('/update-status', authenticate, async (req, res) => {
     
     console.log(`Updating session status: class=${classId}, student=${studentId}, session=${sessionId}, completed=${completed}`);
     
-    // First, check if the session completion record already exists
+    // Get the session details from the subject to get day and title first
+    const classData = await Class.findById(classId).populate('sspSubject');
+    if (!classData || !classData.sspSubject) {
+      return res.status(404).json({ message: 'Class or subject not found' });
+    }
+    
+    const subject = await Subject.findById(classData.sspSubject._id);
+    if (!subject) {
+      return res.status(404).json({ message: 'Subject not found' });
+    }
+    
+    // Find the session in either first or second semester sessions
+    let sessionInfo = subject.sessions.find(s => s._id.toString() === sessionId);
+    let semester = '1st Semester';
+    
+    if (!sessionInfo && subject.secondSemesterSessions) {
+      sessionInfo = subject.secondSemesterSessions.find(s => s._id.toString() === sessionId);
+      semester = '2nd Semester';
+    }
+    
+    if (!sessionInfo) {
+      return res.status(404).json({ message: 'Session definition not found in subject' });
+    }
+    
+    // First, check if the session completion record already exists using the new unique constraint
     let sessionCompletion = await SessionCompletion.findOne({
       student: studentId,
-      session: sessionId,
-      class: classId
+      class: classId,
+      sessionDay: sessionInfo.day,
+      semester: semester
     });
     
     if (!sessionCompletion) {
       console.log(`Session completion record not found, creating new one`);
       
-      // Get the session details from the subject to get day and title
-      const classData = await Class.findById(classId).populate('sspSubject');
-      if (!classData || !classData.sspSubject) {
-        return res.status(404).json({ message: 'Class or subject not found' });
-      }
-      
-      const subject = await Subject.findById(classData.sspSubject._id);
-      if (!subject) {
-        return res.status(404).json({ message: 'Subject not found' });
-      }
-      
-      // Find the session in either first or second semester sessions
-      let sessionInfo = subject.sessions.find(s => s._id.toString() === sessionId);
-      let semester = '1st Semester';
-      
-      if (!sessionInfo && subject.secondSemesterSessions) {
-        sessionInfo = subject.secondSemesterSessions.find(s => s._id.toString() === sessionId);
-        semester = '2nd Semester';
-      }
-      
-      if (!sessionInfo) {
-        return res.status(404).json({ message: 'Session definition not found in subject' });
-    }
-    
       // Create a new session completion record
       sessionCompletion = new SessionCompletion({
         student: studentId,
@@ -1281,23 +1321,20 @@ router.post('/update-status', authenticate, async (req, res) => {
       console.log(`Updated existing session completion record with ID ${sessionCompletion._id}`);
     }
     
-    // If session was marked as completed, trigger M&M notification check
+    // If session was marked as completed, trigger period update
     if (completed) {
       try {
-        console.log(`Triggering M&M notification check for class ${classId}`);
-        const axios = require('axios');
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        console.log(`Session completed, updating period for class ${classId}`);
         
-        // Call the M&M check endpoint asynchronously
-        axios.post(`${baseUrl}/api/midtermFinals/check-sessions-and-notify`, {
-          classId: classId
-        }).then(response => {
-          console.log(`M&M notification check completed: ${response.data.notificationsSent} notifications sent`);
-        }).catch(error => {
-          console.error('Error triggering M&M notification check:', error.message);
-        });
+        // Import services
+        const PeriodService = require('../services/periodService');
+        
+        // Update period directly
+        const periodResult = await PeriodService.updateCurrentPeriod(classId);
+        console.log(`Period update completed: ${periodResult.period} (${periodResult.method})`);
+        
       } catch (error) {
-        console.error('Error setting up M&M notification check:', error);
+        console.error('Error updating period:', error.message);
       }
     }
     
@@ -1644,6 +1681,19 @@ router.post('/load/:classId/:semester', authenticate, authorizeAdviser, async (r
             const sessionTitle = `${semester} Day ${day + 1}`;
             
             try {
+              // Check if session already exists to prevent duplicates
+              const existingSession = await SessionCompletion.findOne({
+                student: student._id,
+                class: classId,
+                sessionDay: day,
+                semester: semester
+              });
+              
+              if (existingSession) {
+                console.log(`Session for day ${day} already exists for student ${student._id}, skipping`);
+                continue;
+              }
+              
               const session = new SessionCompletion({
                 student: student._id,
                 class: classId,
@@ -1667,6 +1717,19 @@ router.post('/load/:classId/:semester', authenticate, authorizeAdviser, async (r
           // Create sessions based on the defined sessions
           for (const sessionDef of sessionDefs) {
             try {
+              // Check if session already exists to prevent duplicates
+              const existingSession = await SessionCompletion.findOne({
+                student: student._id,
+                class: classId,
+                sessionDay: sessionDef.day,
+                semester: semester
+              });
+              
+              if (existingSession) {
+                console.log(`Session for day ${sessionDef.day} already exists for student ${student._id}, skipping`);
+                continue;
+              }
+              
               const session = new SessionCompletion({
                 student: student._id,
                 class: classId,
@@ -2471,6 +2534,19 @@ router.post('/load-student', authenticate, authorizeAdviser, async (req, res) =>
         const sessionTitle = `${semester} Day ${day + 1}`;
         
         try {
+          // Check if session already exists to prevent duplicates
+          const existingSession = await SessionCompletion.findOne({
+            student: studentId,
+            class: classId,
+            sessionDay: day,
+            semester: semester
+          });
+          
+          if (existingSession) {
+            console.log(`Session for day ${day} already exists for student ${studentId}, skipping`);
+            continue;
+          }
+          
           const session = new SessionCompletion({
             student: studentId,
             class: classId,
@@ -2493,6 +2569,19 @@ router.post('/load-student', authenticate, authorizeAdviser, async (req, res) =>
       // Create sessions based on the defined sessions
       for (const sessionDef of sessionDefs) {
         try {
+          // Check if session already exists to prevent duplicates
+          const existingSession = await SessionCompletion.findOne({
+            student: studentId,
+            class: classId,
+            sessionDay: sessionDef.day,
+            semester: semester
+          });
+          
+          if (existingSession) {
+            console.log(`Session for day ${sessionDef.day} already exists for student ${studentId}, skipping`);
+            continue;
+          }
+          
           const session = new SessionCompletion({
             student: studentId,
             class: classId,
@@ -3502,6 +3591,151 @@ router.get('/admin-history-options', authenticate, authorizeAdmin, async (req, r
   } catch (error) {
     console.error('Get admin history options error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
+// Send M&M/Permit requirement reminder email
+router.post('/send-mm-permit-reminder', authenticate, authorizeAdviser, async (req, res) => {
+  try {
+    const { studentId, examType, semester, missingRequirements } = req.body;
+    
+    if (!studentId || !examType || !semester || !missingRequirements) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required parameters: studentId, examType, semester, missingRequirements' 
+      });
+    }
+    
+    // Get student with user data
+    const student = await Student.findById(studentId).populate('user');
+    if (!student || !student.user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Student not found' 
+      });
+    }
+    
+    // Get adviser name
+    const adviserName = `${req.user.firstName} ${req.user.lastName}`;
+    
+    // Send email if student has email address
+    if (student.user.email) {
+      try {
+        const emailService = require('../services/emailService');
+        await emailService.sendMMPermitReminderEmail(
+          student.user.email,
+          student,
+          examType,
+          semester,
+          missingRequirements,
+          adviserName
+        );
+        
+        console.log(`📧 M&M/Permit reminder email sent to ${student.user.email} for ${examType} exam`);
+        
+        res.json({
+          success: true,
+          message: `M&M/Permit reminder email sent to ${student.user.firstName} ${student.user.lastName}`,
+          emailSent: true
+        });
+        
+      } catch (emailError) {
+        console.error(`❌ Failed to send M&M/Permit reminder email to ${student.user.email}:`, emailError);
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to send email notification',
+          error: emailError.message 
+        });
+      }
+    } else {
+      res.json({
+        success: true,
+        message: `Student ${student.user.firstName} ${student.user.lastName} has no email address`,
+        emailSent: false
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error sending M&M/Permit reminder email:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+});
+
+// Send session reminder email
+router.post('/send-session-reminder', authenticate, authorizeAdviser, async (req, res) => {
+  try {
+    const { studentId, semester, missingCount } = req.body;
+    
+    if (!studentId || !semester || missingCount === undefined) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required parameters: studentId, semester, missingCount' 
+      });
+    }
+    
+    // Get student with user data and class information
+    const student = await Student.findById(studentId).populate('user').populate('class');
+    if (!student || !student.user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Student not found' 
+      });
+    }
+    
+    // Get adviser name
+    const adviserName = `${req.user.firstName} ${req.user.lastName}`;
+    
+    // Get current period from student's class
+    const currentPeriod = student.class?.currentPeriod || 'Prelim';
+    
+    // Send email if student has email address
+    if (student.user.email) {
+      try {
+        const emailService = require('../services/emailService');
+        await emailService.sendSessionReminderEmail(
+          student.user.email,
+          student,
+          semester,
+          missingCount,
+          adviserName,
+          currentPeriod
+        );
+        
+        console.log(`📧 Session reminder email sent to ${student.user.email} for ${currentPeriod} ${semester} semester`);
+        
+        res.json({
+          success: true,
+          message: `Session reminder email sent to ${student.user.firstName} ${student.user.lastName}`,
+          emailSent: true
+        });
+        
+      } catch (emailError) {
+        console.error(`❌ Failed to send session reminder email to ${student.user.email}:`, emailError);
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to send email notification',
+          error: emailError.message 
+        });
+      }
+    } else {
+      res.json({
+        success: true,
+        message: `Student ${student.user.firstName} ${student.user.lastName} has no email address`,
+        emailSent: false
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error sending session reminder email:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 });
 

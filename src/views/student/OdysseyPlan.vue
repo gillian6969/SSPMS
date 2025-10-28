@@ -1,18 +1,22 @@
 <template>
-  <div class="min-h-screen p-6" style="background-color: #F6FBF9;">
-    <div class="max-w-7xl mx-auto space-y-8">
+  <div class="min-h-screen p-2" style="background-color: #F6FBF9;">
+    <div class="max-w-7xl mx-auto space-y-6">
       <!-- Header -->
-      <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6">
-        <div class="text-center">
-          <h1 class="text-2xl font-normal text-gray-800">Odyssey Plan</h1>
-          <p class="text-gray-500 mt-1 font-normal">Create your goals and action steps for the semester</p>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div>
+              <h1 class="text-2xl font-normal text-gray-800">Odyssey Plan</h1>
+              <p class="text-gray-500 font-normal">Create your goals and action steps for the semester</p>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Content -->
-      <div class="max-w-4xl mx-auto">
+      <div class="max-w-7xl mx-auto">
         <!-- No Class Assignment Message -->
-        <div v-if="!loadingYearLevel && !hasClassAssignment" class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
+        <div v-if="!loadingYearLevel && !hasClassAssignment" class="bg-yellow-50 border border-yellow-200 rounded-2xl shadow-lg border border-gray-100 p-8 mb-6" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
           <div class="flex items-center">
             <svg class="h-8 w-8 text-yellow-400 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -27,7 +31,7 @@
         </div>
 
         <!-- Year and Semester Selection (Improved UI) -->
-        <div v-if="hasClassAssignment" class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6 mb-6">
+        <div v-if="hasClassAssignment" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-6" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
           <h2 class="text-xl font-semibold text-primary mb-4">Select Academic Period</h2>
           
           <!-- Loading indicator -->
@@ -81,7 +85,7 @@
         </div>
 
         <!-- Plan Form -->
-        <div v-if="hasClassAssignment && selectedYear && selectedSemester" class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6">
+        <div v-if="hasClassAssignment && selectedYear && selectedSemester" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" style="box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
           <form @submit.prevent="submitPlan">
             <!-- Goals -->
             <div class="mb-8">

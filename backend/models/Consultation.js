@@ -171,6 +171,21 @@ const ConsultationSchema = new mongoose.Schema({
       required: true
     },
     notes: String,
+    // Student's academic period and semester at time of booking
+    studentPeriod: {
+      type: String,
+      enum: ['Prelim', 'Midterm', 'Finals'],
+      default: 'Prelim'
+    },
+    studentSemester: {
+      type: String,
+      enum: ['1st Semester', '2nd Semester'],
+      default: '1st Semester'
+    },
+    studentSchoolYear: {
+      type: String,
+      default: '2025-2026'
+    },
     // Time allocation within the consultation slot
     allocatedStartTime: {
       type: String, // Format: "HH:MM"
@@ -241,7 +256,23 @@ const ConsultationSchema = new mongoose.Schema({
       type: String,
       trim: true
     }
-  }]
+  }],
+  
+  // Academic period and semester tagging (automatically set based on adviser's class)
+  currentPeriod: {
+    type: String,
+    enum: ['Prelim', 'Midterm', 'Finals'],
+    default: 'Prelim'
+  },
+  currentSemester: {
+    type: String,
+    enum: ['1st Semester', '2nd Semester'],
+    default: '1st Semester'
+  },
+  schoolYear: {
+    type: String,
+    default: '2025-2026'
+  }
 }, {
   timestamps: true
 });
@@ -249,6 +280,9 @@ const ConsultationSchema = new mongoose.Schema({
 // Index for efficient queries
 ConsultationSchema.index({ adviser: 1, dayOfWeek: 1, startTime: 1 });
 ConsultationSchema.index({ status: 1 });
+ConsultationSchema.index({ currentPeriod: 1 });
+ConsultationSchema.index({ currentSemester: 1 });
+ConsultationSchema.index({ schoolYear: 1 });
 
 // Virtual for checking if consultation is full
 ConsultationSchema.virtual('isFull').get(function() {

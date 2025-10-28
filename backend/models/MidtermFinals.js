@@ -42,6 +42,18 @@ const mmSubmissionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // File attachment information (like permits)
+  fileAttachment: {
+    filename: String,
+    originalName: String,
+    mimetype: String,
+    size: Number,
+    path: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
   submissionDate: {
     type: Date,
     default: Date.now

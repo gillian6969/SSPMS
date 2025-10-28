@@ -5,30 +5,20 @@ const validateTurnstile = async (req, res, next) => {
   try {
     const { turnstileToken } = req.body;
     
-    // Skip validation if no token provided (for development)
+    // Skip validation if no token provided
     if (!turnstileToken) {
       console.log('No Turnstile token provided, skipping validation');
       return next();
     }
     
-    // Skip validation for dummy/placeholder tokens in development
-    if (turnstileToken.includes('DUMMY') || 
-        turnstileToken.includes('XXXX') || 
-        turnstileToken === 'test-token') {
-      console.log('Dummy Turnstile token detected, skipping validation for development');
+    // Skip validation for development dummy tokens
+    if (turnstileToken.includes('1x00000000000000000000AA')) {
+      console.log('Development Turnstile token detected, skipping validation');
       return next();
     }
     
-    // Only skip the Cloudflare dummy key in development mode
-    if (process.env.NODE_ENV === 'development' && turnstileToken.includes('1x00000000000000000000AA')) {
-      console.log('Development dummy Turnstile token detected, skipping validation');
-      return next();
-    }
-    
-    // Get secret key from environment based on NODE_ENV
-    const secretKey = process.env.NODE_ENV === 'development' 
-      ? process.env.TURNSTILE_LOCAL_SECRET_KEY 
-      : process.env.TURNSTILE_PROD_SECRET_KEY;
+    // Get production secret key from environment
+    const secretKey = process.env.TURNSTILE_PROD_SECRET_KEY;
     
     if (!secretKey) {
       console.log('No Turnstile secret key configured, skipping validation');

@@ -537,6 +537,64 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Adviser not found or inactive' });
     }
     
+    // Get adviser's class information for period and semester tagging
+    const AdvisoryClass = require('../models/AdvisoryClass');
+    const Class = require('../models/Class');
+    
+    let currentPeriod = 'Prelim';
+    let currentSemester = '1st Semester';
+    let schoolYear = '2025-2026';
+    
+    try {
+      // Find adviser's active class with valid period/semester data
+      const advisoryClasses = await AdvisoryClass.find({ 
+        adviser: adviserId, 
+        status: 'active' 
+      }).populate('class');
+      
+      // Find first class with valid period/semester data
+      let advisoryClass = null;
+      for (const ac of advisoryClasses) {
+        if (ac.class && ac.class.currentPeriod && ac.class.currentSemester) {
+          advisoryClass = ac;
+          break;
+        }
+      }
+      
+      if (advisoryClass && advisoryClass.class) {
+        const classData = advisoryClass.class;
+        
+        // Map class period/semester values to consultation enum values
+        const periodMapping = {
+          'Prelim': 'Prelim',
+          'Midterm': 'Midterm', 
+          'Finals': 'Finals'
+        };
+        
+        const semesterMapping = {
+          '1st': '1st Semester',
+          '1st Semester': '1st Semester',
+          '2nd': '2nd Semester', 
+          '2nd Semester': '2nd Semester'
+        };
+        
+        currentPeriod = periodMapping[classData.currentPeriod] || 'Prelim';
+        currentSemester = semesterMapping[classData.currentSemester] || '1st Semester';
+        schoolYear = classData.schoolYear || '2025-2026';
+        
+        console.log(`✅ Consultation tagged with adviser's class: Period=${currentPeriod}, Semester=${currentSemester}, SchoolYear=${schoolYear}`);
+        console.log(`   📚 Class: ${classData.className || 'Unknown'} (${classData.yearLevel || 'N/A'})`);
+        console.log(`   🔄 Mapped from: Period=${classData.currentPeriod}, Semester=${classData.currentSemester}`);
+      } else {
+        console.log(`⚠️  No active class with valid period/semester found for adviser ${adviserId}, using FALLBACK values: Period=${currentPeriod}, Semester=${currentSemester}`);
+        console.log(`   🔍 This consultation will use default academic period/semester values`);
+        console.log(`   📊 Found ${advisoryClasses.length} active classes, but none have valid period/semester data`);
+      }
+    } catch (error) {
+      console.error('Error getting adviser class info for consultation tagging:', error);
+      // Continue with defaults if there's an error
+    }
+    
     // Validate day of week (0-4 for Monday-Friday)
     if (dayOfWeek < 0 || dayOfWeek > 4) {
       return res.status(400).json({ message: 'Invalid day of week. Must be 0-4 (Monday-Friday)' });
@@ -644,10 +702,20 @@ router.post('/', authenticate, authorizeAdmin, async (req, res) => {
       maxStudents,
       notes: notes || '',
       status: 'Pending_Adviser_Acceptance',
-      adviserAccepted: false
+      adviserAccepted: false,
+      currentPeriod,
+      currentSemester,
+      schoolYear
     });
     
     await consultation.save();
+    
+    // Log consultation creation summary
+    console.log(`🎉 Consultation created successfully!`);
+    console.log(`   📋 ID: ${consultation._id}`);
+    console.log(`   👨‍🏫 Adviser: ${consultation.adviser?.firstName || 'Unknown'} ${consultation.adviser?.lastName || 'Unknown'}`);
+    console.log(`   📅 Period: ${currentPeriod} | Semester: ${currentSemester} | School Year: ${schoolYear}`);
+    console.log(`   📊 Status: ${consultation.status}`);
     
     // Populate adviser info for response
     await consultation.populate('adviser', 'firstName lastName email salutation');
@@ -900,10 +968,43 @@ router.post('/:id/book', authenticate, async (req, res) => {
     // Find the student record with populated user and class data
     const student = await Student.findOne({ user: req.user._id })
       .populate('user', 'firstName lastName email idNumber')
-      .populate('class', 'yearLevel section major')
+      .populate('class', 'yearLevel section major currentPeriod currentSemester schoolYear')
       .populate('classDetails', 'yearLevel section major');
     if (!student) {
       return res.status(404).json({ message: 'Student record not found' });
+    }
+    
+    // Get student's current period and semester from their class
+    let studentPeriod = 'Prelim';
+    let studentSemester = '1st Semester';
+    let studentSchoolYear = '2025-2026';
+    
+    if (student.class) {
+      // Map class period/semester values to consultation enum values
+      const periodMapping = {
+        'Prelim': 'Prelim',
+        'Midterm': 'Midterm', 
+        'Finals': 'Finals'
+      };
+      
+      const semesterMapping = {
+        '1st': '1st Semester',
+        '1st Semester': '1st Semester',
+        '2nd': '2nd Semester', 
+        '2nd Semester': '2nd Semester'
+      };
+      
+      studentPeriod = periodMapping[student.class.currentPeriod] || 'Prelim';
+      studentSemester = semesterMapping[student.class.currentSemester] || '1st Semester';
+      studentSchoolYear = student.class.schoolYear || '2025-2026';
+      
+      console.log(`✅ Student booking tagged with student's class: Period=${studentPeriod}, Semester=${studentSemester}, SchoolYear=${studentSchoolYear}`);
+      console.log(`   👤 Student: ${student.user?.firstName || 'Unknown'} ${student.user?.lastName || 'Unknown'}`);
+      console.log(`   📚 Student's Class: ${student.class.className || 'Unknown'} (${student.class.yearLevel || 'N/A'})`);
+      console.log(`   🔄 Mapped from: Period=${student.class.currentPeriod}, Semester=${student.class.currentSemester}`);
+    } else {
+      console.log(`⚠️  No class found for student ${student._id}, using FALLBACK values: Period=${studentPeriod}, Semester=${studentSemester}`);
+      console.log(`   🔍 This booking will use default academic period/semester values`);
     }
     
     // Get the week dates for the consultation being booked
@@ -983,10 +1084,21 @@ router.post('/:id/book', authenticate, async (req, res) => {
       status: 'Booked', // New default status
       concern: concern,
       notes: notes || '',
-      consultationType: meetingType === 'virtual' ? 'chat' : 'in-person'
+      consultationType: meetingType === 'virtual' ? 'chat' : 'in-person',
+      studentPeriod,
+      studentSemester,
+      studentSchoolYear
     });
     
     await consultation.save();
+    
+    // Log booking creation summary
+    console.log(`🎉 Consultation booking created successfully!`);
+    console.log(`   📋 Consultation ID: ${consultation._id}`);
+    console.log(`   👤 Student: ${student.user?.firstName || 'Unknown'} ${student.user?.lastName || 'Unknown'}`);
+    console.log(`   👨‍🏫 Adviser: ${consultation.adviser?.firstName || 'Unknown'} ${consultation.adviser?.lastName || 'Unknown'}`);
+    console.log(`   📅 Student Period: ${studentPeriod} | Student Semester: ${studentSemester}`);
+    console.log(`   📊 Booking Status: Booked`);
     
     // Get the newly created booking
     const newBooking = consultation.bookings[consultation.bookings.length - 1];
@@ -2027,7 +2139,10 @@ router.get('/admin-history', authenticate, authorizeAdmin, async (req, res) => {
                 dayOfWeek: consultation.dayOfWeek,
                 startTime: consultation.startTime,
                 endTime: consultation.endTime,
-                status: consultation.status
+                status: consultation.status,
+                currentPeriod: consultation.currentPeriod,
+                currentSemester: consultation.currentSemester,
+                schoolYear: consultation.schoolYear
               },
               concern: booking.concern,
               notes: booking.notes,
@@ -2036,7 +2151,11 @@ router.get('/admin-history', authenticate, authorizeAdmin, async (req, res) => {
               completedAt: booking.completedAt,
               completionNotes: booking.completionNotes,
               cancelledAt: booking.cancelledAt,
-              cancellationReason: booking.cancellationReason
+              cancellationReason: booking.cancellationReason,
+              // Student's period and semester at time of booking
+              studentPeriod: booking.studentPeriod,
+              studentSemester: booking.studentSemester,
+              studentSchoolYear: booking.studentSchoolYear
             });
           }
         });
@@ -2066,10 +2185,13 @@ router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, re
       section, 
       major, 
       adviserId, 
-      meetingType 
+      meetingType,
+      period,
+      semester,
+      schoolYear
     } = req.query;
 
-    console.log('📊 Exporting consultation history...', { format, startDate, endDate, yearLevel, section, major, adviserId, meetingType });
+    console.log('📊 Exporting consultation history...', { format, startDate, endDate, yearLevel, section, major, adviserId, meetingType, period, semester, schoolYear });
 
     // Build date filter
     let dateQuery = {};
@@ -2084,6 +2206,15 @@ router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, re
     let consultationQuery = {};
     if (adviserId) {
       consultationQuery.adviser = adviserId;
+    }
+    if (period) {
+      consultationQuery.currentPeriod = period;
+    }
+    if (semester) {
+      consultationQuery.currentSemester = semester;
+    }
+    if (schoolYear) {
+      consultationQuery.schoolYear = schoolYear;
     }
 
     // Find consultations with filters
@@ -2182,7 +2313,10 @@ router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, re
           sspAdviser: sspAdviser,
           totalConsultations: 0,
           concerns: [],
-          concernCounts: {} // Track concern frequency
+          concernCounts: {}, // Track concern frequency
+          periods: new Set(), // Track all unique periods
+          semesters: new Set(), // Track all unique semesters
+          schoolYear: booking.consultation.schoolYear || '2025-2026'
         };
       }
       
@@ -2197,6 +2331,14 @@ router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, re
       if (!studentSummary[studentId].concerns.includes(booking.concern)) {
         studentSummary[studentId].concerns.push(booking.concern);
       }
+      
+      // Track unique periods and semesters
+      if (booking.consultation.currentPeriod) {
+        studentSummary[studentId].periods.add(booking.consultation.currentPeriod);
+      }
+      if (booking.consultation.currentSemester) {
+        studentSummary[studentId].semesters.add(booking.consultation.currentSemester);
+      }
     });
 
     // Add repeating concerns (concerns that appear 2+ times)
@@ -2207,6 +2349,10 @@ router.get('/admin-history/export', authenticate, authorizeAdmin, async (req, re
           student.repeatingConcerns.push(`${concern} (${count} times)`);
         }
       });
+      
+      // Convert Sets to arrays for frontend
+      student.periods = Array.from(student.periods);
+      student.semesters = Array.from(student.semesters);
     });
 
     const exportData = {
@@ -2296,7 +2442,15 @@ router.get('/adviser-history', authenticate, authorizeAdviser, async (req, res) 
               consultationType: booking.consultationType,
               completionNotes: booking.completionNotes,
               completedAt: booking.completedAt,
-              bookedAt: booking.bookedAt
+              bookedAt: booking.bookedAt,
+              // Include period and semester for filtering
+              currentPeriod: consultation.currentPeriod,
+              currentSemester: consultation.currentSemester,
+              schoolYear: consultation.schoolYear,
+              // Include student's period and semester at time of booking
+              studentPeriod: booking.studentPeriod,
+              studentSemester: booking.studentSemester,
+              studentSchoolYear: booking.studentSchoolYear
             });
           }
         });
@@ -2377,7 +2531,15 @@ router.get('/student-history', authenticate, async (req, res) => {
               consultationType: booking.consultationType,
               completionNotes: booking.completionNotes,
               completedAt: booking.completedAt,
-              bookedAt: booking.bookedAt
+              bookedAt: booking.bookedAt,
+              // Include period and semester for filtering
+              currentPeriod: consultation.currentPeriod,
+              currentSemester: consultation.currentSemester,
+              schoolYear: consultation.schoolYear,
+              // Include student's period and semester at time of booking
+              studentPeriod: booking.studentPeriod,
+              studentSemester: booking.studentSemester,
+              studentSchoolYear: booking.studentSchoolYear
             });
           }
         });

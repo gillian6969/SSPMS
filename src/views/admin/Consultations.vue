@@ -612,6 +612,45 @@
                 <option value="in-person">In-Person Meeting</option>
               </select>
             </div>
+            
+            <!-- Period -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">Period</label>
+              <select
+                v-model="historyFilters.period"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Periods</option>
+                <option value="Prelim">Prelim</option>
+                <option value="Midterm">Midterm</option>
+                <option value="Finals">Finals</option>
+              </select>
+            </div>
+            
+            <!-- Semester -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">Semester</label>
+              <select
+                v-model="historyFilters.semester"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Semesters</option>
+                <option value="1st Semester">1st Semester</option>
+                <option value="2nd Semester">2nd Semester</option>
+              </select>
+            </div>
+            
+            <!-- School Year -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">School Year</label>
+              <select
+                v-model="historyFilters.schoolYear"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All School Years</option>
+                <option v-for="year in availableSchoolYears" :key="year" :value="year">{{ year }}</option>
+              </select>
+            </div>
           </div>
           
           <!-- Filter Actions -->
@@ -1558,9 +1597,30 @@ const historyFilters = ref({
   section: '',
   major: '',
   adviser: '',
-  meetingType: ''
+  meetingType: '',
+  period: '',
+  semester: '',
+  schoolYear: ''
 })
 const availableAdvisers = ref([])
+
+// Available school years from consultation data
+const availableSchoolYears = computed(() => {
+  const years = new Set()
+  
+  // Get school years from consultation history
+  filteredHistoryRecords.value.forEach(record => {
+    if (record.consultation?.schoolYear) {
+      years.add(record.consultation.schoolYear)
+    }
+    if (record.studentSchoolYear) {
+      years.add(record.studentSchoolYear)
+    }
+  })
+  
+  // Convert to array and sort descending (newest first)
+  return Array.from(years).sort((a, b) => b.localeCompare(a))
+})
 
 // History pagination
 const historyCurrentPage = ref(1)
@@ -2596,6 +2656,20 @@ const filteredHistoryRecords = computed(() => {
     )
   }
 
+  // Filter by period
+  if (historyFilters.value.period) {
+    filtered = filtered.filter(record => 
+      record.consultation?.currentPeriod === historyFilters.value.period
+    )
+  }
+
+  // Filter by semester
+  if (historyFilters.value.semester) {
+    filtered = filtered.filter(record => 
+      record.consultation?.currentSemester === historyFilters.value.semester
+    )
+  }
+
   // Apply sorting
   if (historySortField.value) {
     filtered = [...filtered].sort((a, b) => {
@@ -3004,7 +3078,10 @@ const exportHistory = async (format) => {
       section: historyFilters.value.section,
       major: historyFilters.value.major,
       adviserId: historyFilters.value.adviser,
-      meetingType: historyFilters.value.meetingType
+      meetingType: historyFilters.value.meetingType,
+      period: historyFilters.value.period,
+      semester: historyFilters.value.semester,
+      schoolYear: historyFilters.value.schoolYear
     })
     
     console.log('📊 Exporting consultation history...', { format, params: params.toString() })
@@ -3033,16 +3110,51 @@ const exportHistory = async (format) => {
 }
 
 const exportToExcel = async (data) => {
+  // Generate title same as PDF
+  const generateFilterDescription = () => {
+    const filters = []
+    
+    if (historyFilters.value.yearLevel && historyFilters.value.yearLevel !== '') {
+      filters.push(historyFilters.value.yearLevel)
+    }
+    if (historyFilters.value.section && historyFilters.value.section !== '') {
+      filters.push(historyFilters.value.section)
+    }
+    if (historyFilters.value.major && historyFilters.value.major !== '') {
+      filters.push(historyFilters.value.major)
+    }
+    if (historyFilters.value.adviser && historyFilters.value.adviser !== '') {
+      filters.push(historyFilters.value.adviser)
+    }
+    if (historyFilters.value.period && historyFilters.value.period !== '') {
+      filters.push(`${historyFilters.value.period} period`)
+    }
+    if (historyFilters.value.semester && historyFilters.value.semester !== '') {
+      filters.push(historyFilters.value.semester)
+    }
+    
+    // Always include school year
+    const schoolYear = data.studentSummary.length > 0 ? data.studentSummary[0].schoolYear : '2025-2026'
+    filters.push(`SY ${schoolYear}`)
+    
+    return filters.join(' - ')
+  }
+  
+  const title = `Consultation Summary - ${generateFilterDescription()}`
+  
   // Create Excel file with two sheets
   const rawData = generateRawDataForExcel(data)
   const summaryData = generateSummaryForExcel(data)
   
+  // Truncate sheet name to fit Excel's 31-character limit
+  const sheetName = title.length > 31 ? title.substring(0, 28) + '...' : title
+  
   // Create workbook with two sheets
   const workbook = {
-    SheetNames: ['Raw Data', 'Summary'],
+    SheetNames: ['Raw Data', sheetName], // Use truncated title for summary sheet
     Sheets: {
       'Raw Data': rawData,
-      'Summary': summaryData
+      [sheetName]: summaryData // Use truncated title as sheet name
     }
   }
   
@@ -3052,71 +3164,250 @@ const exportToExcel = async (data) => {
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   link.setAttribute('href', url)
-  link.setAttribute('download', `consultation-history-${new Date().toISOString().split('T')[0]}.xlsx`)
+  // Use full title in filename (no character limit for filenames)
+  const filename = title.replace(/[<>:"/\\|?*]/g, '-') // Replace invalid filename characters
+  link.setAttribute('download', `${filename}-${new Date().toISOString().split('T')[0]}.xlsx`)
   link.style.visibility = 'hidden'
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
 }
 
+// Helper function to load image as base64
+const loadImageAsBase64 = (imagePath) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = img.width
+      canvas.height = img.height
+      ctx.drawImage(img, 0, 0)
+      const dataURL = canvas.toDataURL('image/png')
+      resolve(dataURL)
+    }
+    img.onerror = reject
+    img.src = imagePath
+  })
+}
+
 const exportToPDF = async (data) => {
   const { studentSummary } = data
   
-  // Create new PDF document
-  const doc = new jsPDF('p', 'mm', 'a4') // Portrait orientation
+  // Group students by school year
+  const groupedBySchoolYear = {}
+  studentSummary.forEach(student => {
+    const schoolYear = student.schoolYear || '2025-2026'
+    if (!groupedBySchoolYear[schoolYear]) {
+      groupedBySchoolYear[schoolYear] = []
+    }
+    groupedBySchoolYear[schoolYear].push(student)
+  })
   
-  // Add SSCMS title
+  // Create new PDF document with Legal landscape orientation (8.5x13 inches)
+  const doc = new jsPDF('l', 'mm', [330.2, 215.9]) // Legal landscape (13in x 8.5in)
+  const pageWidth = doc.internal.pageSize.width
+  const pageHeight = doc.internal.pageSize.height
+  const margin = 15
+  
+  // Sort school years (newest first)
+  const schoolYears = Object.keys(groupedBySchoolYear).sort((a, b) => b.localeCompare(a))
+  
+  for (let schoolYearIndex = 0; schoolYearIndex < schoolYears.length; schoolYearIndex++) {
+    const schoolYear = schoolYears[schoolYearIndex]
+    const students = groupedBySchoolYear[schoolYear]
+    
+    // Add new page for each school year (except first one)
+    if (schoolYearIndex > 0) {
+      doc.addPage()
+    }
+    
+    // Determine which columns to include based on filters
+    // Logic: 
+    // - When semester filter is selected: Show PERIOD column only
+    // - When period filter is selected: Show SEMESTER column only  
+    // - When all filters are "All": Show BOTH Period AND Semester columns
+    const includePeriodColumn = historyFilters.value.semester && historyFilters.value.semester !== '' ||
+                               (!historyFilters.value.period || historyFilters.value.period === '') && 
+                               (!historyFilters.value.semester || historyFilters.value.semester === '')
+    const includeSemesterColumn = historyFilters.value.period && historyFilters.value.period !== '' ||
+                                 (!historyFilters.value.period || historyFilters.value.period === '') && 
+                                 (!historyFilters.value.semester || historyFilters.value.semester === '')
+    
+    // Generate filter description for title - always include school year
+    const generateFilterDescription = () => {
+      const filters = []
+      
+      if (historyFilters.value.yearLevel) filters.push(`${historyFilters.value.yearLevel} year`)
+      if (historyFilters.value.section) filters.push(historyFilters.value.section)
+      if (historyFilters.value.major) filters.push(historyFilters.value.major)
+      if (historyFilters.value.period) filters.push(historyFilters.value.period.toLowerCase())
+      if (historyFilters.value.semester) filters.push(historyFilters.value.semester.toLowerCase())
+      
+      // Always include school year in title
+      filters.push(`SY ${schoolYear}`)
+      
+      return filters.join(' - ')
+    }
+    
+    // Professional header with logos - increased size
+    // System logo (upper left) - using actual image
+    try {
+      // Load system logo as base64 or use direct path
+      const systemLogoData = await loadImageAsBase64('/src/assets/android-chrome-512x512.png')
+      doc.addImage(systemLogoData, 'PNG', margin, 5, 30, 30) // Increased from 20x20 to 30x30
+    } catch (error) {
+      // Fallback to text if image fails
+      doc.setFontSize(18)
+      doc.setTextColor(34, 197, 94) // Green color
+      doc.text('SSCMS', margin, 20)
+    }
+    
+    // University logo (upper right) - using actual image
+    try {
+      // Load university logo as base64 or use direct path
+      const univLogoData = await loadImageAsBase64('/src/assets/Univ logo.webp')
+      doc.addImage(univLogoData, 'WEBP', pageWidth - margin - 35, 5, 30, 30) // Increased from 20x20 to 30x30
+    } catch (error) {
+      // Fallback to text if image fails
+      doc.setFontSize(12)
+      doc.setTextColor(100, 100, 100) // Gray color
+      doc.text('ARAUULLO UNIVERSITY', pageWidth - margin - 60, 20)
+    }
+    
+    // Add subtitle - moved down to avoid logo overlap
+    doc.setFontSize(10)
+    doc.setTextColor(50, 50, 50) // Darker gray
+    doc.text('Student Success Compliance and Monitoring System', margin, 40)
+    
+    // Add main title with filter description
   doc.setFontSize(16)
-  doc.text('SSCMS', 14, 15)
-  
-  // Add main title
-  doc.setFontSize(20)
-  doc.text('Completed Consultations Summary', 14, 25)
+    doc.setTextColor(0, 0, 0) // Black color
+    const title = `Consultation Summary - ${generateFilterDescription()}`
+    doc.text(title, margin, 50)
+    
+    // Build headers array
+    const headers = ['Student ID', 'Student Name', 'Year Level', 'Section', 'Major', 'SSP Adviser', 'Total Consultations']
+    
+    // Include period column when semester filter is selected OR when all filters are "All"
+    if (includePeriodColumn) {
+      headers.push('Period')
+    }
+    
+    // Include semester column when period filter is selected OR when all filters are "All"
+    if (includeSemesterColumn) {
+      headers.push('Semester')
+    }
+    
+    headers.push('All Concerns', 'Repeating Concerns')
+    
+    // Calculate optimal column widths to fit Legal paper size (330.2mm width)
+    const availableWidth = pageWidth - (margin * 2) - 20 // Legal landscape: 330.2mm - 30mm - 20mm = 280.2mm (extra margin)
+    
+    const columnWidths = {}
+    
+    // Calculate total columns
+    const totalColumns = 7 + (includePeriodColumn ? 1 : 0) + (includeSemesterColumn ? 1 : 0) + 2 // base + period + semester + concerns
+    
+    // Distribute width more evenly to use all available space
+    const baseWidth = availableWidth / totalColumns
+    
+    // Set proportional widths for each column type
+    columnWidths[0] = { cellWidth: baseWidth * 0.8 } // Student ID
+    columnWidths[1] = { cellWidth: baseWidth * 1.2 } // Student Name
+    columnWidths[2] = { cellWidth: baseWidth * 0.6 } // Year Level
+    columnWidths[3] = { cellWidth: baseWidth * 0.8 } // Section
+    columnWidths[4] = { cellWidth: baseWidth * 0.8 } // Major
+    columnWidths[5] = { cellWidth: baseWidth * 1.4 } // SSP Adviser
+    columnWidths[6] = { cellWidth: baseWidth * 0.8 } // Total Consultations
+    
+    let currentIndex = 7
+    
+    // Period column
+    if (includePeriodColumn) {
+      columnWidths[currentIndex] = { cellWidth: baseWidth * 1.0 }
+      currentIndex++
+    }
+    
+    // Semester column
+    if (includeSemesterColumn) {
+      columnWidths[currentIndex] = { cellWidth: baseWidth * 1.0 }
+      currentIndex++
+    }
+    
+    // Concerns columns - give more space for content
+    columnWidths[currentIndex] = { cellWidth: baseWidth * 1.8 } // All Concerns
+    columnWidths[currentIndex + 1] = { cellWidth: baseWidth * 1.8 } // Repeating Concerns
   
   // Prepare table data with cleaned SSP adviser names
-  const tableData = studentSummary.map(student => [
+    const tableData = students.map(student => {
+      const row = [
     student.studentId,
     student.studentName,
     student.yearLevel,
     student.section,
     student.major,
     student.sspAdviser.replace(' N/A', '').trim(), // Remove N/A from adviser names
-    student.totalConsultations.toString(),
-    student.concerns.join(', '),
-    student.repeatingConcerns.join(', ') || 'None'
-  ])
-  
-  // Create table using autoTable
+        student.totalConsultations.toString()
+      ]
+      
+      // Include period when semester filter is selected OR when all filters are "All"
+      if (includePeriodColumn) {
+        const periods = student.periods && student.periods.length > 0 ? student.periods.join(', ') : 'N/A'
+        row.push(periods)
+      }
+      
+      // Include semester when period filter is selected OR when all filters are "All"
+      if (includeSemesterColumn) {
+        const semesters = student.semesters && student.semesters.length > 0 ? student.semesters.join(', ') : 'N/A'
+        row.push(semesters)
+      }
+      
+      row.push(student.concerns.join(', '))
+      row.push(student.repeatingConcerns.join(', ') || 'None')
+      
+      return row
+    })
+    
+    // Create table using autoTable with professional styling
   autoTable(doc, {
-    head: [['Student ID', 'Student Name', 'Year Level', 'Section', 'Major', 'SSP Adviser', 'Total Consultations', 'All Concerns', 'Repeating Concerns']],
+      head: [headers],
     body: tableData,
-    startY: 35,
+      startY: 60,
     styles: {
-      fontSize: 7,
-      cellPadding: 2
+        fontSize: 9, // Increased from 8 to 9 for better readability
+        cellPadding: 4, // Increased from 3 to 4 for less cramped appearance
+        lineColor: [200, 200, 200],
+        lineWidth: 0.5,
+        textColor: [0, 0, 0],
+        halign: 'left',
+        valign: 'top'
     },
     headStyles: {
       fillColor: [34, 197, 94], // Green color
-      textColor: 255,
-      fontStyle: 'bold'
-    },
-    columnStyles: {
-      0: { cellWidth: 12 }, // Student ID
-      1: { cellWidth: 20 }, // Student Name
-      2: { cellWidth: 12 }, // Year Level
-      3: { cellWidth: 15 }, // Section
-      4: { cellWidth: 20 }, // Major
-      5: { cellWidth: 20 }, // SSP Adviser
-      6: { cellWidth: 15 }, // Total Consultations
-      7: { cellWidth: 30 }, // All Concerns
-      8: { cellWidth: 30 }  // Repeating Concerns
-    },
+        textColor: [255, 255, 255], // White text
+        fontStyle: 'bold',
+        fontSize: 9,
+        halign: 'center',
+        valign: 'middle'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250] // Light gray for alternating rows
+      },
+      columnStyles: columnWidths,
+      margin: { left: margin, right: margin },
+      tableWidth: 'auto',
+      showHead: 'everyPage',
     didDrawPage: (data) => {
-      // Add footer
+        // Professional footer
       doc.setFontSize(8)
-      doc.text('SSPMS - Student Support and Performance Management System', 14, doc.internal.pageSize.height - 10)
+        doc.setTextColor(100, 100, 100)
+        doc.text('SSPMS - Student Support and Performance Management System', margin, doc.internal.pageSize.height - 10)
+        doc.text(`Page ${data.pageNumber}`, doc.internal.pageSize.width - margin - 20, doc.internal.pageSize.height - 10)
     }
   })
+  }
   
   // Save the PDF
   doc.save(`consultation-summary-${new Date().toISOString().split('T')[0]}.pdf`)
@@ -3125,7 +3416,7 @@ const exportToPDF = async (data) => {
 const generateRawDataCSV = (data) => {
   const { rawData } = data
   
-  let csv = 'Student ID,Student Name,Year Level,Section,Major,Consultation Adviser,Concern,Meeting Type,Date,Time,Completion Notes\n'
+  let csv = 'Student ID,Student Name,Year Level,Section,Major,Consultation Adviser,Concern,Meeting Type,Date,Time,Completion Notes,Period,Semester\n'
   
   rawData.forEach(record => {
     const studentId = record.student?.user?.idNumber || 'N/A'
@@ -3139,8 +3430,10 @@ const generateRawDataCSV = (data) => {
     const date = formatHistoryDate(record.consultation?.weekStart, record.consultation?.dayOfWeek)
     const time = formatHistoryTime(record.consultation?.startTime, record.consultation?.endTime)
     const completionNotes = record.completionNotes || 'N/A'
+    const period = record.consultation?.currentPeriod || 'N/A'
+    const semester = record.consultation?.currentSemester || 'N/A'
     
-    csv += `"${studentId}","${studentName}","${yearLevel}","${section}","${major}","${adviser}","${concern}","${meetingType}","${date}","${time}","${completionNotes}"\n`
+    csv += `"${studentId}","${studentName}","${yearLevel}","${section}","${major}","${adviser}","${concern}","${meetingType}","${date}","${time}","${completionNotes}","${period}","${semester}"\n`
   })
   
   return csv
@@ -3165,7 +3458,7 @@ const generateRawDataForExcel = (data) => {
   const { rawData } = data
   
   // Create headers
-  const headers = ['Student ID', 'Student Name', 'Year Level', 'Section', 'Major', 'Consultation Adviser', 'Concern', 'Meeting Type', 'Date', 'Time', 'Completion Notes']
+  const headers = ['Student ID', 'Student Name', 'Year Level', 'Section', 'Major', 'Consultation Adviser', 'Concern', 'Meeting Type', 'Date', 'Time', 'Completion Notes', 'Period', 'Semester']
   
   // Create data rows
   const rows = rawData.map(record => [
@@ -3179,7 +3472,9 @@ const generateRawDataForExcel = (data) => {
     record.consultationType === 'chat' ? 'Virtual' : 'In-Person',
     formatHistoryDate(record.consultation?.weekStart, record.consultation?.dayOfWeek),
     formatHistoryTime(record.consultation?.startTime, record.consultation?.endTime),
-    record.completionNotes || 'N/A'
+    record.completionNotes || 'N/A',
+    record.consultation?.currentPeriod || 'N/A',
+    record.consultation?.currentSemester || 'N/A'
   ])
   
   // Create worksheet
@@ -3197,7 +3492,9 @@ const generateRawDataForExcel = (data) => {
     { wch: 15 }, // Meeting Type
     { wch: 15 }, // Date
     { wch: 15 }, // Time
-    { wch: 30 }  // Completion Notes
+    { wch: 30 }, // Completion Notes
+    { wch: 12 }, // Period
+    { wch: 15 }  // Semester
   ]
   
   return worksheet
@@ -3206,37 +3503,210 @@ const generateRawDataForExcel = (data) => {
 const generateSummaryForExcel = (data) => {
   const { studentSummary } = data
   
-  // Create headers
-  const headers = ['Student ID', 'Student Name', 'Year Level', 'Section', 'Major', 'SSP Adviser', 'Total Consultations', 'All Concerns', 'Repeating Concerns']
+  // Apply same column logic as PDF
+  const includePeriodColumn = historyFilters.value.semester && historyFilters.value.semester !== '' ||
+                             (!historyFilters.value.period || historyFilters.value.period === '') && 
+                             (!historyFilters.value.semester || historyFilters.value.semester === '')
+  const includeSemesterColumn = historyFilters.value.period && historyFilters.value.period !== '' ||
+                               (!historyFilters.value.period || historyFilters.value.period === '') && 
+                               (!historyFilters.value.semester || historyFilters.value.semester === '')
   
-  // Create data rows with cleaned SSP adviser names
-  const rows = studentSummary.map(student => [
+  // Generate filter description for title (same as PDF)
+  const generateFilterDescription = () => {
+    const filters = []
+    
+    if (historyFilters.value.yearLevel && historyFilters.value.yearLevel !== '') {
+      filters.push(historyFilters.value.yearLevel)
+    }
+    if (historyFilters.value.section && historyFilters.value.section !== '') {
+      filters.push(historyFilters.value.section)
+    }
+    if (historyFilters.value.major && historyFilters.value.major !== '') {
+      filters.push(historyFilters.value.major)
+    }
+    if (historyFilters.value.adviser && historyFilters.value.adviser !== '') {
+      filters.push(historyFilters.value.adviser)
+    }
+    if (historyFilters.value.period && historyFilters.value.period !== '') {
+      filters.push(`${historyFilters.value.period} period`)
+    }
+    if (historyFilters.value.semester && historyFilters.value.semester !== '') {
+      filters.push(historyFilters.value.semester)
+    }
+    
+    // Always include school year
+    const schoolYear = studentSummary.length > 0 ? studentSummary[0].schoolYear : '2025-2026'
+    filters.push(`SY ${schoolYear}`)
+    
+    return filters.join(' - ')
+  }
+  
+  // Create headers (same logic as PDF)
+  const headers = ['Student ID', 'Student Name', 'Year Level', 'Section', 'Major', 'SSP Adviser', 'Total Consultations']
+  
+  // Include period column when semester filter is selected OR when all filters are "All"
+  if (includePeriodColumn) {
+    headers.push('Period')
+  }
+  
+  // Include semester column when period filter is selected OR when all filters are "All"
+  if (includeSemesterColumn) {
+    headers.push('Semester')
+  }
+  
+  headers.push('All Concerns', 'Repeating Concerns')
+  
+  // Create data rows with same logic as PDF
+  const rows = studentSummary.map(student => {
+    const row = [
     student.studentId,
     student.studentName,
     student.yearLevel,
     student.section,
     student.major,
     student.sspAdviser.replace(' N/A', '').trim(), // Remove N/A from adviser names
-    student.totalConsultations,
-    student.concerns.join('; '),
-    student.repeatingConcerns.join('; ') || 'None'
-  ])
+      student.totalConsultations
+    ]
+    
+    // Include period when semester filter is selected OR when all filters are "All"
+    if (includePeriodColumn) {
+      const periods = student.periods && student.periods.length > 0 ? student.periods.join(', ') : 'N/A'
+      row.push(periods)
+    }
+    
+    // Include semester when period filter is selected OR when all filters are "All"
+    if (includeSemesterColumn) {
+      const semesters = student.semesters && student.semesters.length > 0 ? student.semesters.join(', ') : 'N/A'
+      row.push(semesters)
+    }
+    
+    row.push(student.concerns.join(', '))
+    row.push(student.repeatingConcerns.join(', ') || 'None')
+    
+    return row
+  })
   
   // Create worksheet
   const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows])
   
-  // Set column widths
-  worksheet['!cols'] = [
-    { wch: 12 }, // Student ID
-    { wch: 20 }, // Student Name
-    { wch: 12 }, // Year Level
-    { wch: 15 }, // Section
-    { wch: 20 }, // Major
-    { wch: 20 }, // SSP Adviser
-    { wch: 15 }, // Total Consultations
-    { wch: 40 }, // All Concerns
-    { wch: 40 }  // Repeating Concerns
-  ]
+  // Enhanced professional styling
+  const range = XLSX.utils.decode_range(worksheet['!ref'])
+  
+  // Style header row with enhanced design
+  for (let col = range.s.c; col <= range.e.c; col++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
+    if (!worksheet[cellAddress]) worksheet[cellAddress] = { v: '' }
+    
+    worksheet[cellAddress].s = {
+      fill: { fgColor: { rgb: '1E40AF' } }, // Professional blue background
+      font: { 
+        color: { rgb: 'FFFFFF' }, 
+        bold: true, 
+        sz: 12, // Larger font size
+        name: 'Calibri' // Professional font
+      },
+      alignment: { 
+        horizontal: 'center', 
+        vertical: 'center',
+        wrapText: true // Allow text wrapping
+      },
+      border: {
+        top: { style: 'medium', color: { rgb: '1E3A8A' } },
+        bottom: { style: 'medium', color: { rgb: '1E3A8A' } },
+        left: { style: 'medium', color: { rgb: '1E3A8A' } },
+        right: { style: 'medium', color: { rgb: '1E3A8A' } }
+      }
+    }
+  }
+  
+  // Style data rows with enhanced design
+  for (let row = 1; row <= range.e.r; row++) {
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
+      if (!worksheet[cellAddress]) worksheet[cellAddress] = { v: '' }
+      
+      // Different styling for different column types
+      let cellStyle = {
+        font: { 
+          sz: 11, // Professional font size
+          name: 'Calibri',
+          color: { rgb: '1F2937' } // Dark gray text
+        },
+        alignment: { 
+          horizontal: 'left', 
+          vertical: 'top',
+          wrapText: true, // Allow text wrapping
+          indent: 1 // Small indent for better readability
+        },
+        border: {
+          top: { style: 'thin', color: { rgb: 'D1D5DB' } },
+          bottom: { style: 'thin', color: { rgb: 'D1D5DB' } },
+          left: { style: 'thin', color: { rgb: 'D1D5DB' } },
+          right: { style: 'thin', color: { rgb: 'D1D5DB' } }
+        }
+      }
+      
+      // Special styling for numeric columns
+      if (col === 6) { // Total Consultations column
+        cellStyle.alignment.horizontal = 'center'
+        cellStyle.font.bold = true
+        cellStyle.font.color = { rgb: '059669' } // Green for numbers
+      }
+      
+      // Special styling for ID columns
+      if (col === 0) { // Student ID column
+        cellStyle.font.name = 'Consolas' // Monospace font for IDs
+        cellStyle.font.sz = 10
+        cellStyle.alignment.horizontal = 'center'
+      }
+      
+      // Alternating row colors with better contrast
+      cellStyle.fill = { 
+        fgColor: { rgb: row % 2 === 0 ? 'F8FAFC' : 'FFFFFF' } 
+      }
+      
+      // Highlight important rows (students with many consultations)
+      if (rows[row - 1] && rows[row - 1][6] && parseInt(rows[row - 1][6]) >= 3) {
+        cellStyle.fill = { fgColor: { rgb: 'FEF3C7' } } // Light yellow highlight
+        cellStyle.font.bold = true
+      }
+      
+      worksheet[cellAddress].s = cellStyle
+    }
+  }
+  
+  // Add row height for better spacing
+  worksheet['!rows'] = []
+  for (let row = 0; row <= range.e.r; row++) {
+    worksheet['!rows'][row] = { hpt: row === 0 ? 25 : 20 } // Header row taller
+  }
+  
+  // Set column widths (optimized for content with better spacing)
+  const columnWidths = []
+  const baseColumns = 7
+  const totalColumns = baseColumns + (includePeriodColumn ? 1 : 0) + (includeSemesterColumn ? 1 : 0) + 2
+  const baseWidth = 18 // Increased base width for better spacing
+  
+  columnWidths.push({ wch: baseWidth * 0.9 }) // Student ID - wider for better readability
+  columnWidths.push({ wch: baseWidth * 1.4 }) // Student Name - much wider for full names
+  columnWidths.push({ wch: baseWidth * 0.7 }) // Year Level - compact but readable
+  columnWidths.push({ wch: baseWidth * 1.0 }) // Section - wider for section names
+  columnWidths.push({ wch: baseWidth * 1.2 }) // Major - wider for longer major names
+  columnWidths.push({ wch: baseWidth * 1.6 }) // SSP Adviser - much wider for full names
+  columnWidths.push({ wch: baseWidth * 0.8 }) // Total Consultations - compact for numbers
+  
+  if (includePeriodColumn) {
+    columnWidths.push({ wch: baseWidth * 1.1 }) // Period - wider for multiple values
+  }
+  
+  if (includeSemesterColumn) {
+    columnWidths.push({ wch: baseWidth * 1.1 }) // Semester - wider for multiple values
+  }
+  
+  columnWidths.push({ wch: baseWidth * 2.2 }) // All Concerns - much wider for content
+  columnWidths.push({ wch: baseWidth * 2.0 }) // Repeating Concerns - wider for content
+  
+  worksheet['!cols'] = columnWidths
   
   return worksheet
 }
@@ -3251,7 +3721,10 @@ const clearHistoryFilters = () => {
     section: '',
     major: '',
     adviser: '',
-    meetingType: ''
+    meetingType: '',
+    period: '',
+    semester: '',
+    schoolYear: ''
   }
   historyCurrentPage.value = 1
 }
