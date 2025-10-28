@@ -23,7 +23,7 @@ router.get('/profile', authenticate, async (req, res) => {
 // Update user profile
 router.put('/profile', authenticate, async (req, res) => {
   try {
-    const { firstName, lastName, idNumber } = req.body;
+    const { firstName, middleName, lastName, idNumber } = req.body;
     
     // Find user
     const user = await User.findById(req.user.id);
@@ -33,6 +33,7 @@ router.put('/profile', authenticate, async (req, res) => {
     
     // Update fields
     if (firstName) user.firstName = firstName;
+    if (middleName !== undefined) user.middleName = middleName;
     if (lastName) user.lastName = lastName;
     if (idNumber) user.idNumber = idNumber;
     
@@ -45,6 +46,7 @@ router.put('/profile', authenticate, async (req, res) => {
       user: {
         _id: user._id,
         firstName: user.firstName,
+        middleName: user.middleName,
         lastName: user.lastName,
         email: user.email,
         idNumber: user.idNumber,

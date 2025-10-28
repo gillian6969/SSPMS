@@ -59,72 +59,16 @@
         <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
           <div class="flex justify-between items-center mb-4">
             <h3 class="font-medium text-lg">Change Password</h3>
-            <button 
-              @click="togglePasswordForm" 
+            <button
+              @click="showPasswordForm = true"
               class="text-sm text-primary hover:text-primary-dark focus:outline-none"
             >
-              {{ showPasswordForm ? 'Cancel' : 'Change' }}
+              Change
             </button>
           </div>
-          
-          <form v-if="showPasswordForm" @submit.prevent="changeUserPassword" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Current Password *</label>
-              <input
-                v-model="password.currentPassword"
-                type="password"
-                class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                :class="{ 'border-red-500': passwordErrors.currentPassword }"
-                required
-              />
-              <p v-if="passwordErrors.currentPassword" class="mt-1 text-sm text-red-500">{{ passwordErrors.currentPassword }}</p>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">New Password *</label>
-              <input
-                v-model="password.newPassword"
-                type="password"
-                class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                :class="{ 'border-red-500': passwordErrors.newPassword }"
-                required
-              />
-              <p v-if="passwordErrors.newPassword" class="mt-1 text-sm text-red-500">{{ passwordErrors.newPassword }}</p>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password *</label>
-              <input
-                v-model="password.confirmPassword"
-                type="password"
-                class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                :class="{ 'border-red-500': passwordErrors.confirmPassword }"
-                required
-              />
-              <p v-if="passwordErrors.confirmPassword" class="mt-1 text-sm text-red-500">{{ passwordErrors.confirmPassword }}</p>
-            </div>
-            
-            <div class="flex justify-end">
-              <button
-                type="submit"
-                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                :disabled="changePasswordLoading"
-              >
-                <span v-if="changePasswordLoading" class="flex items-center">
-                  <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Updating...
-                </span>
-                <span v-else>Change Password</span>
-              </button>
-            </div>
-          </form>
-          
-          <div v-else>
-            <p class="text-sm text-gray-500">For security reasons, passwords are not displayed. Click 'Change' to update your password.</p>
-          </div>
+          <p class="text-sm text-gray-500">
+            For security reasons, passwords are not displayed. Click 'Change' to update your password.
+          </p>
         </div>
       </div>
       
@@ -350,6 +294,74 @@
         </div>
       </div>
     </div>
+
+    <!-- Change Password Modal -->
+    <div v-if="showPasswordForm" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div class="relative mx-auto p-6 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium">Change Password</h3>
+          <button @click="showPasswordForm = false" class="text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form @submit.prevent="changeUserPassword" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Current Password *</label>
+            <input
+              v-model="password.currentPassword"
+              type="password"
+              class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+              :class="{ 'border-red-500': passwordErrors.currentPassword }"
+              required
+            />
+            <p v-if="passwordErrors.currentPassword" class="mt-1 text-sm text-red-500">{{ passwordErrors.currentPassword }}</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">New Password *</label>
+            <input
+              v-model="password.newPassword"
+              type="password"
+              class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+              :class="{ 'border-red-500': passwordErrors.newPassword }"
+              required
+            />
+            <p v-if="passwordErrors.newPassword" class="mt-1 text-sm text-red-500">{{ passwordErrors.newPassword }}</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password *</label>
+            <input
+              v-model="password.confirmPassword"
+              type="password"
+              class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+              :class="{ 'border-red-500': passwordErrors.confirmPassword }"
+              required
+            />
+            <p v-if="passwordErrors.confirmPassword" class="mt-1 text-sm text-red-500">{{ passwordErrors.confirmPassword }}</p>
+          </div>
+          
+          <div class="flex justify-end items-center pt-4 space-x-4">
+            <button
+              type="submit"
+              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              :disabled="changePasswordLoading"
+            >
+              <span v-if="changePasswordLoading" class="flex items-center">
+                <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Updating...
+              </span>
+              <span v-else>Change Password</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -370,6 +382,7 @@ const loading = ref(true);
 const profile = ref({
   firstName: '',
   lastName: '',
+  middleName: '',
   salutation: '',
   email: '',
   idNumber: '',
@@ -450,6 +463,7 @@ const fetchProfileData = async () => {
       profile.value = {
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
+        middleName: userData.middleName || '',
         salutation: userData.salutation || '',
         email: userData.email || '',
         idNumber: userData.idNumber || '',
@@ -460,6 +474,7 @@ const fetchProfileData = async () => {
       profile.value = {
         firstName: authStore.user?.firstName || '',
         lastName: authStore.user?.lastName || '',
+        middleName: authStore.user?.middleName || '',
         salutation: authStore.user?.salutation || '',
         email: authStore.user?.email || '',
         idNumber: authStore.user?.idNumber || '',
@@ -474,6 +489,7 @@ const fetchProfileData = async () => {
     profile.value = {
       firstName: authStore.user?.firstName || '',
       lastName: authStore.user?.lastName || '',
+      middleName: authStore.user?.middleName || '',
       salutation: authStore.user?.salutation || '',
       email: authStore.user?.email || '',
       idNumber: authStore.user?.idNumber || '',
@@ -656,11 +672,6 @@ const changeUserPassword = async () => {
   }
 };
 
-// Toggle password form
-const togglePasswordForm = () => {
-  showPasswordForm.value = !showPasswordForm.value;
-};
-
 // Toggle profile edit
 const toggleProfileEdit = () => {
   editingProfile.value = !editingProfile.value;
@@ -689,16 +700,15 @@ const updateProfile = async () => {
       contactNumber: editProfile.value.contactNumber
     });
     
-    // Update profile in local state
-    profile.value = {
-      firstName: editProfile.value.firstName,
-      lastName: editProfile.value.lastName,
-      middleName: editProfile.value.middleName,
-      salutation: editProfile.value.salutation,
-      contactNumber: editProfile.value.contactNumber
-    };
+    // Update profile in local state without overwriting existing fields like email and idNumber
+    profile.value.firstName = editProfile.value.firstName;
+    profile.value.lastName = editProfile.value.lastName;
+    profile.value.middleName = editProfile.value.middleName;
+    profile.value.salutation = editProfile.value.salutation;
+    profile.value.contactNumber = editProfile.value.contactNumber;
     
     notificationService.showSuccess('Profile updated successfully');
+    editingProfile.value = false; // Close the edit form on success
   } catch (error) {
     console.error('Error updating profile:', error);
     notificationService.showError('Failed to update profile. Please try again.');

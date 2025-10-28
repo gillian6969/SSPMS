@@ -486,11 +486,60 @@ router.get('/user/:userId', authenticate, async (req, res) => {
   }
 });
 
+// Update adviser profile by user ID
+router.put('/adviser/:userId/profile', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { firstName, middleName, lastName, email, contactNumber, salutation } = req.body;
+
+    // Verify that the logged-in user is the owner of this profile or an admin
+    if (userId !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'You do not have permission to update this profile' });
+    }
+
+    // Find the user record
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User record not found' });
+    }
+
+    // Update user information
+    if (firstName) user.firstName = firstName;
+    if (middleName != null) user.middleName = middleName;
+    if (lastName) user.lastName = lastName;
+    if (email) user.email = email;
+    if (salutation != null) user.salutation = salutation;
+    if (contactNumber != null) user.contactNumber = contactNumber;
+
+    await user.save();
+
+    // Since advisers don't have a separate "Adviser" model like students,
+    // we just update the User model.
+
+    res.json({
+      message: 'Profile updated successfully',
+      data: {
+        user: {
+          firstName: user.firstName,
+          middleName: user.middleName,
+          lastName: user.lastName,
+          email: user.email,
+          contactNumber: user.contactNumber,
+          salutation: user.salutation
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Update adviser profile by user ID error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Update profile by user ID
 router.put('/user/:userId/profile', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { firstName, lastName, email, contactNumber, address } = req.body;
+    const { firstName, middleName, lastName, email, contactNumber, address } = req.body;
     
     // Find student with this user ID
     const student = await Student.findOne({ user: userId });
@@ -535,13 +584,14 @@ router.put('/user/:userId/profile', authenticate, async (req, res) => {
     await student.save();
     
     // Update user information
-    if (firstName || lastName || email) {
+    if (firstName || middleName || lastName || email) {
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ message: 'User record not found' });
       }
       
       if (firstName) user.firstName = firstName;
+      if (middleName) user.middleName = middleName;
       if (lastName) user.lastName = lastName;
       if (email) user.email = email;
       
@@ -557,6 +607,7 @@ router.put('/user/:userId/profile', authenticate, async (req, res) => {
           address: student.address,
           user: {
             firstName: firstName || (student.user && student.user.firstName),
+            middleName: middleName || (student.user && student.user.middleName),
             lastName: lastName || (student.user && student.user.lastName),
             email: email || (student.user && student.user.email)
           }
@@ -3019,7 +3070,7 @@ router.post('/assign-selected-classes', authenticate, authorizeAdmin, async (req
     const students = await Student.find({
       _id: { $in: studentIds },
       status: 'active'
-    });
+    }).populate('user', 'firstName lastName');
     
     if (students.length === 0) {
       return res.status(404).json({
@@ -3042,6 +3093,7 @@ router.post('/assign-selected-classes', authenticate, authorizeAdmin, async (req
     let assignedCount = 0;
     let failedCount = 0;
     const assignmentErrors = [];
+    const assignedStudentsInfo = [];
     
     // Process each student
     for (const student of students) {
@@ -3054,18 +3106,19 @@ router.post('/assign-selected-classes', authenticate, authorizeAdmin, async (req
         let major = student.major;
         
         // Try to get from classDetails if direct properties are not available
-        if (!yearLevel && student.classDetails) yearLevel = student.classDetails.yearLevel;
-        if (!section && student.classDetails) section = student.classDetails.section;
-        if (!major && student.classDetails) major = student.classDetails.major;
+        if (!yearLevel && student.classDetails?.yearLevel) yearLevel = student.classDetails.yearLevel;
+        if (!section && student.classDetails?.section) section = student.classDetails.section;
+        if (!major && student.classDetails?.major) major = student.classDetails.major;
         
+        const studentName = (student.user?.firstName && student.user?.lastName) ? `${student.user.firstName} ${student.user.lastName}` : `Student ID ${student._id}`;
         console.log(`Student details - YL: ${yearLevel}, Sec: ${section}, Major: ${major}`);
         
         if (!yearLevel || !section) {
           failedCount++;
-          const errorMsg = `Student ${student._id} has no year level or section information`;
+          const errorMsg = `Student ${student._id} (${studentName}) could not be assigned: Missing Year Level or Section.`;
           console.error(errorMsg);
           assignmentErrors.push(errorMsg);
-          continue;
+          continue; // Skip to the next student
         }
         
         // Find a matching class
@@ -3122,16 +3175,21 @@ router.post('/assign-selected-classes', authenticate, authorizeAdmin, async (req
           }
           
           assignedCount++;
+          assignedStudentsInfo.push({ id: student._id, name: studentName });
           console.log(`✅ Assigned student ${student._id} to class ${matchingClass._id}`);
         } else {
           failedCount++;
-          const errorMsg = `No matching class found for student ${student._id} (${student.user?.lastName || ''}, ${student.user?.firstName || ''})`;
+          const errorMsg = `No matching class found for student ${student._id} (${studentName}) with details (Year: ${yearLevel}, Section: ${section}, Major: ${major || 'N/A'})`;
           console.error(errorMsg);
           assignmentErrors.push(errorMsg);
         }
       } catch (studentError) {
         failedCount++;
-        console.error(`Error processing student ${student._id}:`, studentError);
+        const studentName = (student.user?.firstName && student.user?.lastName) 
+          ? `${student.user.firstName} ${student.user.lastName}` 
+          : `Student ID ${student._id}`;
+        const errorMsg = `Error processing student ${student._id} (${studentName}): ${studentError.message}`;
+        console.error(errorMsg);
         assignmentErrors.push(`Error with student ${student._id}: ${studentError.message}`);
       }
     }
@@ -3142,7 +3200,8 @@ router.post('/assign-selected-classes', authenticate, authorizeAdmin, async (req
       message: `Successfully assigned ${assignedCount} students to classes (${failedCount} failed)`,
       assignedCount: assignedCount,
       failedCount: failedCount,
-      errors: assignmentErrors
+      errors: assignmentErrors,
+      assignedStudents: assignedStudentsInfo
     });
   } catch (error) {
     console.error('Error in assign-selected-classes route:', error);

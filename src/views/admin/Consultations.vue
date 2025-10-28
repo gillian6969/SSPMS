@@ -825,7 +825,7 @@
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Choose an adviser</option>
-              <option v-for="adviser in advisers" :key="adviser._id" :value="adviser._id">
+              <option v-for="adviser in activeAdvisers" :key="adviser._id" :value="adviser._id">
                 {{ adviser.firstName }} {{ adviser.lastName }}
               </option>
             </select>
@@ -1732,6 +1732,11 @@ onMounted(() => {
 // Computed property for duration that always uses system setting
 const consultationDuration = computed(() => {
   return systemOptions.value?.consultation?.defaultDuration
+})
+
+// Filter for active advisers only in the dropdown
+const activeAdvisers = computed(() => {
+  return advisers.value.filter(adviser => adviser.status === 'active')
 })
 
 // Methods

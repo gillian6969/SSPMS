@@ -12,6 +12,7 @@ const Notification = require('../models/Notification');
 const SessionCompletion = require('../models/SessionCompletion');
 const Consultation = require('../models/Consultation');
 const sgMail = require('@sendgrid/mail');
+const emailService = require('../services/emailService');
 
 // Get all advisers
 router.get('/', authenticate, authorizeAdmin, async (req, res) => {
@@ -805,6 +806,16 @@ router.post('/advisory/classes', authenticate, authorizeAdmin, async (req, res) 
       }
     }
 
+    // Send email to adviser
+    if (populatedAssignment.adviser && populatedAssignment.class) {
+      try {
+        const emailHtml = emailService.generateAdviserAssignedEmail(populatedAssignment.adviser, populatedAssignment.class);
+        await emailService.sendEmail(populatedAssignment.adviser.email, 'You have been assigned to a new advisory class', emailHtml);
+      } catch (emailError) {
+        console.error('Failed to send assignment email:', emailError);
+      }
+    }
+
     res.status(201).json(processedClass);
   } catch (error) {
     console.error('Create advisory class error:', error);
@@ -816,42 +827,58 @@ router.post('/advisory/classes', authenticate, authorizeAdmin, async (req, res) 
 router.put('/advisory/classes/:id', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { adviser, class: classId, status } = req.body;
-    
+
     // Validate inputs
     if (!adviser || !classId) {
       return res.status(400).json({ message: 'Adviser ID and Class ID are required' });
     }
-    
-    // Find the advisory class
-    const advisoryClass = await AdvisoryClass.findById(req.params.id);
+
+    // Find the advisory class and populate adviser and class details
+    const advisoryClass = await AdvisoryClass.findById(req.params.id)
+      .populate('adviser', 'firstName lastName salutation email')
+      .populate('class', 'yearLevel section major schoolYear');
+      
     if (!advisoryClass) {
       return res.status(404).json({ message: 'Advisory class not found' });
     }
-    
+
+    const oldAdviser = advisoryClass.adviser;
+
     // Check if adviser exists
-    const adviserExists = await User.findOne({ _id: adviser, role: 'adviser' });
-    if (!adviserExists) {
+    const newAdviser = await User.findOne({ _id: adviser, role: 'adviser' });
+    if (!newAdviser) {
       return res.status(400).json({ message: 'Adviser not found' });
     }
-    
+
     // Check if class exists
     const classExists = await Class.findById(classId);
     if (!classExists) {
       return res.status(400).json({ message: 'Class not found' });
     }
-    
+
     // Check status of adviser and class
-    if (adviserExists.status !== 'active') {
+    if (newAdviser.status !== 'active') {
       return res.status(400).json({ message: 'Cannot assign inactive adviser to advisory class' });
     }
-    
+
     if (classExists.status !== 'active') {
       return res.status(400).json({ message: 'Cannot assign inactive class to advisory class' });
     }
-    
-    // If status is being set to inactive, delete the record
+
+    // If status is being set to inactive, handle unassignment
     if (status && status === 'inactive') {
       await AdvisoryClass.findByIdAndDelete(req.params.id);
+
+      // Send unassignment email if there was an adviser
+      if (oldAdviser) {
+        try {
+          const emailHtml = emailService.generateAdviserUnassignedEmail(oldAdviser, classExists);
+          await emailService.sendEmail(oldAdviser.email, 'You have been unassigned from an advisory class', emailHtml);
+        } catch (emailError) {
+          console.error('Failed to send unassignment email:', emailError);
+        }
+      }
+
       return res.json({ message: 'Advisory class deleted successfully' });
     } else {
       // Update fields
@@ -859,7 +886,30 @@ router.put('/advisory/classes/:id', authenticate, authorizeAdmin, async (req, re
       advisoryClass.class = classId;
       advisoryClass.updatedAt = Date.now();
       await advisoryClass.save();
-      
+
+      // Handle email notifications for adviser changes
+      const adviserChanged = oldAdviser ? oldAdviser._id.toString() !== newAdviser._id.toString() : true;
+
+      if (adviserChanged) {
+        // Send unassignment email to old adviser
+        if (oldAdviser) {
+          try {
+            const emailHtml = emailService.generateAdviserUnassignedEmail(oldAdviser, classExists);
+            await emailService.sendEmail(oldAdviser.email, 'You have been unassigned from an advisory class', emailHtml);
+          } catch (emailError) {
+            console.error('Failed to send unassignment email to old adviser:', emailError);
+          }
+        }
+
+        // Send assignment email to new adviser
+        try {
+          const emailHtml = emailService.generateAdviserAssignedEmail(newAdviser, classExists);
+          await emailService.sendEmail(newAdviser.email, 'You have been assigned to a new advisory class', emailHtml);
+        } catch (emailError) {
+          console.error('Failed to send assignment email to new adviser:', emailError);
+        }
+      }
+
       // Return updated advisory class with populated fields
       const updatedAdvisoryClass = await AdvisoryClass.findById(advisoryClass._id)
         .populate({
@@ -872,41 +922,31 @@ router.put('/advisory/classes/:id', authenticate, authorizeAdmin, async (req, re
           ]
         })
         .populate('adviser', 'firstName lastName salutation email status');
-      
+
       // Process the class to add semester information flags
       const processedClass = JSON.parse(JSON.stringify(updatedAdvisoryClass));
       
-      // Check if the class has the new semester structure
       if (processedClass.class && (processedClass.class.firstSemester || processedClass.class.secondSemester)) {
-        // Add flags to indicate which semesters are available
         processedClass.hasFirstSemester = !!processedClass.class.firstSemester?.sspSubject;
         processedClass.hasSecondSemester = !!processedClass.class.secondSemester?.sspSubject;
-        
-        // Add first semester subject info at the top level for backwards compatibility
         if (processedClass.hasFirstSemester) {
           processedClass.class.firstSemesterSubject = processedClass.class.firstSemester.sspSubject;
         }
-        
-        // Add second semester subject info at the top level
         if (processedClass.hasSecondSemester) {
           processedClass.class.secondSemesterSubject = processedClass.class.secondSemester.sspSubject;
         }
       } else {
-        // For legacy classes, determine semester from sspSubject
         const semester = processedClass.class?.sspSubject?.semester || '';
         processedClass.hasFirstSemester = semester.includes('1st') || !semester.includes('2nd');
         processedClass.hasSecondSemester = semester.includes('2nd');
-        
-        // Add convenience flags
         if (processedClass.hasFirstSemester) {
           processedClass.class.firstSemesterSubject = processedClass.class.sspSubject;
         }
-        
         if (processedClass.hasSecondSemester) {
           processedClass.class.secondSemesterSubject = processedClass.class.sspSubject;
         }
       }
-      
+
       res.json(processedClass);
     }
   } catch (error) {
@@ -918,15 +958,27 @@ router.put('/advisory/classes/:id', authenticate, authorizeAdmin, async (req, re
 // Delete advisory class
 router.delete('/advisory/classes/:id', authenticate, authorizeAdmin, async (req, res) => {
   try {
-    const advisoryClass = await AdvisoryClass.findById(req.params.id);
-    
+    const advisoryClass = await AdvisoryClass.findById(req.params.id)
+      .populate('adviser', 'firstName lastName salutation email')
+      .populate('class', 'yearLevel section major schoolYear');
+
     if (!advisoryClass) {
       return res.status(404).json({ message: 'Advisory class not found' });
     }
-    
+
+    // Send unassignment email if there was an adviser
+    if (advisoryClass.adviser && advisoryClass.class) {
+      try {
+        const emailHtml = emailService.generateAdviserUnassignedEmail(advisoryClass.adviser, advisoryClass.class);
+        await emailService.sendEmail(advisoryClass.adviser.email, 'You have been unassigned from an advisory class', emailHtml);
+      } catch (emailError) {
+        console.error('Failed to send unassignment email:', emailError);
+      }
+    }
+
     // Delete the record
     await AdvisoryClass.findByIdAndDelete(req.params.id);
-    
+
     res.json({ message: 'Advisory class deleted successfully' });
   } catch (error) {
     console.error('Delete advisory class error:', error);
