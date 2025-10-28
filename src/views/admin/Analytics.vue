@@ -667,8 +667,11 @@ const applyFilters = async () => {
 // Generate PDF Report
 const generatePDFReport = async () => {
   const doc = new jsPDF('p', 'mm', 'a4');
-  const sspCanvas = sspProgressChart.value
-  const consultationCanvas = consultationChart.value
+  // The canvases were removed in the previous fix, but they are needed to get the chart data.
+  // Let's re-add them but ensure they point to the correct chart instances.
+  const sspCanvas = sspProgressChartInstance;
+  const consultationCanvas = consultationChartInstance;
+
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
@@ -741,48 +744,35 @@ const generatePDFReport = async () => {
   let finalY = (doc).lastAutoTable.finalY || 80;
 
   // SSP Completion Status as a table
-  if (stats.totalStudents > 0) {
+  if (sspCanvas && sspCanvas.config.data) {
+    if (finalY > pageHeight - 60) { // Check if there's enough space
+      doc.addPage()
+      addHeader()
+      finalY = 30
+    }
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.text('Student SSP Completion Details', margin, finalY + 15)
+    doc.text('SSP Completion Status', margin, finalY + 15)
 
-    // Fetch detailed student progress data
-    const queryParams = new URLSearchParams()
-    if (filters.yearLevel) queryParams.append('yearLevel', filters.yearLevel)
-    if (filters.section) queryParams.append('section', filters.section)
-    if (filters.major) queryParams.append('major', filters.major)
-    
-    const response = await api.get(`/admin/analytics/student-progress?${queryParams.toString()}`)
-    const studentProgress = response.data || []
-
-    const studentTableBody = studentProgress.map(student => {
-      const completion = student.totalSessions > 0 
-        ? `${Math.round((student.completedSessions / student.totalSessions) * 100)}%`
-        : '0%'
-      return [
-        student.name,
-        student.idNumber,
-        `${student.completedSessions} / ${student.totalSessions}`,
-        completion
-      ]
+    const sspData = sspCanvas.config.data.datasets[0].data
+    const sspLabels = sspCanvas.config.data.labels
+    const sspTableBody = sspLabels.map((label, index) => {
+      return [label, sspData[index]]
     })
 
     autoTable(doc, {
       startY: finalY + 20,
       margin: { left: margin, right: margin },
-      head: [['Student Name', 'ID Number', 'Sessions Completed', 'Completion %']],
-      body: studentTableBody,
+      head: [['Period', 'Number of Students']],
+      body: sspTableBody,
       theme: 'striped',
-      headStyles: { fillColor: [34, 197, 94] }, // Green header
-      didDrawPage: (data) => {
-        addHeader(); // Add header to new pages
-      }
+      headStyles: { fillColor: [52, 152, 219] }
     })
     finalY = (doc).lastAutoTable.finalY
   }
 
   // Consultations by Concern Type as a table
-  if (consultationChartInstance && consultationChartInstance.data) {
+  if (consultationCanvas && consultationCanvas.config.data) {
     if (finalY > pageHeight - 60) { // Check if there's enough space
       doc.addPage()
       addHeader()
@@ -793,8 +783,8 @@ const generatePDFReport = async () => {
     doc.setFont('helvetica', 'bold')
     doc.text('Consultations by Concern Type', margin, finalY + 15)
 
-    const consultationData = consultationChartInstance.data.datasets[0].data
-    const consultationLabels = consultationChartInstance.data.labels
+    const consultationData = consultationCanvas.config.data.datasets[0].data
+    const consultationLabels = consultationCanvas.config.data.labels
     const totalConsultations = consultationData.reduce((a, b) => a + b, 0)
     const consultationTableBody = consultationLabels.map((label, index) => {
       const count = consultationData[index]
@@ -826,7 +816,8 @@ const generatePDFReport = async () => {
 // Print Report
 const printReport = () => {
   // The user wants the print button to generate a PDF with a specific name,
-  // which is what generatePDFReport already does.
+  // which is what generatePDFReport already does. Let's revert to this
+  // as the window.print() method was not working as expected.
   generatePDFReport();
 }
 
