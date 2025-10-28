@@ -11,12 +11,6 @@ const validateTurnstile = async (req, res, next) => {
       return next();
     }
     
-    // Skip validation for development dummy tokens
-    if (turnstileToken.includes('1x00000000000000000000AA')) {
-      console.log('Development Turnstile token detected, skipping validation');
-      return next();
-    }
-    
     // Get production secret key from environment
     const secretKey = process.env.TURNSTILE_PROD_SECRET_KEY;
     

@@ -207,16 +207,16 @@ const {
   validateToken
 } = useTurnstile()
 
-// Turnstile configuration - using development key for now
+// Turnstile configuration - using production keys
 const turnstileConfig = ref({
-  siteKey: '1x00000000000000000000AA'  // Development key (always passes)
+  siteKey: import.meta.env.VITE_TURNSTILE_PROD_SITE_KEY || '0x4AAAAAAB8L-aAqFIPoryrm'
 })
 
-// Debug logging
+// Debug logging (keys removed for security)
 console.log('Environment check:', {
   isDev: import.meta.env.DEV,
-  prodKey: import.meta.env.VITE_TURNSTILE_PROD_SITE_KEY,
-  selectedKey: turnstileConfig.value.siteKey
+  hasProdKey: !!import.meta.env.VITE_TURNSTILE_PROD_SITE_KEY,
+  selectedKey: turnstileConfig.value.siteKey.substring(0, 10) + '...'
 })
 
 

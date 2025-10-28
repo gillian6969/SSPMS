@@ -77,19 +77,19 @@ const initTurnstile = async () => {
         size: props.size,
         action: props.action,
         callback: (token) => {
-          console.log('Turnstile success:', token)
+          console.log('Turnstile verification successful')
           emit('success', token)
         },
         'error-callback': (error) => {
-          console.error('Turnstile error:', error)
+          console.error('Turnstile verification failed:', error)
           emit('error', error)
         },
         'expired-callback': () => {
-          console.log('Turnstile expired')
+          console.log('Turnstile token expired')
           emit('expired')
         },
         'timeout-callback': () => {
-          console.log('Turnstile timeout')
+          console.log('Turnstile verification timeout')
           emit('timeout')
         }
       })
